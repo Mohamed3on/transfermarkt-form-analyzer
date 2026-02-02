@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -8,6 +8,9 @@ export async function POST() {
     revalidatePath("/api/manager/[clubId]", "page");
     revalidatePath("/api/player-form", "page");
     revalidatePath("/api/player-minutes/[playerId]", "page");
+
+    // Revalidate underperformers cache (uses unstable_cache with tags)
+    revalidateTag("underperformers");
 
     return NextResponse.json({
       success: true,

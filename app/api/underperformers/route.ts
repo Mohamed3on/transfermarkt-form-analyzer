@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { unstable_cache, revalidateTag } from "next/cache";
 import * as cheerio from "cheerio";
 
 const BASE_URL = "https://www.transfermarkt.com";
@@ -20,15 +21,6 @@ interface PlayerStats {
   playerId: string;
   minutes?: number;
 }
-
-interface CacheEntry {
-  data: PlayerStats[];
-  timestamp: number;
-}
-
-// In-memory cache for 24 hours
-const cache = new Map<string, CacheEntry>();
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 async function fetchPage(url: string): Promise<string> {
   const response = await fetch(url, {
@@ -149,6 +141,9 @@ async function fetchPlayerMinutes(playerId: string): Promise<number> {
   }
 }
 
+const MIN_MARKET_VALUE = 10_000_000; // €10m minimum to be considered
+const MAX_RESULTS = 50; // Return top candidates, client filters further
+
 /**
  * Step 1: Find candidates - players who seem to underperform based on points vs cheaper players
  * A player is a candidate if there exists a cheaper player with more points
@@ -158,6 +153,9 @@ function findCandidates(players: PlayerStats[]): PlayerStats[] {
 
   for (let i = 0; i < players.length; i++) {
     const player = players[i];
+    // Skip low-value players
+    if (player.marketValue < MIN_MARKET_VALUE) continue;
+
     // Check if any cheaper player (later in the sorted list) has more points
     const cheaperWithMorePoints = players.slice(i + 1).some(p => p.points > player.points);
     if (cheaperWithMorePoints) {
@@ -187,66 +185,43 @@ function findRealUnderperformers(players: PlayerStats[]): PlayerStats[] {
 }
 
 async function computeUnderperformers(positionType: string): Promise<PlayerStats[]> {
-  // Step 1: Fetch all players sorted by market value desc
+  // Fetch all players sorted by market value desc
   const allPlayers = await fetchTopScorers(positionType);
 
-  // Step 2: Find candidates (preliminary filter without minutes)
+  // Find candidates - players where a cheaper player has more points
   const candidates = findCandidates(allPlayers);
 
-  if (candidates.length === 0) {
-    return [];
-  }
-
-  // Step 3: Fetch minutes only for candidates (in parallel, batched for speed)
-  const BATCH_SIZE = 20;
-  for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
-    const batch = candidates.slice(i, i + BATCH_SIZE);
-    const minutesResults = await Promise.all(
-      batch.map(p => fetchPlayerMinutes(p.playerId))
-    );
-    batch.forEach((player, idx) => {
-      player.minutes = minutesResults[idx];
-    });
-  }
-
-  // Step 4: Apply real underperformer filter with minutes
-  const realUnderperformers = findRealUnderperformers(candidates);
-
-  // Sort by market value descending
-  return realUnderperformers.sort((a, b) => b.marketValue - a.marketValue);
+  // Return top candidates by market value (client will fetch minutes and filter further)
+  return candidates.sort((a, b) => b.marketValue - a.marketValue).slice(0, MAX_RESULTS);
 }
+
+// Cached version using Next.js cache (works on Vercel)
+const getCachedUnderperformers = unstable_cache(
+  async (positionType: string) => computeUnderperformers(positionType),
+  ["underperformers"],
+  { revalidate: 86400, tags: ["underperformers"] } // 24 hours
+);
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const positionType = searchParams.get("position") || "cf";
+  const bustCache = searchParams.get("bust") === "true";
 
-  // Validate position type
   if (!["forward", "cf"].includes(positionType)) {
     return NextResponse.json({ error: "Invalid position type" }, { status: 400 });
   }
 
-  const cacheKey = `underperformers-${positionType}`;
-  const now = Date.now();
-
-  // Check cache
-  const cached = cache.get(cacheKey);
-  if (cached && (now - cached.timestamp) < CACHE_TTL) {
-    return NextResponse.json({
-      underperformers: cached.data,
-      cached: true,
-      cacheAge: Math.floor((now - cached.timestamp) / 1000 / 60), // minutes
-    });
+  // Bust cache if requested
+  if (bustCache) {
+    revalidateTag("underperformers");
+    return NextResponse.json({ cleared: true });
   }
 
   try {
-    const underperformers = await computeUnderperformers(positionType);
-
-    // Update cache
-    cache.set(cacheKey, { data: underperformers, timestamp: now });
+    const underperformers = await getCachedUnderperformers(positionType);
 
     return NextResponse.json({
       underperformers,
-      cached: false,
     });
   } catch (error) {
     console.error("Error computing underperformers:", error);

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 async function revalidateAllCaches(): Promise<boolean> {
+  // Single call clears all caches including underperformers (via revalidateTag)
   const res = await fetch("/api/revalidate", { method: "POST" });
   return res.ok;
 }

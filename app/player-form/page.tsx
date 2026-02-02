@@ -590,6 +590,52 @@ function UnderperformersSection({
     staleTime: 5 * 60 * 1000,
   });
 
+  const candidates = data?.underperformers || [];
+  const playerIds = candidates.map((p) => p.playerId);
+
+  // Fetch minutes for all candidates in parallel
+  const minutesQueries = useQueries({
+    queries: playerIds.map((playerId) => ({
+      queryKey: ["player-minutes", playerId],
+      queryFn: ({ signal }: { signal: AbortSignal }) => fetchPlayerMinutes(playerId, signal),
+      enabled: !!playerId,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  // Build minutes map and filter to real underperformers
+  const { playersWithMinutes, realUnderperformers, isFiltering } = useMemo(() => {
+    const withMinutes = candidates.map((player, idx) => ({
+      ...player,
+      minutes: minutesQueries[idx]?.data,
+      minutesLoading: minutesQueries[idx]?.isLoading ?? true,
+    }));
+
+    // Check if still loading any minutes
+    const stillLoading = withMinutes.some((p) => p.minutesLoading);
+
+    // Filter to real underperformers: no one with >= value AND >= minutes has fewer points
+    const filtered = withMinutes.filter((player) => {
+      const playerMins = player.minutes;
+      if (playerMins === undefined) return true; // Keep while loading
+      const dominated = withMinutes.some(
+        (other) =>
+          other.playerId !== player.playerId &&
+          other.minutes !== undefined &&
+          other.marketValue >= player.marketValue &&
+          other.minutes >= playerMins &&
+          other.points < player.points
+      );
+      return !dominated;
+    });
+
+    return {
+      playersWithMinutes: withMinutes,
+      realUnderperformers: filtered,
+      isFiltering: stillLoading,
+    };
+  }, [candidates, minutesQueries]);
+
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -601,18 +647,24 @@ function UnderperformersSection({
           <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: "#ff6b7a" }}>
             {title}
           </h2>
-          {data?.cached && (
-            <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>
-              cached {data.cacheAge}m ago
-            </span>
+          {isFiltering && !isLoading && (
+            <div className="flex items-center gap-1.5">
+              <div
+                className="w-2.5 h-2.5 rounded-full border-2 animate-spin"
+                style={{ borderColor: "transparent", borderTopColor: "var(--accent-blue)" }}
+              />
+              <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                filtering...
+              </span>
+            </div>
           )}
         </div>
-        {data?.underperformers && (
+        {realUnderperformers.length > 0 && (
           <span
             className="text-sm font-bold px-2.5 py-1 rounded-lg tabular-nums"
             style={{ background: "rgba(255, 71, 87, 0.15)", color: "#ff6b7a" }}
           >
-            {data.underperformers.length}
+            {realUnderperformers.length}
           </span>
         )}
       </div>
@@ -630,7 +682,7 @@ function UnderperformersSection({
         </div>
       )}
 
-      {data?.underperformers && data.underperformers.length === 0 && (
+      {!isLoading && !error && realUnderperformers.length === 0 && !isFiltering && (
         <div
           className="rounded-xl p-8 text-center animate-fade-in"
           style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
@@ -644,9 +696,9 @@ function UnderperformersSection({
         </div>
       )}
 
-      {data?.underperformers && data.underperformers.length > 0 && (
+      {realUnderperformers.length > 0 && (
         <div className="space-y-3">
-          {data.underperformers.map((player, index) => (
+          {realUnderperformers.map((player, index) => (
             <UnderperformerListCard
               key={player.playerId}
               player={player}
