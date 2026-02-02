@@ -46,31 +46,35 @@ interface LeagueTeam {
 }
 
 interface MarketValueTeam {
-  name: string;
+  clubId: string;
   marketValue: string;
   marketValueNum: number;
-  logoUrl: string;
-  clubId: string;
 }
 
-function parseLeagueTable($: cheerio.CheerioAPI): LeagueTeam[] {
-  const teams: LeagueTeam[] = [];
+// Parse both tables from the startseite page
+function parseStartseitePage($: cheerio.CheerioAPI): { standings: LeagueTeam[]; marketValues: MarketValueTeam[] } {
+  const standings: LeagueTeam[] = [];
+  const marketValues: MarketValueTeam[] = [];
 
-  $("table.items > tbody > tr").each((_, row) => {
+  // Find standings table (has "Pts" in header)
+  const standingsTable = $("table.items").filter((_, table) => {
+    const headerText = $(table).find("thead").text().toLowerCase();
+    return headerText.includes("pts") || headerText.includes("pkte");
+  }).first();
+
+  standingsTable.find("tbody > tr").each((_, row) => {
     const cells = $(row).find("> td");
-    if (cells.length < 9) return;
+    if (cells.length < 5) return;
 
     const positionText = $(cells[0]).text().trim();
     const position = parseInt(positionText, 10);
     if (isNaN(position)) return;
 
-    const logoCell = $(cells[1]);
-    const logoUrl = logoCell.find("img").attr("src") || "";
-
-    const nameCell = $(cells[2]);
-    const nameLink = nameCell.find("a").first();
-    const name = nameLink.attr("title") || nameLink.text().trim();
-    const clubUrl = nameLink.attr("href") || "";
+    const clubCell = $(cells[1]);
+    const clubLink = clubCell.find("a").first();
+    const logoUrl = clubCell.find("img").attr("src") || "";
+    const name = clubLink.attr("title") || "";
+    const clubUrl = clubLink.attr("href") || "";
     const clubIdMatch = clubUrl.match(/\/verein\/(\d+)/);
     const clubId = clubIdMatch ? clubIdMatch[1] : "";
 
@@ -79,19 +83,12 @@ function parseLeagueTable($: cheerio.CheerioAPI): LeagueTeam[] {
     if (isNaN(points)) return;
 
     if (name && clubId) {
-      // Normalize URL to use startseite
       const normalizedUrl = clubUrl.replace(/\/(spielplan|tabelle)\//, "/startseite/");
-      teams.push({ name, position, points, logoUrl, clubUrl: `${BASE_URL}${normalizedUrl}`, clubId });
+      standings.push({ name, position, points, logoUrl, clubUrl: `${BASE_URL}${normalizedUrl}`, clubId });
     }
   });
 
-  return teams;
-}
-
-function parseMarketValueTable($: cheerio.CheerioAPI): MarketValueTeam[] {
-  const teams: MarketValueTeam[] = [];
-
-  // Find the table with market value header (first table.items with 7 columns)
+  // Find market value table (has "market value" in header)
   const mvTable = $("table.items").filter((_, table) => {
     const headerText = $(table).find("thead").text().toLowerCase();
     return headerText.includes("market value") || headerText.includes("marktwert");
@@ -101,13 +98,8 @@ function parseMarketValueTable($: cheerio.CheerioAPI): MarketValueTeam[] {
     const cells = $(row).find("> td");
     if (cells.length < 6) return;
 
-    const logoCell = $(cells[0]);
-    const logoUrl = logoCell.find("img").attr("src") || "";
-
     const nameCell = $(cells[1]);
-    const nameLink = nameCell.find("a").first();
-    const name = nameLink.attr("title") || nameLink.text().trim();
-    const clubUrl = nameLink.attr("href") || "";
+    const clubUrl = nameCell.find("a").first().attr("href") || "";
     const clubIdMatch = clubUrl.match(/\/verein\/(\d+)/);
     const clubId = clubIdMatch ? clubIdMatch[1] : "";
 
@@ -115,30 +107,25 @@ function parseMarketValueTable($: cheerio.CheerioAPI): MarketValueTeam[] {
     const marketValue = mvCell.text().trim();
     const marketValueNum = parseMarketValue(marketValue);
 
-    if (name && clubId && marketValueNum > 0) {
-      teams.push({ name, marketValue, marketValueNum, logoUrl, clubId });
+    if (clubId && marketValueNum > 0) {
+      marketValues.push({ clubId, marketValue, marketValueNum });
     }
   });
 
-  return teams;
+  return { standings, marketValues };
 }
 
 async function fetchLeagueData(league: typeof LEAGUES[number]): Promise<TeamFormEntry[]> {
   try {
-    const tableUrl = `${BASE_URL}/${league.slug}/tabelle/wettbewerb/${league.code}`;
-    const mvUrl = `${BASE_URL}/${league.slug}/startseite/wettbewerb/${league.code}`;
+    // Single fetch per league - startseite has both tables
+    const url = `${BASE_URL}/${league.slug}/startseite/wettbewerb/${league.code}`;
+    const html = await fetchPage(url);
+    const $ = cheerio.load(html);
 
-    // Fetch both pages in parallel
-    const [tableHtml, mvHtml] = await Promise.all([fetchPage(tableUrl), fetchPage(mvUrl)]);
-
-    const $table = cheerio.load(tableHtml);
-    const leagueTeams = parseLeagueTable($table);
-
-    const $mv = cheerio.load(mvHtml);
-    const mvTeams = parseMarketValueTable($mv);
+    const { standings, marketValues } = parseStartseitePage($);
 
     // Sort by market value to determine expected positions
-    const sortedByMV = [...mvTeams].sort((a, b) => b.marketValueNum - a.marketValueNum);
+    const sortedByMV = [...marketValues].sort((a, b) => b.marketValueNum - a.marketValueNum);
     const mvRankMap = new Map<string, { rank: number; value: string; valueNum: number }>();
     sortedByMV.forEach((team, idx) => {
       mvRankMap.set(team.clubId, { rank: idx + 1, value: team.marketValue, valueNum: team.marketValueNum });
@@ -146,13 +133,13 @@ async function fetchLeagueData(league: typeof LEAGUES[number]): Promise<TeamForm
 
     // Create points by position lookup
     const pointsByPosition = new Map<number, number>();
-    leagueTeams.forEach((team) => {
+    standings.forEach((team) => {
       pointsByPosition.set(team.position, team.points);
     });
 
     // Combine data and calculate delta
     const results: TeamFormEntry[] = [];
-    for (const team of leagueTeams) {
+    for (const team of standings) {
       const mvData = mvRankMap.get(team.clubId);
       if (!mvData) continue;
 
@@ -187,7 +174,6 @@ const getTeamFormData = unstable_cache(
     const results = await Promise.all(LEAGUES.map(fetchLeagueData));
     const allTeams = results.flat();
 
-    // Sort by delta pts for overperformers and underperformers
     const overperformers = [...allTeams]
       .filter((t) => t.deltaPts > 0)
       .sort((a, b) => b.deltaPts - a.deltaPts)
