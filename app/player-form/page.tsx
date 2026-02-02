@@ -928,9 +928,7 @@ export default function PlayerFormPage() {
               >
                 <option value="forward">All Forwards</option>
                 <option value="cf">Centre-Forward</option>
-                <option value="rw">Right Winger</option>
-                <option value="lw">Left Winger</option>
-                <option value="all">All Positions</option>
+                <option value="midfielder">Midfielders</option>
               </select>
 
               <button

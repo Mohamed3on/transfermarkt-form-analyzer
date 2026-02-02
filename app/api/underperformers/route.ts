@@ -96,6 +96,9 @@ async function fetchTopScorers(positionType: string): Promise<PlayerStats[]> {
     case "cf":
       positionPath = "ausrichtung//spielerposition_id/14";
       break;
+    case "midfielder":
+      positionPath = "ausrichtung/Mittelfeld/spielerposition_id/";
+      break;
     case "forward":
     default:
       positionPath = "ausrichtung/Sturm/spielerposition_id/";
@@ -207,7 +210,7 @@ export async function GET(request: Request) {
   const positionType = searchParams.get("position") || "cf";
   const bustCache = searchParams.get("bust") === "true";
 
-  if (!["forward", "cf"].includes(positionType)) {
+  if (!["forward", "cf", "midfielder"].includes(positionType)) {
     return NextResponse.json({ error: "Invalid position type" }, { status: 400 });
   }
 

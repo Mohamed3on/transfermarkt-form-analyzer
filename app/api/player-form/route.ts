@@ -95,14 +95,8 @@ async function fetchTopScorers(positionType: string = "forward"): Promise<Player
     case "cf":
       positionPath = "ausrichtung//spielerposition_id/14";
       break;
-    case "rw":
-      positionPath = "ausrichtung//spielerposition_id/12";
-      break;
-    case "lw":
-      positionPath = "ausrichtung//spielerposition_id/11";
-      break;
-    case "all":
-      positionPath = "ausrichtung//spielerposition_id/";
+    case "midfielder":
+      positionPath = "ausrichtung/Mittelfeld/spielerposition_id/";
       break;
     case "forward":
     default:
