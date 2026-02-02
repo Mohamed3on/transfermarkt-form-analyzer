@@ -125,15 +125,15 @@ function parseMarketValueTable($: cheerio.CheerioAPI): MarketValueTeam[] {
 
 async function fetchLeagueData(league: typeof LEAGUES[number]): Promise<TeamFormEntry[]> {
   try {
-    // Fetch league table
     const tableUrl = `${BASE_URL}/${league.slug}/tabelle/wettbewerb/${league.code}`;
-    const tableHtml = await fetchPage(tableUrl);
+    const mvUrl = `${BASE_URL}/${league.slug}/startseite/wettbewerb/${league.code}`;
+
+    // Fetch both pages in parallel
+    const [tableHtml, mvHtml] = await Promise.all([fetchPage(tableUrl), fetchPage(mvUrl)]);
+
     const $table = cheerio.load(tableHtml);
     const leagueTeams = parseLeagueTable($table);
 
-    // Fetch market values
-    const mvUrl = `${BASE_URL}/${league.slug}/startseite/wettbewerb/${league.code}`;
-    const mvHtml = await fetchPage(mvUrl);
     const $mv = cheerio.load(mvHtml);
     const mvTeams = parseMarketValueTable($mv);
 
