@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getInjuredPlayers } from "@/app/api/injured/route";
+import { getInjuredPlayers } from "@/lib/injured";
 import { InjuredUI } from "./InjuredUI";
 
 export const metadata: Metadata = {
