@@ -178,7 +178,7 @@ function TeamListSection({
   title: string;
   icon: React.ReactNode;
 }) {
-  const clubIds = teams.map((t) => t.clubId).filter(Boolean);
+  const clubIds = useMemo(() => teams.map((t) => t.clubId).filter(Boolean), [teams]);
 
   const managerQueries = useQueries({
     queries: clubIds.map((clubId) => ({

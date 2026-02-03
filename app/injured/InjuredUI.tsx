@@ -219,7 +219,7 @@ function TeamInjuryCard({ team, rank }: { team: TeamInjuryGroup; rank: number })
         <div className="mt-3 flex flex-wrap gap-1.5 sm:gap-2">
           {displayPlayers.map((player) => (
             <a
-              key={player.name}
+              key={player.profileUrl || player.name}
               href={player.profileUrl}
               target="_blank"
               rel="noopener noreferrer"
@@ -325,6 +325,12 @@ export function InjuredUI() {
     return Array.from(groupMap.values()).sort((a, b) => b.totalValue - a.totalValue);
   }, [data?.players]);
 
+  // Find team with most injuries (by count)
+  const mostInjuredTeam = useMemo(() => {
+    if (!teamGroups.length) return null;
+    return teamGroups.reduce((max, team) => (team.count > max.count ? team : max), teamGroups[0]);
+  }, [teamGroups]);
+
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <Header />
@@ -390,7 +396,7 @@ export function InjuredUI() {
             </div>
             <div className="text-center">
               <div className="text-xl sm:text-2xl font-black" style={{ color: "var(--accent-hot)" }}>
-                {teamGroups[0]?.count || 0}
+                {mostInjuredTeam?.count || 0}
               </div>
               <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                 Most Injured
