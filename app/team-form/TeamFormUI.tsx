@@ -69,9 +69,9 @@ function TeamCard({ team, rank, type, manager, managerLoading }: TeamCardProps) 
         </div>
 
         {/* Club Logo */}
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "var(--bg-elevated)" }}>
+        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1.5" style={{ background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
           {team.logoUrl ? (
-            <img src={team.logoUrl} alt={team.name} className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+            <img src={team.logoUrl} alt={team.name} className="w-full h-full object-contain" />
           ) : (
             <div className="text-xl" style={{ color: "var(--text-muted)" }}>?</div>
           )}

@@ -114,7 +114,7 @@ function PlayerCard({ player, rank }: { player: InjuredPlayer; rank: number }) {
             {/* Club & League */}
             <div className="flex items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-2 flex-wrap">
               {player.clubLogoUrl && (
-                <img src={player.clubLogoUrl} alt={player.club} className="w-4 h-4 sm:w-5 sm:h-5 object-contain" />
+                <img src={player.clubLogoUrl} alt={player.club} className="w-5 h-5 sm:w-6 sm:h-6 object-contain bg-white rounded p-0.5" />
               )}
               <span className="text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none text-[var(--text-secondary)]">
                 {player.club}
@@ -157,9 +157,9 @@ function TeamInjuryCard({ team, rank }: { team: TeamInjuryGroup; rank: number })
           <RankBadge rank={rank} />
 
           {/* Club Logo */}
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden shrink-0 flex items-center justify-center bg-[var(--bg-elevated)]">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1.5 bg-white shadow-sm">
             {team.clubLogoUrl ? (
-              <img src={team.clubLogoUrl} alt={team.club} className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+              <img src={team.clubLogoUrl} alt={team.club} className="w-full h-full object-contain" />
             ) : (
               <div className="text-xl text-[var(--text-muted)]">?</div>
             )}
