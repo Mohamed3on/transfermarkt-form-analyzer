@@ -52,7 +52,7 @@ function parseInjuredPlayers($: cheerio.CheerioAPI, leagueName: string): Injured
     const clubCell = $(cells[1]);
     const clubLink = clubCell.find("a").first();
     const club = clubLink.attr("title") || "";
-    const clubLogoUrl = (clubCell.find("img").attr("src") || "").replace("/verysmall/", "/head/");
+    const clubLogoUrl = (clubCell.find("img").attr("src") || "").replace("/tiny/", "/head/");
 
     const injury = $(cells[2]).text().trim();
     const returnDate = $(cells[3]).text().trim();

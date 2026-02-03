@@ -73,7 +73,7 @@ function parseStartseitePage($: cheerio.CheerioAPI): { standings: LeagueTeam[]; 
 
     const clubCell = $(cells[1]);
     const clubLink = clubCell.find("a").first();
-    const logoUrl = (clubCell.find("img").attr("src") || "").replace("/verysmall/", "/head/");
+    const logoUrl = (clubCell.find("img").attr("src") || "").replace("/tiny/", "/head/");
     const name = clubLink.attr("title") || "";
     const clubUrl = clubLink.attr("href") || "";
     const clubIdMatch = clubUrl.match(/\/verein\/(\d+)/);
