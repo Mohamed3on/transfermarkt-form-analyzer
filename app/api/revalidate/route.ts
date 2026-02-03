@@ -13,6 +13,7 @@ export async function POST() {
     revalidateTag("underperformers");
     revalidateTag("injured");
     revalidateTag("team-form");
+    revalidateTag("form-analysis");
 
     return NextResponse.json({
       success: true,

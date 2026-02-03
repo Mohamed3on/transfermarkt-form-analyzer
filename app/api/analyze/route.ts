@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import * as cheerio from "cheerio";
 import type { TeamStats, PeriodAnalysis, AnalysisResult } from "@/app/types";
 
@@ -11,7 +12,6 @@ async function fetchPage(url: string): Promise<string> {
       "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     },
-    next: { revalidate: 3600 }, // 1 hour cache
   });
   return response.text();
 }
@@ -121,12 +121,17 @@ function findQualifiedTeams(teams: TeamStats[], type: "top" | "bottom") {
   return results;
 }
 
-export async function GET() {
-  try {
-    const analysis: PeriodAnalysis[] = [];
+const getAnalysis = unstable_cache(
+  async (): Promise<AnalysisResult> => {
+    // Fetch all periods in parallel
+    const allTeamsPerPeriod = await Promise.all(PERIODS.map(fetchAllTeams));
 
-    for (const period of PERIODS) {
-      const teams = await fetchAllTeams(period);
+    const analysis: PeriodAnalysis[] = [];
+    let matchedPeriod: number | null = null;
+
+    for (let i = 0; i < PERIODS.length; i++) {
+      const period = PERIODS[i];
+      const teams = allTeamsPerPeriod[i];
       if (teams.length === 0) continue;
 
       const leaders = getLeaders(teams);
@@ -162,12 +167,24 @@ export async function GET() {
 
       analysis.push(periodData);
 
-      if (periodData.hasMatch) {
-        return NextResponse.json({ success: true, matchedPeriod: period, analysis } as AnalysisResult);
+      if (periodData.hasMatch && !matchedPeriod) {
+        matchedPeriod = period;
       }
     }
 
-    return NextResponse.json({ success: false, matchedPeriod: null, analysis } as AnalysisResult);
+    if (matchedPeriod) {
+      return { success: true, matchedPeriod, analysis };
+    }
+    return { success: false, matchedPeriod: null, analysis };
+  },
+  ["form-analysis"],
+  { revalidate: 43200, tags: ["form-analysis"] }
+);
+
+export async function GET() {
+  try {
+    const result = await getAnalysis();
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error analyzing form:", error);
     return NextResponse.json({ error: "Failed to analyze form data" }, { status: 500 });
