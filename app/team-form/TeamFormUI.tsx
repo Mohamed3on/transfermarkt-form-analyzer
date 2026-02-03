@@ -132,37 +132,32 @@ function TeamCard({ team, rank, type, manager, managerLoading }: TeamCardProps) 
 
           {/* Manager info */}
           {showManager && team.clubId && (
-            <div
-              className="mt-2 pt-2 text-xs sm:text-sm"
-              style={{ borderTop: "1px solid var(--border-subtle)" }}
-            >
+            <div className="mt-2 text-[11px] sm:text-sm" style={{ color: "var(--text-muted)" }}>
               {managerLoading ? (
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full border animate-spin"
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full border animate-spin inline-block"
                     style={{
                       borderColor: "var(--border-subtle)",
                       borderTopColor: "var(--accent-blue)",
                     }}
                   />
-                  <span style={{ color: "var(--text-muted)" }}>Loading manager...</span>
-                </div>
+                  <span>Manager...</span>
+                </span>
               ) : manager ? (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span style={{ color: "var(--text-muted)" }}>Manager:</span>
+                <span>
+                  Manager:{" "}
                   <a
                     href={manager.profileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold hover:underline transition-colors truncate"
+                    className="font-semibold hover:underline"
                     style={{ color: "var(--accent-blue)" }}
                   >
                     {manager.name}
                   </a>
-                </div>
-              ) : (
-                <span style={{ color: "var(--text-muted)" }}>Manager info not available</span>
-              )}
+                </span>
+              ) : null}
             </div>
           )}
         </div>
@@ -189,8 +184,8 @@ function TeamListSection({
     queries: clubIds.map((clubId) => ({
       queryKey: ["manager", clubId],
       queryFn: () => fetchManager(clubId),
-      staleTime: 60 * 60 * 1000, // 1 hour
-      gcTime: 24 * 60 * 60 * 1000, // Keep in cache for 24 hours
+      staleTime: 24 * 60 * 60 * 1000, // 24 hours
+      gcTime: 7 * 24 * 60 * 60 * 1000, // Keep in cache for 7 days
       refetchOnWindowFocus: false,
       refetchOnMount: false,
     })),
