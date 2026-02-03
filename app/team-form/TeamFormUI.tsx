@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery, useQueries } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { TeamFormEntry, ManagerInfo } from "@/app/types";
 
-interface TeamFormResponse {
+export interface TeamFormResponse {
   success: boolean;
   overperformers: TeamFormEntry[];
   underperformers: TeamFormEntry[];
@@ -12,10 +12,8 @@ interface TeamFormResponse {
   leagues: string[];
 }
 
-async function fetchTeamForm(): Promise<TeamFormResponse> {
-  const res = await fetch("/api/team-form");
-  if (!res.ok) throw new Error("Failed to fetch team form data");
-  return res.json();
+interface TeamFormUIProps {
+  initialData: TeamFormResponse;
 }
 
 async function fetchManager(clubId: string): Promise<{ clubId: string; manager: ManagerInfo | null }> {
@@ -228,145 +226,76 @@ function TeamListSection({
   );
 }
 
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 10 }).map((_, i) => (
-        <div
-          key={i}
-          className="rounded-xl p-4 animate-pulse"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-lg" style={{ background: "var(--bg-elevated)" }} />
-            <div className="w-12 h-12 rounded-lg" style={{ background: "var(--bg-elevated)" }} />
-            <div className="flex-1 space-y-2">
-              <div className="h-5 rounded w-1/3" style={{ background: "var(--bg-elevated)" }} />
-              <div className="h-4 rounded w-1/2" style={{ background: "var(--bg-elevated)" }} />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export function TeamFormUI() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["team-form"],
-    queryFn: fetchTeamForm,
-    staleTime: 1000 * 60 * 30,
-  });
+export function TeamFormUI({ initialData }: TeamFormUIProps) {
+  const data = initialData;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg-base)" }}>
-      <main className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* Header */}
-        <div className="mb-4 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black mb-1 sm:mb-2" style={{ color: "var(--text-primary)" }}>
-            Team Form vs Market Value
-          </h1>
-          <p className="text-sm sm:text-lg" style={{ color: "var(--text-muted)" }}>
-            Teams over/underperforming their expected position based on squad market value
-          </p>
+    <>
+      {/* Stats */}
+      <div
+        className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-8 p-3 sm:p-4 rounded-xl"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
+      >
+        <div className="text-center">
+          <div className="text-xl sm:text-2xl font-black" style={{ color: "var(--accent-hot)" }}>
+            {data.totalTeams}
+          </div>
+          <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+            Teams
+          </div>
         </div>
-
-        {/* Stats */}
-        {data && (
-          <div
-            className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-8 p-3 sm:p-4 rounded-xl"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
-          >
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-black" style={{ color: "var(--accent-hot)" }}>
-                {data.totalTeams}
-              </div>
-              <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                Teams
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-black" style={{ color: "var(--accent-hot)" }}>
-                {data.leagues.length}
-              </div>
-              <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                Leagues
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-black" style={{ color: "#16a34a" }}>
-                +{data.overperformers[0]?.deltaPts || 0}
-              </div>
-              <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                Top Δ
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-black" style={{ color: "#dc2626" }}>
-                {data.underperformers[0]?.deltaPts || 0}
-              </div>
-              <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                Bottom Δ
-              </div>
-            </div>
+        <div className="text-center">
+          <div className="text-xl sm:text-2xl font-black" style={{ color: "var(--accent-hot)" }}>
+            {data.leagues.length}
           </div>
-        )}
-
-        {/* Content */}
-        {isLoading && (
-          <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold mb-3" style={{ color: "#16a34a" }}>
-                Overperformers
-              </h2>
-              <LoadingSkeleton />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold mb-3" style={{ color: "#dc2626" }}>
-                Underperformers
-              </h2>
-              <LoadingSkeleton />
-            </div>
+          <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+            Leagues
           </div>
-        )}
-
-        {error && (
-          <div
-            className="p-4 rounded-xl text-center"
-            style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)" }}
-          >
-            <p style={{ color: "#ef4444" }}>Failed to load team form data. Please try again.</p>
+        </div>
+        <div className="text-center">
+          <div className="text-xl sm:text-2xl font-black" style={{ color: "#16a34a" }}>
+            +{data.overperformers[0]?.deltaPts || 0}
           </div>
-        )}
-
-        {data && (
-          <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-            {/* Overperformers */}
-            <TeamListSection
-              teams={data.overperformers}
-              type="over"
-              title="Overperformers"
-              icon={
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-              }
-            />
-
-            {/* Underperformers */}
-            <TeamListSection
-              teams={data.underperformers}
-              type="under"
-              title="Underperformers"
-              icon={
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              }
-            />
+          <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+            Top Δ
           </div>
-        )}
-      </main>
-    </div>
+        </div>
+        <div className="text-center">
+          <div className="text-xl sm:text-2xl font-black" style={{ color: "#dc2626" }}>
+            {data.underperformers[0]?.deltaPts || 0}
+          </div>
+          <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+            Bottom Δ
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+        {/* Overperformers */}
+        <TeamListSection
+          teams={data.overperformers}
+          type="over"
+          title="Overperformers"
+          icon={
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+          }
+        />
+
+        {/* Underperformers */}
+        <TeamListSection
+          teams={data.underperformers}
+          type="under"
+          title="Underperformers"
+          icon={
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          }
+        />
+      </div>
+    </>
   );
 }

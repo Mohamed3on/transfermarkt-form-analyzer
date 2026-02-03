@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTeamFormData } from "@/lib/team-form";
 import { TeamFormUI } from "./TeamFormUI";
 
 export const metadata: Metadata = {
@@ -6,6 +7,7 @@ export const metadata: Metadata = {
   description: "Teams over/underperforming their expected position based on squad market value",
 };
 
-export default function TeamFormPage() {
-  return <TeamFormUI />;
+export default async function TeamFormPage() {
+  const data = await getTeamFormData();
+  return <TeamFormUI initialData={data} />;
 }
