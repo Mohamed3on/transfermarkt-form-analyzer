@@ -3,6 +3,9 @@
 import { useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { TeamFormEntry, ManagerInfo } from "@/app/types";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ManagerPPGBadge, ManagerSkeleton } from "@/app/components/ManagerPPGBadge";
 
 export interface TeamFormResponse {
   success: boolean;
@@ -47,14 +50,12 @@ interface TeamCardProps {
 
 function TeamCard({ team, rank, type, manager, managerLoading, index = 0 }: TeamCardProps) {
   const isOver = type === "over";
-  const showManager = manager !== undefined;
+  const showManager = manager !== undefined || managerLoading;
 
   return (
-    <div
-      className="rounded-xl p-3 sm:p-4 transition-[transform,box-shadow] hover:scale-[1.01] hover-lift animate-slide-up opacity-0"
+    <Card
+      className="h-full w-full p-3 sm:p-4 transition-[transform,box-shadow] hover:scale-[1.01] hover-lift animate-slide-up opacity-0"
       style={{
-        background: "var(--bg-card)",
-        border: "1px solid var(--border-subtle)",
         animationDelay: `${index * 0.05}s`,
         animationFillMode: "forwards",
       }}
@@ -94,15 +95,16 @@ function TeamCard({ team, rank, type, manager, managerLoading, index = 0 }: Team
                 {team.name}
               </a>
               <div className="flex items-center gap-2 mt-0.5">
-                <span
-                  className="px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold shrink-0"
+                <Badge
+                  className="px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs shrink-0"
                   style={{
                     background: getLeagueColor(team.league),
                     color: team.league === "Ligue 1" ? "#000" : "#fff",
+                    border: "none",
                   }}
                 >
                   {team.league}
-                </span>
+                </Badge>
               </div>
             </div>
             {/* Delta */}
@@ -126,7 +128,7 @@ function TeamCard({ team, rank, type, manager, managerLoading, index = 0 }: Team
               <span style={{ color: "var(--text-secondary)" }}>Expected:</span> {team.marketValueRank}th → {team.expectedPoints}pts
             </span>
             <span>
-              <span style={{ color: "var(--text-secondary)" }}>Value:</span> {formatValue(team.marketValue)}
+              <span style={{ color: "var(--text-secondary)" }}>Avg:</span> {formatValue(team.marketValue)}
             </span>
           </div>
 
@@ -134,97 +136,155 @@ function TeamCard({ team, rank, type, manager, managerLoading, index = 0 }: Team
           {showManager && team.clubId && (
             <div className="mt-2 text-[11px] sm:text-sm" style={{ color: "var(--text-muted)" }}>
               {managerLoading ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full border animate-spin inline-block"
-                    style={{
-                      borderColor: "var(--border-subtle)",
-                      borderTopColor: "var(--accent-blue)",
-                    }}
-                  />
-                  <span>Manager...</span>
-                </span>
+                <ManagerSkeleton />
               ) : manager ? (
-                <span>
-                  Manager:{" "}
-                  <a
-                    href={manager.profileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold hover:underline"
-                    style={{ color: "var(--accent-blue)" }}
-                  >
-                    {manager.name}
-                  </a>
-                </span>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span>
+                    Manager:{" "}
+                    <a
+                      href={manager.profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold hover:underline"
+                      style={{ color: "var(--accent-blue)" }}
+                    >
+                      {manager.name}
+                    </a>
+                  </span>
+                  <ManagerPPGBadge manager={manager} />
+                </div>
               ) : null}
             </div>
           )}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
-// Component that handles parallel manager fetching for a list of teams
-function TeamListSection({
-  teams,
-  type,
-  title,
-  icon,
+// Component that renders both lists with aligned card rows
+function TeamListsGrid({
+  overperformers,
+  underperformers,
 }: {
-  teams: TeamFormEntry[];
-  type: "over" | "under";
-  title: string;
-  icon: React.ReactNode;
+  overperformers: TeamFormEntry[];
+  underperformers: TeamFormEntry[];
 }) {
-  const clubIds = useMemo(() => teams.map((t) => t.clubId).filter(Boolean), [teams]);
+  const allClubIds = useMemo(() => {
+    const ids = [...overperformers, ...underperformers].map((t) => t.clubId).filter(Boolean);
+    return [...new Set(ids)];
+  }, [overperformers, underperformers]);
 
   const managerQueries = useQueries({
-    queries: clubIds.map((clubId) => ({
+    queries: allClubIds.map((clubId) => ({
       queryKey: ["manager", clubId],
       queryFn: () => fetchManager(clubId),
-      staleTime: 24 * 60 * 60 * 1000, // 24 hours
-      gcTime: 7 * 24 * 60 * 60 * 1000, // Keep in cache for 7 days
+      staleTime: 24 * 60 * 60 * 1000,
+      gcTime: 7 * 24 * 60 * 60 * 1000,
       refetchOnWindowFocus: false,
       refetchOnMount: false,
     })),
   });
 
   const managersMap = useMemo(() => {
-    const map: Record<string, ManagerInfo | null> = {};
-    managerQueries.forEach((q, i) => {
-      if (q.data) {
-        map[clubIds[i]] = q.data.manager;
-      }
+    const map: Record<string, { manager: ManagerInfo | null; loading: boolean }> = {};
+    allClubIds.forEach((clubId, i) => {
+      map[clubId] = {
+        manager: managerQueries[i].data?.manager ?? null,
+        loading: managerQueries[i].isLoading,
+      };
     });
     return map;
-  }, [managerQueries, clubIds]);
+  }, [managerQueries, allClubIds]);
 
-  const isOver = type === "over";
+  const maxLength = Math.max(overperformers.length, underperformers.length);
+
+  const renderTeamCard = (team: TeamFormEntry, rank: number, type: "over" | "under", index: number) => (
+    <TeamCard
+      team={team}
+      rank={rank}
+      type={type}
+      manager={managersMap[team.clubId]?.manager}
+      managerLoading={managersMap[team.clubId]?.loading}
+      index={index}
+    />
+  );
 
   return (
     <div className="animate-fade-in">
-      <h2 className="text-lg sm:text-xl font-bold mb-3 flex items-center gap-2" style={{ color: isOver ? "#16a34a" : "#dc2626" }}>
-        {icon}
-        {title}
-      </h2>
-      <div className="space-y-3">
-        {teams.map((team, idx) => {
-          const clubIdIndex = clubIds.indexOf(team.clubId);
-          const managerQuery = clubIdIndex >= 0 ? managerQueries[clubIdIndex] : null;
-          return (
-            <TeamCard
-              key={`${team.name}-${team.league}`}
-              team={team}
-              rank={idx + 1}
-              type={type}
-              manager={managersMap[team.clubId]}
-              managerLoading={managerQuery?.isLoading}
-              index={idx}
-            />
-          );
-        })}
+      {/* Desktop: aligned grid rows */}
+      <div className="hidden md:block">
+        {/* Headers */}
+        <div className="grid grid-cols-2 gap-6 mb-3">
+          <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2" style={{ color: "#16a34a" }}>
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+            Overperformers
+          </h2>
+          <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2" style={{ color: "#dc2626" }}>
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            Underperformers
+          </h2>
+        </div>
+
+        {/* Card rows */}
+        <div className="space-y-3">
+          {Array.from({ length: maxLength }).map((_, idx) => {
+            const overTeam = overperformers[idx];
+            const underTeam = underperformers[idx];
+
+            return (
+              <div key={idx} className="grid grid-cols-2 gap-6 items-stretch">
+                <div className="flex">
+                  {overTeam ? renderTeamCard(overTeam, idx + 1, "over", idx) : <div />}
+                </div>
+                <div className="flex">
+                  {underTeam ? renderTeamCard(underTeam, idx + 1, "under", idx) : <div />}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Mobile: stacked lists */}
+      <div className="md:hidden space-y-6">
+        {/* Overperformers */}
+        <div>
+          <h2 className="text-lg font-bold flex items-center gap-2 mb-3" style={{ color: "#16a34a" }}>
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+            Overperformers
+          </h2>
+          <div className="space-y-3">
+            {overperformers.map((team, idx) => (
+              <div key={`${team.name}-${team.league}`}>
+                {renderTeamCard(team, idx + 1, "over", idx)}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Underperformers */}
+        <div>
+          <h2 className="text-lg font-bold flex items-center gap-2 mb-3" style={{ color: "#dc2626" }}>
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            Underperformers
+          </h2>
+          <div className="space-y-3">
+            {underperformers.map((team, idx) => (
+              <div key={`${team.name}-${team.league}`}>
+                {renderTeamCard(team, idx + 1, "under", idx)}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -235,71 +295,11 @@ export function TeamFormUI({ initialData }: TeamFormUIProps) {
 
   return (
     <>
-      {/* Stats */}
-      <div
-        className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-8 p-3 sm:p-4 rounded-xl animate-scale-in"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
-      >
-        <div className="text-center">
-          <div className="text-xl sm:text-2xl font-black" style={{ color: "var(--accent-hot)" }}>
-            {data.totalTeams}
-          </div>
-          <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-            Teams
-          </div>
-        </div>
-        <div className="text-center">
-          <div className="text-xl sm:text-2xl font-black" style={{ color: "var(--accent-hot)" }}>
-            {data.leagues.length}
-          </div>
-          <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-            Leagues
-          </div>
-        </div>
-        <div className="text-center">
-          <div className="text-xl sm:text-2xl font-black" style={{ color: "#16a34a" }}>
-            +{data.overperformers[0]?.deltaPts || 0}
-          </div>
-          <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-            Top Δ
-          </div>
-        </div>
-        <div className="text-center">
-          <div className="text-xl sm:text-2xl font-black" style={{ color: "#dc2626" }}>
-            {data.underperformers[0]?.deltaPts || 0}
-          </div>
-          <div className="text-[10px] sm:text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-            Bottom Δ
-          </div>
-        </div>
-      </div>
-
       {/* Content */}
-      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-        {/* Overperformers */}
-        <TeamListSection
-          teams={data.overperformers}
-          type="over"
-          title="Overperformers"
-          icon={
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-          }
-        />
-
-        {/* Underperformers */}
-        <TeamListSection
-          teams={data.underperformers}
-          type="under"
-          title="Underperformers"
-          icon={
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          }
-        />
-      </div>
+      <TeamListsGrid
+        overperformers={data.overperformers}
+        underperformers={data.underperformers}
+      />
     </>
   );
 }

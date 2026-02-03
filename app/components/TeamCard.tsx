@@ -2,7 +2,10 @@
 
 import type { QualifiedTeam, ManagerInfo } from "@/app/types";
 import Image from "next/image";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ManagerPPGBadge, ManagerSkeleton } from "./ManagerPPGBadge";
 
 interface TeamCardProps {
   team: QualifiedTeam;
@@ -15,10 +18,7 @@ interface TeamCardProps {
 export function TeamCardSkeleton({ compact }: { compact?: boolean }) {
   if (compact) {
     return (
-      <div
-        className="rounded-xl p-3"
-        style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}
-      >
+      <Card className="p-3 bg-[var(--bg-elevated)]">
         <div className="flex items-center gap-3">
           <Skeleton className="w-8 h-8 rounded-lg" />
           <div className="flex-1 space-y-2">
@@ -26,15 +26,12 @@ export function TeamCardSkeleton({ compact }: { compact?: boolean }) {
             <Skeleton className="h-3 w-20" />
           </div>
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div
-      className="rounded-xl p-4"
-      style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}
-    >
+    <Card className="p-4 bg-[var(--bg-elevated)]">
       <div className="flex items-center gap-4">
         <Skeleton className="w-12 h-12 rounded-xl" />
         <div className="flex-1 space-y-2">
@@ -48,25 +45,19 @@ export function TeamCardSkeleton({ compact }: { compact?: boolean }) {
       </div>
       <Skeleton className="h-3 w-full mt-3" />
       <Skeleton className="h-4 w-32 mt-3" />
-    </div>
+    </Card>
   );
 }
 
 export function TeamCard({ team, type, manager, managerLoading, compact }: TeamCardProps) {
-  const showManager = manager !== undefined;
+  const showManager = manager !== undefined || managerLoading;
   const isTop = type === "top";
   const accentColor = isTop ? "var(--accent-hot)" : "var(--accent-cold)";
   const glowColor = isTop ? "var(--accent-hot-glow)" : "var(--accent-cold-glow)";
 
   if (compact) {
     return (
-      <div
-        className="rounded-xl p-3 transition-transform duration-200 hover:scale-[1.02]"
-        style={{
-          background: "var(--bg-elevated)",
-          border: "1px solid var(--border-subtle)",
-        }}
-      >
+      <Card className="p-3 bg-[var(--bg-elevated)] transition-transform duration-200 hover:scale-[1.02]">
         <div className="flex items-center gap-3">
           {team.logoUrl && (
             <Image
@@ -74,6 +65,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
               alt={team.name}
               width={28}
               height={28}
+              sizes="28px"
               className="object-contain"
               unoptimized
             />
@@ -103,16 +95,15 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div
-      className="rounded-xl p-3 sm:p-4 transition-transform duration-200 hover:scale-[1.01]"
+    <Card
+      className="p-3 sm:p-4 bg-[var(--bg-elevated)] transition-transform duration-200 hover:scale-[1.01]"
       style={{
-        background: "var(--bg-elevated)",
-        border: `1px solid ${accentColor}`,
+        borderColor: accentColor,
         boxShadow: `0 0 20px ${glowColor}`,
       }}
     >
@@ -128,6 +119,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
               alt={team.name}
               width={40}
               height={40}
+              sizes="(max-width: 640px) 32px, 40px"
               className="object-contain w-8 h-8 sm:w-10 sm:h-10"
               unoptimized
             />
@@ -158,17 +150,18 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
       {/* Criteria tags */}
       <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-3 sm:mt-4">
         {team.criteria.map((c) => (
-          <span
+          <Badge
             key={c}
-            className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold"
+            variant="outline"
+            className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs"
             style={{
               background: glowColor,
               color: accentColor,
-              border: `1px solid ${accentColor}`,
+              borderColor: accentColor,
             }}
           >
             {c}
-          </span>
+          </Badge>
         ))}
       </div>
 
@@ -211,18 +204,9 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
           style={{ borderTop: "1px solid var(--border-subtle)" }}
         >
           {managerLoading ? (
-            <div className="flex items-center gap-2">
-              <div
-                className="w-3 h-3 rounded-full border animate-spin"
-                style={{
-                  borderColor: "var(--border-subtle)",
-                  borderTopColor: "var(--accent-blue)",
-                }}
-              />
-              <span style={{ color: "var(--text-muted)" }}>Loading manager...</span>
-            </div>
+            <ManagerSkeleton />
           ) : manager ? (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span style={{ color: "var(--text-muted)" }}>Manager:</span>
               <a
                 href={manager.profileUrl}
@@ -233,17 +217,13 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
               >
                 {manager.name}
               </a>
-              {manager.appointedDate && (
-                <span style={{ color: "var(--text-muted)" }} className="text-xs">
-                  (since {manager.appointedDate})
-                </span>
-              )}
+              <ManagerPPGBadge manager={manager} />
             </div>
           ) : (
             <span style={{ color: "var(--text-muted)" }}>Manager info not available</span>
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

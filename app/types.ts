@@ -60,10 +60,25 @@ export interface AnalysisResult {
   analysis: PeriodAnalysis[];
 }
 
+export interface ManagerTrivia {
+  name: string;
+  profileUrl: string;
+  ppg: number;
+  matches: number;
+  years: string; // e.g., "2015-2018"
+}
+
 export interface ManagerInfo {
   name: string;
   profileUrl: string;
   appointedDate?: string;
+  matches: number;
+  ppg: number | null; // null if no matches or "-" in data
+  isCurrentManager: boolean;
+  ppgRank?: number; // rank among managers with >= matches since 1995 (1 = best)
+  totalComparableManagers?: number; // how many managers qualify for comparison
+  bestManager?: ManagerTrivia; // best PPG among comparable managers
+  worstManager?: ManagerTrivia; // worst PPG among comparable managers
 }
 
 export interface InjuredPlayer {

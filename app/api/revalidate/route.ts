@@ -14,6 +14,7 @@ export async function POST() {
     revalidateTag("injured");
     revalidateTag("team-form");
     revalidateTag("form-analysis");
+    revalidateTag("manager");
 
     return NextResponse.json({
       success: true,

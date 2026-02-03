@@ -6,6 +6,7 @@ import { TeamCard, TeamCardSkeleton } from "./TeamCard";
 import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 async function fetchAnalysis(): Promise<AnalysisResult> {
@@ -28,10 +29,7 @@ function AnalysisSkeleton() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Hero skeleton */}
-      <div
-        className="rounded-2xl p-8"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
-      >
+      <Card className="rounded-2xl p-8">
         <Skeleton className="h-8 w-64 mb-4" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
@@ -44,18 +42,14 @@ function AnalysisSkeleton() {
             <TeamCardSkeleton />
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Period cards skeleton */}
       {[1, 2].map((i) => (
-        <div
+        <Card
           key={i}
           className="rounded-2xl p-6"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-subtle)",
-            opacity: 1 - i * 0.3,
-          }}
+          style={{ opacity: 1 - i * 0.3 }}
         >
           <div className="flex justify-between items-center mb-6">
             <Skeleton className="h-7 w-40" />
@@ -65,7 +59,7 @@ function AnalysisSkeleton() {
             <Skeleton className="h-32 rounded-xl" />
             <Skeleton className="h-32 rounded-xl" />
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );
@@ -166,11 +160,9 @@ function MatchedTeamsSection({ teams, type }: { teams: QualifiedTeam[]; type: "t
 
 function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }) {
   return (
-    <div
+    <Card
       className="rounded-2xl p-4 sm:p-6 transition-transform duration-300 hover:scale-[1.01] animate-slide-up"
       style={{
-        background: "var(--bg-card)",
-        border: "1px solid var(--border-subtle)",
         boxShadow: period.hasMatch ? "var(--shadow-glow-hot)" : "none",
         animationDelay: `${index * 150}ms`,
       }}
@@ -185,16 +177,17 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
           </span>
           <span className="text-sm sm:text-base" style={{ color: "var(--text-secondary)" }}>games</span>
         </div>
-        <span
+        <Badge
+          variant={period.hasMatch ? "default" : "secondary"}
           className="px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider"
-          style={{
-            background: period.hasMatch ? "var(--accent-hot-glow)" : "var(--bg-elevated)",
-            color: period.hasMatch ? "var(--accent-hot)" : "var(--text-muted)",
-            border: `1px solid ${period.hasMatch ? "var(--accent-hot)" : "var(--border-subtle)"}`,
-          }}
+          style={period.hasMatch ? {
+            background: "var(--accent-hot-glow)",
+            color: "var(--accent-hot)",
+            borderColor: "var(--accent-hot)",
+          } : undefined}
         >
           {period.hasMatch ? "✓ Match" : "No Match"}
-        </span>
+        </Badge>
       </div>
 
       {/* Leaders Grid */}
@@ -220,14 +213,11 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
             </div>
           </div>
         ) : (
-          <div
-            className="rounded-xl p-4 text-center"
-            style={{ background: "var(--bg-elevated)" }}
-          >
+          <Card className="h-full p-4 text-center bg-[var(--bg-elevated)] flex items-center justify-center">
             <p style={{ color: "var(--text-muted)" }} className="text-sm">
               No team has 2+ top criteria
             </p>
-          </div>
+          </Card>
         )}
 
         {period.bottomTeams.length > 0 ? (
@@ -245,17 +235,14 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
             </div>
           </div>
         ) : (
-          <div
-            className="rounded-xl p-4 text-center"
-            style={{ background: "var(--bg-elevated)" }}
-          >
+          <Card className="h-full p-4 text-center bg-[var(--bg-elevated)] flex items-center justify-center">
             <p style={{ color: "var(--text-muted)" }} className="text-sm">
               No team has 2+ bottom criteria
             </p>
-          </div>
+          </Card>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -285,10 +272,7 @@ function LeaderCard({
       ];
 
   return (
-    <div
-      className="rounded-xl p-3 sm:p-4"
-      style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}
-    >
+    <Card className="h-full p-3 sm:p-4 bg-[var(--bg-elevated)]">
       <h4
         className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 flex items-center gap-2"
         style={{ color: accentColor }}
@@ -314,14 +298,14 @@ function LeaderCard({
               >
                 {row.value}
               </span>
-              <span style={{ color: "var(--text-secondary)" }} className="text-[10px] sm:text-xs truncate max-w-[80px] sm:max-w-none inline-block align-bottom">
+              <span style={{ color: "var(--text-secondary)" }} className="text-[10px] sm:text-xs truncate max-w-[60px] sm:max-w-none inline-block align-bottom">
                 {row.teams.slice(0, 1).join(", ")}
               </span>
             </div>
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -352,11 +336,11 @@ export function AnalyzerUI() {
 
         {/* Error State */}
         {error && (
-          <div
+          <Card
             className="rounded-2xl p-6 sm:p-8 text-center animate-scale-in"
             style={{
               background: "var(--accent-cold-glow)",
-              border: "1px solid var(--accent-cold)",
+              borderColor: "var(--accent-cold)",
             }}
           >
             <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">⚠️</div>
@@ -369,17 +353,17 @@ export function AnalyzerUI() {
             <p style={{ color: "var(--text-secondary)" }} className="mb-4 text-sm sm:text-base">
               Unable to fetch data from Transfermarkt
             </p>
-            <button
+            <Button
               onClick={() => refetch()}
-              className="px-6 py-2 rounded-lg font-semibold"
+              className="px-6 py-2"
               style={{
                 background: "var(--accent-cold)",
                 color: "var(--bg-base)",
               }}
             >
               Try Again
-            </button>
-          </div>
+            </Button>
+          </Card>
         )}
 
         {/* Results */}
@@ -442,12 +426,9 @@ export function AnalyzerUI() {
                 </div>
               </div>
             ) : (
-              <div
+              <Card
                 className="rounded-2xl p-6 sm:p-8 text-center animate-scale-in"
-                style={{
-                  background: "var(--bg-card)",
-                  border: "1px solid var(--accent-cold)",
-                }}
+                style={{ borderColor: "var(--accent-cold)" }}
               >
                 <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">📊</div>
                 <h2
@@ -459,7 +440,7 @@ export function AnalyzerUI() {
                 <p className="text-sm sm:text-base" style={{ color: "var(--text-secondary)" }}>
                   No period has both clear top and bottom qualifying teams
                 </p>
-              </div>
+              </Card>
             )}
 
             {/* Period Analysis Section */}

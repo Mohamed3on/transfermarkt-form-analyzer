@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -109,7 +109,7 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
                   {player.position}
                 </p>
               </div>
-              <span className="text-sm sm:text-lg font-black shrink-0 text-[var(--accent-hot)]">
+              <span className="text-sm sm:text-lg font-black shrink-0 text-[var(--accent-hot)] font-value">
                 {formatValue(player.marketValue)}
               </span>
             </div>
@@ -149,8 +149,6 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
 }
 
 function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank: number; index?: number }) {
-  const [expanded, setExpanded] = useState(false);
-  const displayPlayers = expanded ? team.players : team.players.slice(0, 3);
   const leagueStyle = getLeagueStyle(team.league);
 
   return (
@@ -183,7 +181,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                 </Badge>
               </div>
               <div className="text-right shrink-0">
-                <div className="text-sm sm:text-lg font-black text-[var(--accent-hot)]">
+                <div className="text-sm sm:text-lg font-black text-[var(--accent-hot)] font-value">
                   {formatValueNum(team.totalValue)}
                 </div>
                 <div className="text-[10px] sm:text-xs text-[var(--text-muted)]">
@@ -196,7 +194,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
 
         {/* Player Pills */}
         <div className="mt-3 flex flex-wrap gap-1.5 sm:gap-2">
-          {displayPlayers.map((player) => (
+          {team.players.map((player) => (
             <a
               key={player.profileUrl || player.name}
               href={player.profileUrl}
@@ -208,40 +206,115 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                 <img src={player.imageUrl} alt={player.name} className="w-4 h-4 sm:w-5 sm:h-5 rounded-full object-cover" />
               )}
               <span className="truncate max-w-[80px] sm:max-w-[120px] text-[var(--text-primary)]">{player.name}</span>
-              <span className="text-[var(--accent-hot)] font-medium">{player.marketValue}</span>
+              <span className="text-[var(--accent-hot)] font-medium font-value">{player.marketValue}</span>
             </a>
           ))}
-          {team.players.length > 3 && !expanded && (
-            <button
-              onClick={() => setExpanded(true)}
-              className="px-2 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-[var(--bg-elevated)] text-[var(--accent-blue)] hover:bg-[var(--bg-card)] transition-colors"
-            >
-              +{team.players.length - 3} more
-            </button>
-          )}
-          {expanded && team.players.length > 3 && (
-            <button
-              onClick={() => setExpanded(false)}
-              className="px-2 py-1 rounded-lg text-[11px] sm:text-xs font-medium bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:bg-[var(--bg-card)] transition-colors"
-            >
-              Show less
-            </button>
-          )}
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function StatCard({ value, label }: { value: string | number; label: string }) {
+function StatsHighlights({
+  players,
+  teamGroups,
+  totalValue,
+}: {
+  players: InjuredPlayer[];
+  teamGroups: TeamInjuryGroup[];
+  totalValue: number;
+}) {
+  // Hardest Hit Club: Team with highest total value injured
+  const hardestHitClub = useMemo(() => {
+    if (!teamGroups.length) return null;
+    return teamGroups[0]; // Already sorted by totalValue
+  }, [teamGroups]);
+
+  // League Impact: Which league has most value injured
+  const leagueImpact = useMemo(() => {
+    const leagueValues: Record<string, { value: number; count: number }> = {};
+    players.forEach((p) => {
+      if (!leagueValues[p.league]) {
+        leagueValues[p.league] = { value: 0, count: 0 };
+      }
+      leagueValues[p.league].value += p.marketValueNum;
+      leagueValues[p.league].count++;
+    });
+    const sorted = Object.entries(leagueValues).sort((a, b) => b[1].value - a[1].value);
+    return sorted[0] ? { league: sorted[0][0], value: sorted[0][1].value, count: sorted[0][1].count } : null;
+  }, [players]);
+
+  const leagueStyle = leagueImpact ? getLeagueStyle(leagueImpact.league) : null;
+
   return (
-    <div className="text-center">
-      <div className="text-xl sm:text-2xl font-black text-[var(--accent-hot)]">
-        {value}
-      </div>
-      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-[var(--text-muted)]">
-        {label}
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10 animate-scale-in">
+      {/* Hardest Hit Club */}
+      {hardestHitClub && (
+        <Card className="p-4 sm:p-5 bg-[var(--bg-elevated)]">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-2" style={{ background: "white" }}>
+              {hardestHitClub.clubLogoUrl && (
+                <img src={hardestHitClub.clubLogoUrl} alt="" className="w-full h-full object-contain" aria-hidden="true" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs sm:text-sm uppercase tracking-wider mb-1 text-[var(--text-muted)]">
+                Hardest Hit
+              </div>
+              <div className="font-bold text-base sm:text-lg text-[var(--text-primary)]">
+                {hardestHitClub.club}
+              </div>
+              <div className="text-sm sm:text-base text-[var(--text-secondary)]">
+                {formatValueNum(hardestHitClub.totalValue)} · {hardestHitClub.count} players
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* League Impact */}
+      {leagueImpact && leagueStyle && (
+        <Card className="p-4 sm:p-5 bg-[var(--bg-elevated)]">
+          <div className="flex items-center gap-4">
+            <div
+              className={cn("w-14 h-14 sm:w-16 sm:h-16 rounded-xl shrink-0 flex items-center justify-center", leagueStyle.bg)}
+            >
+              <span className={cn("text-2xl sm:text-3xl font-black tabular-nums", leagueStyle.text)}>{leagueImpact.count}</span>
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs sm:text-sm uppercase tracking-wider mb-1 text-[var(--text-muted)]">
+                Most Affected
+              </div>
+              <div className="font-bold text-base sm:text-lg text-[var(--text-primary)]">
+                {leagueImpact.league}
+              </div>
+              <div className="text-sm sm:text-base text-[var(--text-secondary)]">
+                {formatValueNum(leagueImpact.value)} sidelined
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Total Value */}
+      <Card className="p-4 sm:p-5 bg-[var(--bg-elevated)]">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl shrink-0 flex items-center justify-center bg-red-500/10">
+            <span className="text-2xl sm:text-3xl">🏥</span>
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs sm:text-sm uppercase tracking-wider mb-1 text-[var(--text-muted)]">
+              Total Sidelined
+            </div>
+            <div className="font-bold text-base sm:text-lg text-[var(--text-primary)] font-value">
+              {formatValueNum(totalValue)}
+            </div>
+            <div className="text-sm sm:text-base text-[var(--text-secondary)]">
+              {players.length} players across {new Set(players.map(p => p.league)).size} leagues
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
@@ -250,9 +323,6 @@ export function InjuredUI({ initialData }: InjuredUIProps) {
   const data = initialData;
 
   const totalValue = data.players.reduce((sum, p) => sum + p.marketValueNum, 0);
-  const formattedTotalValue = totalValue >= 1_000_000_000
-    ? `€${(totalValue / 1_000_000_000).toFixed(2)}B`
-    : `€${(totalValue / 1_000_000).toFixed(0)}M`;
 
   const teamGroups = useMemo(() => {
     const groupMap = new Map<string, TeamInjuryGroup>();
@@ -278,24 +348,14 @@ export function InjuredUI({ initialData }: InjuredUIProps) {
     return Array.from(groupMap.values()).sort((a, b) => b.totalValue - a.totalValue);
   }, [data.players]);
 
-  const mostInjuredTeam = useMemo(() => {
-    if (!teamGroups.length) return null;
-    return teamGroups.reduce((max, team) => (team.count > max.count ? team : max), teamGroups[0]);
-  }, [teamGroups]);
-
   return (
     <>
-      {/* Stats */}
-      <Card className="mb-4 sm:mb-6 animate-scale-in">
-        <CardContent className="p-3 sm:p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-            <StatCard value={data.totalPlayers} label="Players" />
-            <StatCard value={teamGroups.length} label="Teams" />
-            <StatCard value={mostInjuredTeam?.count || 0} label="Most Injured" />
-            <StatCard value={formattedTotalValue} label="Total Value" />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Stats Highlights */}
+      <StatsHighlights
+        players={data.players}
+        teamGroups={teamGroups}
+        totalValue={totalValue}
+      />
 
       {/* Tabs */}
       <Tabs defaultValue="players" className="w-full">
