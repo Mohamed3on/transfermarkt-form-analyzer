@@ -4,6 +4,9 @@ import { useQuery, useQueries } from "@tanstack/react-query";
 import type { AnalysisResult, PeriodAnalysis, QualifiedTeam, ManagerInfo } from "@/app/types";
 import { TeamCard, TeamCardSkeleton } from "./TeamCard";
 import { useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 async function fetchAnalysis(): Promise<AnalysisResult> {
   const res = await fetch("/api/analyze");
@@ -29,14 +32,14 @@ function AnalysisSkeleton() {
         className="rounded-2xl p-8"
         style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
       >
-        <div className="skeleton h-8 w-64 mb-4" />
+        <Skeleton className="h-8 w-64 mb-4" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <div className="skeleton h-6 w-32" />
+            <Skeleton className="h-6 w-32" />
             <TeamCardSkeleton />
           </div>
           <div className="space-y-3">
-            <div className="skeleton h-6 w-32" />
+            <Skeleton className="h-6 w-32" />
             <TeamCardSkeleton />
             <TeamCardSkeleton />
           </div>
@@ -55,12 +58,12 @@ function AnalysisSkeleton() {
           }}
         >
           <div className="flex justify-between items-center mb-6">
-            <div className="skeleton h-7 w-40" />
-            <div className="skeleton h-6 w-24 rounded-full" />
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-6 w-24 rounded-full" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="skeleton h-32 rounded-xl" />
-            <div className="skeleton h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
           </div>
         </div>
       ))}
@@ -164,7 +167,7 @@ function MatchedTeamsSection({ teams, type }: { teams: QualifiedTeam[]; type: "t
 function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }) {
   return (
     <div
-      className="rounded-2xl p-4 sm:p-6 transition-all duration-300 hover:scale-[1.01] animate-slide-up"
+      className="rounded-2xl p-4 sm:p-6 transition-transform duration-300 hover:scale-[1.01] animate-slide-up"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-subtle)",

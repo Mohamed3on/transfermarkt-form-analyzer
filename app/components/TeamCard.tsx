@@ -2,6 +2,7 @@
 
 import type { QualifiedTeam, ManagerInfo } from "@/app/types";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TeamCardProps {
   team: QualifiedTeam;
@@ -19,10 +20,10 @@ export function TeamCardSkeleton({ compact }: { compact?: boolean }) {
         style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}
       >
         <div className="flex items-center gap-3">
-          <div className="skeleton w-8 h-8 rounded-lg" />
+          <Skeleton className="w-8 h-8 rounded-lg" />
           <div className="flex-1 space-y-2">
-            <div className="skeleton h-4 w-32" />
-            <div className="skeleton h-3 w-20" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-20" />
           </div>
         </div>
       </div>
@@ -35,18 +36,18 @@ export function TeamCardSkeleton({ compact }: { compact?: boolean }) {
       style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}
     >
       <div className="flex items-center gap-4">
-        <div className="skeleton w-12 h-12 rounded-xl" />
+        <Skeleton className="w-12 h-12 rounded-xl" />
         <div className="flex-1 space-y-2">
-          <div className="skeleton h-5 w-40" />
-          <div className="skeleton h-4 w-28" />
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-4 w-28" />
         </div>
       </div>
       <div className="flex gap-2 mt-3">
-        <div className="skeleton h-6 w-20 rounded-full" />
-        <div className="skeleton h-6 w-24 rounded-full" />
+        <Skeleton className="h-6 w-20 rounded-full" />
+        <Skeleton className="h-6 w-24 rounded-full" />
       </div>
-      <div className="skeleton h-3 w-full mt-3" />
-      <div className="skeleton h-4 w-32 mt-3" />
+      <Skeleton className="h-3 w-full mt-3" />
+      <Skeleton className="h-4 w-32 mt-3" />
     </div>
   );
 }
@@ -60,7 +61,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
   if (compact) {
     return (
       <div
-        className="rounded-xl p-3 transition-all duration-200 hover:scale-[1.02]"
+        className="rounded-xl p-3 transition-transform duration-200 hover:scale-[1.02]"
         style={{
           background: "var(--bg-elevated)",
           border: "1px solid var(--border-subtle)",
@@ -108,7 +109,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
 
   return (
     <div
-      className="rounded-xl p-3 sm:p-4 transition-all duration-200 hover:scale-[1.01]"
+      className="rounded-xl p-3 sm:p-4 transition-transform duration-200 hover:scale-[1.01]"
       style={{
         background: "var(--bg-elevated)",
         border: `1px solid ${accentColor}`,

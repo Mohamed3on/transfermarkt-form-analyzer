@@ -3,8 +3,9 @@ import { getInjuredPlayers } from "@/lib/injured";
 import { InjuredUI } from "./InjuredUI";
 
 export const metadata: Metadata = {
-  title: "Injured Players | FormTracker",
-  description: "Highest value injured players across Europe's top 5 leagues",
+  title: "Football Injury Tracker",
+  description:
+    "Track the highest-value injured football players across Europe's top 5 leagues. See which star players are sidelined in the Premier League, La Liga, Bundesliga, Serie A, and Ligue 1.",
 };
 
 export default async function InjuredPage() {

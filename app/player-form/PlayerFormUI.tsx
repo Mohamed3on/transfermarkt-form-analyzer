@@ -2,6 +2,11 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { SelectNative } from "@/components/ui/select-native";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
 
 interface PlayerStats {
   name: string;
@@ -71,7 +76,7 @@ function MinutesDisplay({
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       {isLoading ? (
-        <div className="skeleton h-4 w-14" />
+        <Skeleton className="h-4 w-14" />
       ) : (
         <span className="text-sm tabular-nums" style={{ color: "var(--text-secondary)" }}>
           {minutes?.toLocaleString() || "—"}&apos;
@@ -255,7 +260,7 @@ function TargetPlayerCard({
           Minutes Played
         </span>
         {minutesLoading ? (
-          <div className="skeleton h-5 w-16" />
+          <Skeleton className="h-5 w-16" />
         ) : (
           <span className="text-base sm:text-lg font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>
             {minutes?.toLocaleString() || "—"}&apos;
@@ -289,7 +294,7 @@ function UnderperformerCard({
 
   return (
     <div
-      className="group rounded-xl p-3 sm:p-4 transition-all duration-200 animate-slide-up hover:translate-x-1"
+      className="group rounded-xl p-3 sm:p-4 transition-transform duration-200 animate-slide-up hover:translate-x-1"
       style={{
         background: "linear-gradient(135deg, rgba(255, 71, 87, 0.06) 0%, var(--bg-card) 100%)",
         border: "1px solid rgba(255, 71, 87, 0.15)",
@@ -439,15 +444,15 @@ function SearchSkeleton() {
         style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
       >
         <div className="flex items-start gap-5">
-          <div className="skeleton w-20 h-20 rounded-xl" />
+          <Skeleton className="w-20 h-20 rounded-xl" />
           <div className="flex-1 space-y-3">
-            <div className="skeleton h-6 w-48" />
-            <div className="skeleton h-4 w-32" />
-            <div className="skeleton h-4 w-40" />
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-40" />
           </div>
           <div className="flex gap-6">
-            <div className="skeleton h-12 w-20" />
-            <div className="skeleton h-12 w-12" />
+            <Skeleton className="h-12 w-20" />
+            <Skeleton className="h-12 w-12" />
           </div>
         </div>
       </div>
@@ -464,16 +469,16 @@ function SearchSkeleton() {
           }}
         >
           <div className="flex items-center gap-4">
-            <div className="skeleton w-8 h-8 rounded-lg" />
-            <div className="skeleton w-12 h-12 rounded-lg" />
+            <Skeleton className="w-8 h-8 rounded-lg" />
+            <Skeleton className="w-12 h-12 rounded-lg" />
             <div className="flex-1 space-y-2">
-              <div className="skeleton h-5 w-36" />
-              <div className="skeleton h-3 w-48" />
+              <Skeleton className="h-5 w-36" />
+              <Skeleton className="h-3 w-48" />
             </div>
             <div className="flex gap-3">
-              <div className="skeleton h-10 w-16" />
-              <div className="skeleton h-10 w-14" />
-              <div className="skeleton h-10 w-16" />
+              <Skeleton className="h-10 w-16" />
+              <Skeleton className="h-10 w-14" />
+              <Skeleton className="h-10 w-16" />
             </div>
           </div>
         </div>
@@ -496,16 +501,16 @@ function DiscoverySkeleton() {
           }}
         >
           <div className="flex items-center gap-4">
-            <div className="skeleton w-8 h-8 rounded-lg" />
-            <div className="skeleton w-12 h-12 rounded-lg" />
+            <Skeleton className="w-8 h-8 rounded-lg" />
+            <Skeleton className="w-12 h-12 rounded-lg" />
             <div className="flex-1 space-y-2">
-              <div className="skeleton h-5 w-36" />
-              <div className="skeleton h-3 w-48" />
+              <Skeleton className="h-5 w-36" />
+              <Skeleton className="h-3 w-48" />
             </div>
             <div className="flex gap-3">
-              <div className="skeleton h-10 w-16" />
-              <div className="skeleton h-10 w-14" />
-              <div className="skeleton h-10 w-16" />
+              <Skeleton className="h-10 w-16" />
+              <Skeleton className="h-10 w-14" />
+              <Skeleton className="h-10 w-16" />
             </div>
           </div>
         </div>
@@ -523,7 +528,7 @@ function UnderperformerListCard({
 }) {
   return (
     <div
-      className="group rounded-xl p-3 sm:p-4 transition-all duration-200 animate-slide-up hover:translate-x-1"
+      className="group rounded-xl p-3 sm:p-4 transition-transform duration-200 animate-slide-up hover:translate-x-1"
       style={{
         background: "linear-gradient(135deg, rgba(255, 71, 87, 0.06) 0%, var(--bg-card) 100%)",
         border: "1px solid rgba(255, 71, 87, 0.15)",
@@ -883,28 +888,20 @@ export function PlayerFormUI() {
           </p>
         </div>
         {/* Search Form */}
-        <div
-          className="rounded-xl p-3 sm:p-4 mb-6 sm:mb-8"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
-        >
+        <Card className="p-3 sm:p-4 mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <div className="flex-1 relative">
-              <input
+            <div className="relative flex-1">
+              <Input
                 type="text"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search player (e.g. Kenan Yildiz)"
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-sm transition-all focus:outline-none focus:ring-2"
-                style={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border-subtle)",
-                  color: "var(--text-primary)",
-                }}
+                className="h-11 pr-10"
               />
               {isFetching && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <svg className="w-5 h-5 animate-spin" style={{ color: "#ffd700" }} fill="none" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 animate-spin text-[#ffd700]" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
@@ -913,36 +910,26 @@ export function PlayerFormUI() {
             </div>
 
             <div className="flex gap-2 sm:gap-3">
-              <select
+              <SelectNative
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
-                className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-sm transition-colors focus:outline-none"
-                style={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border-subtle)",
-                  color: "var(--text-primary)"
-                }}
+                className="h-11 flex-1 sm:w-auto sm:flex-none"
               >
                 <option value="forward">All Forwards</option>
                 <option value="cf">Centre-Forward</option>
                 <option value="midfielder">Midfielders</option>
-              </select>
+              </SelectNative>
 
-              <button
+              <Button
                 onClick={handleSearch}
                 disabled={!playerName.trim() || isLoading}
-                className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{
-                  background: "linear-gradient(135deg, #ffd700, #ff8c00)",
-                  color: "#000",
-                  boxShadow: !playerName.trim() || isLoading ? "none" : "0 4px 20px rgba(255, 215, 0, 0.3)",
-                }}
+                className="h-11 bg-gradient-to-br from-[#ffd700] to-[#ff8c00] text-black shadow-[0_4px_20px_rgba(255,215,0,0.3)] hover:opacity-90"
               >
                 Scout
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Loading State */}
         {isLoading && <SearchSkeleton />}

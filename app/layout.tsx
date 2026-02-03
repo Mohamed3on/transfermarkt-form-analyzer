@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Header } from "./components/Header";
+import { Footer } from "./components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,10 +17,41 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "FormTracker",
-    template: "%s",
+    default: "FormTracker - Football Form Analysis",
+    template: "%s | FormTracker",
   },
-  description: "Track form, injuries, and player stats across Europe's top 5 leagues",
+  description:
+    "Track football team form, injuries, and player performance across Europe's top 5 leagues. Analyze Premier League, La Liga, Bundesliga, Serie A, and Ligue 1 with real-time data from Transfermarkt.",
+  keywords: [
+    "football analytics",
+    "soccer statistics",
+    "team form",
+    "Premier League",
+    "La Liga",
+    "Bundesliga",
+    "Serie A",
+    "Ligue 1",
+    "Transfermarkt",
+    "football injuries",
+    "player stats",
+  ],
+  openGraph: {
+    title: "FormTracker - Football Form Analysis",
+    description:
+      "Track football team form, injuries, and player performance across Europe's top 5 leagues.",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary",
+    title: "FormTracker - Football Form Analysis",
+    description:
+      "Track football team form, injuries, and player performance across Europe's top 5 leagues.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -30,11 +62,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-neutral-950 text-neutral-100 min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-neutral-950 text-neutral-100 min-h-screen flex flex-col`}
       >
         <Providers>
           <Header />
-          {children}
+          <main className="flex-1">{children}</main>
+          <Footer />
         </Providers>
       </body>
     </html>

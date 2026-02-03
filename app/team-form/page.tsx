@@ -3,8 +3,9 @@ import { getTeamFormData } from "@/lib/team-form";
 import { TeamFormUI } from "./TeamFormUI";
 
 export const metadata: Metadata = {
-  title: "Team Δ Pts | FormTracker",
-  description: "Teams over/underperforming their expected position based on squad market value",
+  title: "Football Teams Over/Underperforming",
+  description:
+    "Compare football team league positions against their expected position based on squad market value. Find which teams are overperforming or underperforming relative to their budget.",
 };
 
 export default async function TeamFormPage() {

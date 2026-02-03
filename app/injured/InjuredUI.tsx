@@ -70,11 +70,14 @@ function RankBadge({ rank }: { rank: number }) {
   );
 }
 
-function PlayerCard({ player, rank }: { player: InjuredPlayer; rank: number }) {
+function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: number; index?: number }) {
   const leagueStyle = getLeagueStyle(player.league);
 
   return (
-    <Card className="transition-all hover:scale-[1.005] hover:shadow-md">
+    <Card
+      className="transition-[transform,box-shadow] hover:scale-[1.005] hover:shadow-md animate-slide-up opacity-0"
+      style={{ animationDelay: `${index * 0.03}s`, animationFillMode: "forwards" }}
+    >
       <CardContent className="p-3 sm:p-4">
         <div className="flex items-start gap-3 sm:gap-4">
           <RankBadge rank={rank} />
@@ -145,13 +148,16 @@ function PlayerCard({ player, rank }: { player: InjuredPlayer; rank: number }) {
   );
 }
 
-function TeamInjuryCard({ team, rank }: { team: TeamInjuryGroup; rank: number }) {
+function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank: number; index?: number }) {
   const [expanded, setExpanded] = useState(false);
   const displayPlayers = expanded ? team.players : team.players.slice(0, 3);
   const leagueStyle = getLeagueStyle(team.league);
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
+    <Card
+      className="overflow-hidden transition-[box-shadow] hover:shadow-md animate-slide-up opacity-0"
+      style={{ animationDelay: `${index * 0.05}s`, animationFillMode: "forwards" }}
+    >
       <CardContent className="p-3 sm:p-4">
         <div className="flex items-center gap-3 sm:gap-4">
           <RankBadge rank={rank} />
@@ -280,7 +286,7 @@ export function InjuredUI({ initialData }: InjuredUIProps) {
   return (
     <>
       {/* Stats */}
-      <Card className="mb-4 sm:mb-6">
+      <Card className="mb-4 sm:mb-6 animate-scale-in">
         <CardContent className="p-3 sm:p-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             <StatCard value={data.totalPlayers} label="Players" />
@@ -301,7 +307,7 @@ export function InjuredUI({ initialData }: InjuredUIProps) {
         <TabsContent value="players">
           <div className="space-y-3">
             {data.players.map((player, idx) => (
-              <PlayerCard key={`${player.name}-${player.club}`} player={player} rank={idx + 1} />
+              <PlayerCard key={`${player.name}-${player.club}`} player={player} rank={idx + 1} index={idx} />
             ))}
           </div>
         </TabsContent>
@@ -309,7 +315,7 @@ export function InjuredUI({ initialData }: InjuredUIProps) {
         <TabsContent value="teams">
           <div className="space-y-3">
             {teamGroups.map((team, idx) => (
-              <TeamInjuryCard key={team.club} team={team} rank={idx + 1} />
+              <TeamInjuryCard key={team.club} team={team} rank={idx + 1} index={idx} />
             ))}
           </div>
         </TabsContent>

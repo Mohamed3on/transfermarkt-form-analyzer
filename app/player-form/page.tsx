@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { PlayerFormUI } from "./PlayerFormUI";
 
 export const metadata: Metadata = {
-  title: "Player Underperformers | FormTracker",
-  description: "Find expensive players underdelivering on goal contributions across Europe's top leagues",
+  title: "Underperforming Football Players",
+  description:
+    "Find high-value football players underdelivering on goals and assists. Identifies expensive attackers and midfielders outperformed by cheaper alternatives.",
 };
 
 export default function PlayerFormPage() {

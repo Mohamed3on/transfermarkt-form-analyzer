@@ -42,18 +42,21 @@ interface TeamCardProps {
   type: "over" | "under";
   manager?: ManagerInfo | null;
   managerLoading?: boolean;
+  index?: number;
 }
 
-function TeamCard({ team, rank, type, manager, managerLoading }: TeamCardProps) {
+function TeamCard({ team, rank, type, manager, managerLoading, index = 0 }: TeamCardProps) {
   const isOver = type === "over";
   const showManager = manager !== undefined;
 
   return (
     <div
-      className="rounded-xl p-3 sm:p-4 transition-all hover:scale-[1.01]"
+      className="rounded-xl p-3 sm:p-4 transition-[transform,box-shadow] hover:scale-[1.01] hover-lift animate-slide-up opacity-0"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border-subtle)",
+        animationDelay: `${index * 0.05}s`,
+        animationFillMode: "forwards",
       }}
     >
       <div className="flex items-center gap-3 sm:gap-4">
@@ -201,7 +204,7 @@ function TeamListSection({
   const isOver = type === "over";
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <h2 className="text-lg sm:text-xl font-bold mb-3 flex items-center gap-2" style={{ color: isOver ? "#16a34a" : "#dc2626" }}>
         {icon}
         {title}
@@ -218,6 +221,7 @@ function TeamListSection({
               type={type}
               manager={managersMap[team.clubId]}
               managerLoading={managerQuery?.isLoading}
+              index={idx}
             />
           );
         })}
@@ -233,7 +237,7 @@ export function TeamFormUI({ initialData }: TeamFormUIProps) {
     <>
       {/* Stats */}
       <div
-        className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-8 p-3 sm:p-4 rounded-xl"
+        className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-8 p-3 sm:p-4 rounded-xl animate-scale-in"
         style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
       >
         <div className="text-center">
