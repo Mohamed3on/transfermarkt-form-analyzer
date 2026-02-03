@@ -2,7 +2,6 @@
 
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { Header } from "@/app/components/Header";
 import type { TeamFormEntry, ManagerInfo } from "@/app/types";
 
 interface TeamFormResponse {
@@ -261,8 +260,6 @@ export function TeamFormUI() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-base)" }}>
-      <Header />
-
       <main className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Header */}
         <div className="mb-4 sm:mb-8">

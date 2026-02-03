@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { Header } from "../components/Header";
 
 interface PlayerStats {
   name: string;
@@ -870,8 +869,6 @@ export function PlayerFormUI() {
 
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
-      <Header />
-
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Page title */}
         <div className="mb-4 sm:mb-6">

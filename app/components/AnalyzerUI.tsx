@@ -3,7 +3,6 @@
 import { useQuery, useQueries } from "@tanstack/react-query";
 import type { AnalysisResult, PeriodAnalysis, QualifiedTeam, ManagerInfo } from "@/app/types";
 import { TeamCard, TeamCardSkeleton } from "./TeamCard";
-import { Header } from "./Header";
 import { useMemo } from "react";
 
 async function fetchAnalysis(): Promise<AnalysisResult> {
@@ -337,8 +336,6 @@ export function AnalyzerUI() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-base)" }}>
-      <Header />
-
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Loading State */}
         {isBusy && !data && (

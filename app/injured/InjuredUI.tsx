@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Header } from "@/app/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -279,56 +278,42 @@ export function InjuredUI({ initialData }: InjuredUIProps) {
   }, [teamGroups]);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)]">
-      <Header />
+    <>
+      {/* Stats */}
+      <Card className="mb-4 sm:mb-6">
+        <CardContent className="p-3 sm:p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            <StatCard value={data.totalPlayers} label="Players" />
+            <StatCard value={teamGroups.length} label="Teams" />
+            <StatCard value={mostInjuredTeam?.count || 0} label="Most Injured" />
+            <StatCard value={formattedTotalValue} label="Total Value" />
+          </div>
+        </CardContent>
+      </Card>
 
-      <main className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* Header */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-2xl sm:text-3xl font-black mb-1 sm:mb-2 text-[var(--text-primary)]">
-            Injured Players
-          </h1>
-          <p className="text-sm sm:text-lg text-[var(--text-muted)]">
-            Highest value injured players across Europe&apos;s top 5 leagues
-          </p>
-        </div>
+      {/* Tabs */}
+      <Tabs defaultValue="players" className="w-full">
+        <TabsList className="mb-4 sm:mb-6">
+          <TabsTrigger value="players">All Players</TabsTrigger>
+          <TabsTrigger value="teams">By Team</TabsTrigger>
+        </TabsList>
 
-        {/* Stats */}
-        <Card className="mb-4 sm:mb-6">
-          <CardContent className="p-3 sm:p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-              <StatCard value={data.totalPlayers} label="Players" />
-              <StatCard value={teamGroups.length} label="Teams" />
-              <StatCard value={mostInjuredTeam?.count || 0} label="Most Injured" />
-              <StatCard value={formattedTotalValue} label="Total Value" />
-            </div>
-          </CardContent>
-        </Card>
+        <TabsContent value="players">
+          <div className="space-y-3">
+            {data.players.map((player, idx) => (
+              <PlayerCard key={`${player.name}-${player.club}`} player={player} rank={idx + 1} />
+            ))}
+          </div>
+        </TabsContent>
 
-        {/* Tabs */}
-        <Tabs defaultValue="players" className="w-full">
-          <TabsList className="mb-4 sm:mb-6">
-            <TabsTrigger value="players">All Players</TabsTrigger>
-            <TabsTrigger value="teams">By Team</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="players">
-            <div className="space-y-3">
-              {data.players.map((player, idx) => (
-                <PlayerCard key={`${player.name}-${player.club}`} player={player} rank={idx + 1} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="teams">
-            <div className="space-y-3">
-              {teamGroups.map((team, idx) => (
-                <TeamInjuryCard key={team.club} team={team} rank={idx + 1} />
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+        <TabsContent value="teams">
+          <div className="space-y-3">
+            {teamGroups.map((team, idx) => (
+              <TeamInjuryCard key={team.club} team={team} rank={idx + 1} />
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
+    </>
   );
 }
