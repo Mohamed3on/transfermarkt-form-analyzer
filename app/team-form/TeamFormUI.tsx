@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import type { TeamFormEntry, ManagerInfo } from "@/app/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ManagerPPGBadge, ManagerSkeleton } from "@/app/components/ManagerPPGBadge";
 import { LEAGUES } from "@/lib/leagues";
@@ -42,65 +41,45 @@ function formatValue(value: string): string {
   return value || "-";
 }
 
-interface LeagueFilterProps {
-  selectedLeagues: string[];
-  onValueChange: (value: string[]) => void;
-  onSelectAll: () => void;
-  onClearAll: () => void;
-}
+const toggleItemClass = "px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border-2 data-[state=on]:shadow-md data-[state=off]:opacity-60 data-[state=off]:scale-95 hover:opacity-80 hover:scale-100";
 
-function LeagueFilter({ selectedLeagues, onValueChange, onSelectAll, onClearAll }: LeagueFilterProps) {
-  const allSelected = selectedLeagues.length === LEAGUES.length;
-  const noneSelected = selectedLeagues.length === 0;
-
+function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: string; onValueChange: (value: string) => void }) {
   return (
     <div className="mb-4 sm:mb-6">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-          Filter by league:
-        </span>
-        <div className="flex gap-1.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onSelectAll}
-            className={`h-7 px-2 text-xs ${allSelected ? "text-[var(--text-muted)]" : ""}`}
-            disabled={allSelected}
-          >
-            All
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClearAll}
-            className={`h-7 px-2 text-xs ${noneSelected ? "text-[var(--text-muted)]" : ""}`}
-            disabled={noneSelected}
-          >
-            Clear
-          </Button>
-        </div>
-      </div>
+      <p className="text-sm font-medium mb-3" style={{ color: "var(--text-secondary)" }}>
+        Filter by league:
+      </p>
       <ToggleGroup
-        type="multiple"
-        value={selectedLeagues}
-        onValueChange={onValueChange}
+        type="single"
+        value={selectedLeague}
+        onValueChange={(value) => onValueChange(value || "all")}
         className="flex flex-wrap gap-2"
       >
+        <ToggleGroupItem
+          value="all"
+          className={toggleItemClass}
+          style={{
+            backgroundColor: selectedLeague === "all" ? "var(--text-primary)" : "transparent",
+            borderColor: "var(--text-muted)",
+            color: selectedLeague === "all" ? "var(--bg-base)" : "var(--text-muted)",
+          }}
+        >
+          All Leagues
+        </ToggleGroupItem>
+
         {LEAGUES.map((league) => {
-          const isSelected = selectedLeagues.includes(league.name);
+          const isSelected = selectedLeague === league.name;
           const color = getLeagueColor(league.name);
-          const isLigue1 = league.name === "Ligue 1";
 
           return (
             <ToggleGroupItem
               key={league.code}
               value={league.name}
-              aria-label={`Toggle ${league.name}`}
-              className="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ease-out border-2 data-[state=on]:shadow-md data-[state=off]:opacity-60 data-[state=off]:scale-95 hover:opacity-80 hover:scale-100"
+              className={toggleItemClass}
               style={{
                 backgroundColor: isSelected ? color : "transparent",
                 borderColor: color,
-                color: isSelected ? (isLigue1 ? "#000" : "#fff") : color,
+                color: isSelected ? (league.name === "Ligue 1" ? "#000" : "#fff") : color,
               }}
             >
               {league.name}
@@ -366,55 +345,35 @@ function TeamListsGrid({
 export function TeamFormUI({ initialData }: TeamFormUIProps) {
   const data = initialData;
 
-  // Initialize with all leagues selected
-  const [selectedLeagues, setSelectedLeagues] = useState<string[]>(
-    () => LEAGUES.map((l) => l.name)
-  );
+  // Initialize with all leagues shown
+  const [selectedLeague, setSelectedLeague] = useState<string>("all");
 
-  const handleValueChange = (value: string[]) => {
-    setSelectedLeagues(value);
-  };
-
-  const handleSelectAll = () => {
-    setSelectedLeagues(LEAGUES.map((l) => l.name));
-  };
-
-  const handleClearAll = () => {
-    setSelectedLeagues([]);
-  };
-
-  // Filter teams based on selected leagues
-  const selectedSet = useMemo(() => new Set(selectedLeagues), [selectedLeagues]);
-
+  // Filter teams based on selected league
   const filteredOverperformers = useMemo(
-    () => data.overperformers.filter((team) => selectedSet.has(team.league)),
-    [data.overperformers, selectedSet]
+    () => selectedLeague === "all"
+      ? data.overperformers
+      : data.overperformers.filter((team) => team.league === selectedLeague),
+    [data.overperformers, selectedLeague]
   );
 
   const filteredUnderperformers = useMemo(
-    () => data.underperformers.filter((team) => selectedSet.has(team.league)),
-    [data.underperformers, selectedSet]
+    () => selectedLeague === "all"
+      ? data.underperformers
+      : data.underperformers.filter((team) => team.league === selectedLeague),
+    [data.underperformers, selectedLeague]
   );
 
   return (
     <>
       <LeagueFilter
-        selectedLeagues={selectedLeagues}
-        onValueChange={handleValueChange}
-        onSelectAll={handleSelectAll}
-        onClearAll={handleClearAll}
+        selectedLeague={selectedLeague}
+        onValueChange={setSelectedLeague}
       />
 
-      {selectedLeagues.length === 0 ? (
-        <div className="text-center py-12" style={{ color: "var(--text-muted)" }}>
-          <p className="text-lg">Select at least one league to view teams</p>
-        </div>
-      ) : (
-        <TeamListsGrid
-          overperformers={filteredOverperformers}
-          underperformers={filteredUnderperformers}
-        />
-      )}
+      <TeamListsGrid
+        overperformers={filteredOverperformers}
+        underperformers={filteredUnderperformers}
+      />
     </>
   );
 }
