@@ -1,11 +1,13 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { TeamFormEntry, ManagerInfo } from "@/app/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ManagerPPGBadge, ManagerSkeleton } from "@/app/components/ManagerPPGBadge";
+import { LEAGUES } from "@/lib/leagues";
 
 export interface TeamFormResponse {
   success: boolean;
@@ -37,6 +39,80 @@ function getLeagueColor(league: string): string {
 
 function formatValue(value: string): string {
   return value || "-";
+}
+
+interface LeagueFilterProps {
+  selectedLeagues: Set<string>;
+  onToggleLeague: (league: string) => void;
+  onSelectAll: () => void;
+  onClearAll: () => void;
+}
+
+function LeagueFilter({ selectedLeagues, onToggleLeague, onSelectAll, onClearAll }: LeagueFilterProps) {
+  const allSelected = selectedLeagues.size === LEAGUES.length;
+  const noneSelected = selectedLeagues.size === 0;
+
+  return (
+    <div className="mb-4 sm:mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+          Filter by league:
+        </span>
+        <div className="flex gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSelectAll}
+            className={`h-7 px-2 text-xs ${allSelected ? "text-[var(--text-muted)]" : ""}`}
+            disabled={allSelected}
+          >
+            All
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClearAll}
+            className={`h-7 px-2 text-xs ${noneSelected ? "text-[var(--text-muted)]" : ""}`}
+            disabled={noneSelected}
+          >
+            Clear
+          </Button>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {LEAGUES.map((league) => {
+          const isSelected = selectedLeagues.has(league.name);
+          const color = getLeagueColor(league.name);
+          const isLigue1 = league.name === "Ligue 1";
+
+          return (
+            <button
+              key={league.code}
+              onClick={() => onToggleLeague(league.name)}
+              className={`
+                px-3 py-1.5 rounded-full text-sm font-medium
+                transition-all duration-200 ease-out
+                border-2 cursor-pointer
+                ${isSelected
+                  ? "scale-100 shadow-md"
+                  : "scale-95 opacity-60 hover:opacity-80 hover:scale-100"
+                }
+              `}
+              style={{
+                backgroundColor: isSelected ? color : "transparent",
+                borderColor: color,
+                color: isSelected
+                  ? (isLigue1 ? "#000" : "#fff")
+                  : color,
+              }}
+            >
+              {league.name}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 interface TeamCardProps {
@@ -293,13 +369,61 @@ function TeamListsGrid({
 export function TeamFormUI({ initialData }: TeamFormUIProps) {
   const data = initialData;
 
+  // Initialize with all leagues selected
+  const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(
+    () => new Set(LEAGUES.map((l) => l.name))
+  );
+
+  const handleToggleLeague = (league: string) => {
+    setSelectedLeagues((prev) => {
+      const next = new Set(prev);
+      if (next.has(league)) {
+        next.delete(league);
+      } else {
+        next.add(league);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedLeagues(new Set(LEAGUES.map((l) => l.name)));
+  };
+
+  const handleClearAll = () => {
+    setSelectedLeagues(new Set());
+  };
+
+  // Filter teams based on selected leagues
+  const filteredOverperformers = useMemo(
+    () => data.overperformers.filter((team) => selectedLeagues.has(team.league)),
+    [data.overperformers, selectedLeagues]
+  );
+
+  const filteredUnderperformers = useMemo(
+    () => data.underperformers.filter((team) => selectedLeagues.has(team.league)),
+    [data.underperformers, selectedLeagues]
+  );
+
   return (
     <>
-      {/* Content */}
-      <TeamListsGrid
-        overperformers={data.overperformers}
-        underperformers={data.underperformers}
+      <LeagueFilter
+        selectedLeagues={selectedLeagues}
+        onToggleLeague={handleToggleLeague}
+        onSelectAll={handleSelectAll}
+        onClearAll={handleClearAll}
       />
+
+      {selectedLeagues.size === 0 ? (
+        <div className="text-center py-12" style={{ color: "var(--text-muted)" }}>
+          <p className="text-lg">Select at least one league to view teams</p>
+        </div>
+      ) : (
+        <TeamListsGrid
+          overperformers={filteredOverperformers}
+          underperformers={filteredUnderperformers}
+        />
+      )}
     </>
   );
 }
