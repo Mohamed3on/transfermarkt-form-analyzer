@@ -287,20 +287,23 @@ function LeaderCard({
         {rows.map((row) => (
           <div
             key={row.label}
-            className="flex justify-between items-center text-xs sm:text-sm py-0.5 sm:py-1"
+            className="text-xs sm:text-sm py-0.5 sm:py-1"
             style={{ borderBottom: "1px solid var(--border-subtle)" }}
           >
-            <span style={{ color: "var(--text-muted)" }}>{row.label}</span>
-            <div className="text-right">
+            <div className="flex justify-between items-start gap-2">
+              <span style={{ color: "var(--text-muted)" }} className="shrink-0">{row.label}</span>
               <span
-                className="font-bold mr-1 sm:mr-2"
+                className="font-bold shrink-0"
                 style={{ color: accentColor }}
               >
                 {row.value}
               </span>
-              <span style={{ color: "var(--text-secondary)" }} className="text-[10px] sm:text-xs truncate max-w-[60px] sm:max-w-none inline-block align-bottom">
-                {row.teams.slice(0, 1).join(", ")}
-              </span>
+            </div>
+            <div
+              className="text-[10px] sm:text-xs mt-0.5 leading-relaxed"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {row.teams.join(", ")}
             </div>
           </div>
         ))}
