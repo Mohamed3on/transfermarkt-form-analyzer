@@ -1,11 +1,13 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { TeamFormEntry, ManagerInfo } from "@/app/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ManagerPPGBadge, ManagerSkeleton } from "@/app/components/ManagerPPGBadge";
+import { LEAGUES } from "@/lib/leagues";
 
 export interface TeamFormResponse {
   success: boolean;
@@ -37,6 +39,56 @@ function getLeagueColor(league: string): string {
 
 function formatValue(value: string): string {
   return value || "-";
+}
+
+function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: string; onValueChange: (value: string) => void }) {
+  return (
+    <div className="mb-4 sm:mb-6">
+      <p className="text-sm font-medium mb-3" style={{ color: "var(--text-secondary)" }}>
+        Filter by league:
+      </p>
+      <ToggleGroup
+        type="single"
+        value={selectedLeague}
+        onValueChange={(value) => onValueChange(value || "all")}
+        className="flex flex-wrap gap-2"
+      >
+        <ToggleGroupItem
+          value="all"
+          className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+          style={{
+            backgroundColor: selectedLeague === "all" ? "var(--bg-card)" : "transparent",
+            border: selectedLeague === "all" ? "1px solid var(--accent-blue)" : "1px solid var(--border-subtle)",
+            color: selectedLeague === "all" ? "var(--accent-blue)" : "var(--text-muted)",
+            boxShadow: selectedLeague === "all" ? "0 0 12px rgba(88, 166, 255, 0.2)" : "none",
+          }}
+        >
+          All Leagues
+        </ToggleGroupItem>
+
+        {LEAGUES.map((league) => {
+          const isSelected = selectedLeague === league.name;
+          const color = getLeagueColor(league.name);
+
+          return (
+            <ToggleGroupItem
+              key={league.code}
+              value={league.name}
+              className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+              style={{
+                backgroundColor: isSelected ? color : "var(--bg-card)",
+                border: `1px solid ${isSelected ? color : "var(--border-subtle)"}`,
+                color: isSelected ? (league.name === "Ligue 1" ? "#000" : "#fff") : "var(--text-secondary)",
+                boxShadow: isSelected ? `0 0 12px ${color}40` : "none",
+              }}
+            >
+              {league.name}
+            </ToggleGroupItem>
+          );
+        })}
+      </ToggleGroup>
+    </div>
+  );
 }
 
 interface TeamCardProps {
@@ -293,12 +345,34 @@ function TeamListsGrid({
 export function TeamFormUI({ initialData }: TeamFormUIProps) {
   const data = initialData;
 
+  // Initialize with all leagues shown
+  const [selectedLeague, setSelectedLeague] = useState<string>("all");
+
+  // Filter teams based on selected league
+  const filteredOverperformers = useMemo(
+    () => selectedLeague === "all"
+      ? data.overperformers
+      : data.overperformers.filter((team) => team.league === selectedLeague),
+    [data.overperformers, selectedLeague]
+  );
+
+  const filteredUnderperformers = useMemo(
+    () => selectedLeague === "all"
+      ? data.underperformers
+      : data.underperformers.filter((team) => team.league === selectedLeague),
+    [data.underperformers, selectedLeague]
+  );
+
   return (
     <>
-      {/* Content */}
+      <LeagueFilter
+        selectedLeague={selectedLeague}
+        onValueChange={setSelectedLeague}
+      />
+
       <TeamListsGrid
-        overperformers={data.overperformers}
-        underperformers={data.underperformers}
+        overperformers={filteredOverperformers}
+        underperformers={filteredUnderperformers}
       />
     </>
   );
