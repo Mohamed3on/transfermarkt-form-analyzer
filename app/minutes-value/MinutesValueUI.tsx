@@ -75,7 +75,7 @@ function BenchmarkCard({ player }: { player: MinutesValuePlayer }) {
           </div>
           <div className="flex-1 min-w-0 sm:hidden">
             <a
-              href={`https://www.transfermarkt.com${player.profileUrl}`}
+              href={`https://www.transfermarkt.com${player.profileUrl.replace(/\/profil\//, "/leistungsdaten/")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="font-bold text-lg hover:underline block truncate"
@@ -93,7 +93,7 @@ function BenchmarkCard({ player }: { player: MinutesValuePlayer }) {
 
         <div className="hidden sm:block flex-1 min-w-0">
           <a
-            href={`https://www.transfermarkt.com${player.profileUrl}`}
+            href={`https://www.transfermarkt.com${player.profileUrl.replace(/\/profil\//, "/leistungsdaten/")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="font-bold text-xl hover:underline block truncate"
@@ -193,7 +193,7 @@ function PlayerCard({ player, target, index, minutesLoading }: { player: Minutes
 
         <div className="flex-1 min-w-0">
           <a
-            href={`https://www.transfermarkt.com${player.profileUrl}`}
+            href={`https://www.transfermarkt.com${player.profileUrl.replace(/\/profil\//, "/leistungsdaten/")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="font-semibold text-sm sm:text-base hover:underline block truncate transition-colors"
