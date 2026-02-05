@@ -22,7 +22,7 @@ function parseMarketValueRow($: cheerio.CheerioAPI, row: any): Partial<MinutesVa
   const profileUrl = nameLink.attr("href") || "";
   const position = inlineTable.find("tr").eq(1).find("td").text().trim();
   const imgEl = inlineTable.find("img").first();
-  const imageUrl = imgEl.attr("data-src") || imgEl.attr("src") || "";
+  const imageUrl = (imgEl.attr("data-src") || imgEl.attr("src") || "").replace("/small/", "/header/");
 
   const playerIdMatch = profileUrl.match(/\/spieler\/(\d+)/);
   const playerId = playerIdMatch ? playerIdMatch[1] : "";

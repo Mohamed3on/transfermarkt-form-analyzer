@@ -19,7 +19,7 @@ function parseInjuredPlayers($: cheerio.CheerioAPI, leagueName: string): Injured
     const name = playerLink.attr("title") || playerLink.text().trim();
     const profileUrl = playerLink.attr("href") || "";
     const position = inlineTable.find("tr:last-child td").text().trim();
-    const imageUrl = inlineTable.find("img").attr("data-src") || inlineTable.find("img").attr("src") || "";
+    const imageUrl = (inlineTable.find("img").attr("data-src") || inlineTable.find("img").attr("src") || "").replace("/small/", "/header/");
 
     const clubCell = $(cells[1]);
     const clubLink = clubCell.find("a").first();
