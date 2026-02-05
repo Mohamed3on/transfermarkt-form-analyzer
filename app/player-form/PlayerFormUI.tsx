@@ -1134,14 +1134,13 @@ export function PlayerFormUI() {
               {filteredUnderperformers.length === 0 ? (
                 <div
                   className="rounded-xl p-10 text-center animate-fade-in"
-                  style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
+                  style={{ background: "rgba(255, 71, 87, 0.06)", border: "1px solid rgba(255, 71, 87, 0.2)" }}
                 >
-                  <div className="text-5xl mb-3">📊</div>
-                  <p className="font-semibold text-lg" style={{ color: "var(--text-primary)" }}>
-                    No Underperformers Found
+                  <p className="font-semibold text-lg" style={{ color: "#ff6b7a" }}>
+                    {data.targetPlayer.name} is the underperformer
                   </p>
                   <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                    All higher-valued players are producing more points than {data.targetPlayer.name}
+                    No higher-valued player is producing fewer points
                   </p>
                 </div>
               ) : (

@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import type { MinutesValuePlayer, PlayerStatsResult } from "@/app/types";
 
@@ -145,7 +146,7 @@ function BenchmarkCard({ player }: { player: MinutesValuePlayer }) {
   );
 }
 
-function PlayerCard({ player, target, index }: { player: MinutesValuePlayer; target?: MinutesValuePlayer; index: number }) {
+function PlayerCard({ player, target, index, minutesLoading }: { player: MinutesValuePlayer; target?: MinutesValuePlayer; index: number; minutesLoading?: boolean }) {
   const valueDiff = target ? player.marketValue - target.marketValue : 0;
   const valueDiffDisplay = valueDiff >= 1_000_000
     ? `+${formatValue(valueDiff)}`
@@ -217,12 +218,18 @@ function PlayerCard({ player, target, index }: { player: MinutesValuePlayer; tar
           </div>
           <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
           <div className="text-right min-w-[4rem]">
-            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>
-              {player.minutes.toLocaleString()}&apos;
-            </div>
-            {target && <div className="text-[10px] font-medium tabular-nums" style={{ color: "#ff6b7a" }}>
-              &minus;{minsDiff.toLocaleString()}&apos;
-            </div>}
+            {minutesLoading ? (
+              <Skeleton className="h-5 w-14 ml-auto" />
+            ) : (
+              <>
+                <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>
+                  {player.minutes.toLocaleString()}&apos;
+                </div>
+                {target && <div className="text-[10px] font-medium tabular-nums" style={{ color: "#ff6b7a" }}>
+                  &minus;{minsDiff.toLocaleString()}&apos;
+                </div>}
+              </>
+            )}
           </div>
           <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
           <div className="flex items-center gap-2.5 text-right">
@@ -250,9 +257,13 @@ function PlayerCard({ player, target, index }: { player: MinutesValuePlayer; tar
         {/* Mobile metrics */}
         <div className="sm:hidden text-right shrink-0">
           <div className="text-xs font-bold tabular-nums" style={{ color: "#ff6b7a" }}>{player.marketValueDisplay}</div>
-          <div className="text-[10px] tabular-nums" style={{ color: "var(--accent-blue)" }}>
-            {player.minutes.toLocaleString()}&apos;
-          </div>
+          {minutesLoading ? (
+            <Skeleton className="h-3 w-10 ml-auto mt-0.5" />
+          ) : (
+            <div className="text-[10px] tabular-nums" style={{ color: "var(--accent-blue)" }}>
+              {player.minutes.toLocaleString()}&apos;
+            </div>
+          )}
         </div>
       </div>
 
@@ -274,7 +285,7 @@ function PlayerCard({ player, target, index }: { player: MinutesValuePlayer; tar
 const ROW_HEIGHT = 120; // estimated row height including gap
 const GAP = 12;
 
-function VirtualPlayerList({ items, target }: { items: MinutesValuePlayer[]; target?: MinutesValuePlayer }) {
+function VirtualPlayerList({ items, target, loadingPlayerIds }: { items: MinutesValuePlayer[]; target?: MinutesValuePlayer; loadingPlayerIds?: Set<string> }) {
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: items.length,
@@ -295,7 +306,7 @@ function VirtualPlayerList({ items, target }: { items: MinutesValuePlayer[]; tar
             className="absolute left-0 w-full"
             style={{ top: virtualRow.start }}
           >
-            <PlayerCard player={items[virtualRow.index]} target={target} index={virtualRow.index} />
+            <PlayerCard player={items[virtualRow.index]} target={target} index={virtualRow.index} minutesLoading={loadingPlayerIds?.has(items[virtualRow.index].playerId)} />
           </div>
         ))}
       </div>
@@ -305,12 +316,14 @@ function VirtualPlayerList({ items, target }: { items: MinutesValuePlayer[]; tar
 
 export function MinutesValueUI({ initialData }: { initialData: MinutesValuePlayer[] }) {
   const zeroMinuteIds = useMemo(() => initialData.filter((p) => p.minutes === 0).map((p) => p.playerId), [initialData]);
-  const { data: batchMinutes } = useQuery({
+  const { data: batchMinutes, isLoading: batchLoading } = useQuery({
     queryKey: ["player-minutes-batch", zeroMinuteIds],
     queryFn: ({ signal }) => fetchMinutesBatch(zeroMinuteIds, signal),
     enabled: zeroMinuteIds.length > 0,
     staleTime: 5 * 60 * 1000,
   });
+
+  const loadingPlayerIds = useMemo(() => batchLoading ? new Set(zeroMinuteIds) : new Set<string>(), [batchLoading, zeroMinuteIds]);
 
   const players = useMemo(() => {
     if (!batchMinutes || zeroMinuteIds.length === 0) return initialData;
@@ -499,7 +512,7 @@ export function MinutesValueUI({ initialData }: { initialData: MinutesValuePlaye
                   </p>
                 </div>
               ) : (
-                <VirtualPlayerList items={results} target={selected} />
+                <VirtualPlayerList items={results} target={selected} loadingPlayerIds={loadingPlayerIds} />
               )}
             </section>
 
@@ -551,7 +564,7 @@ export function MinutesValueUI({ initialData }: { initialData: MinutesValuePlaye
                 {players.length}
               </span>
             </div>
-            <VirtualPlayerList items={sortedPlayers} />
+            <VirtualPlayerList items={sortedPlayers} loadingPlayerIds={loadingPlayerIds} />
           </section>
         )}
       </div>
