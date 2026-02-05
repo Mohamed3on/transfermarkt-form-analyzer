@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
+import { PlayerAutocomplete } from "@/components/PlayerAutocomplete";
 import { SelectNative } from "@/components/ui/select-native";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card } from "@/components/ui/card";
 
 interface PlayerStats {
   name: string;
@@ -806,10 +804,6 @@ export function PlayerFormUI() {
   const [playerName, setPlayerName] = useState("");
   const [position, setPosition] = useState("all");
   const [searchParams, setSearchParams] = useState<{ name: string; position: string } | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [highlightIndex, setHighlightIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch player list for autocomplete
   const { data: playerList } = useQuery({
@@ -817,23 +811,6 @@ export function PlayerFormUI() {
     queryFn: ({ signal }) => fetchPlayers(position, signal),
     staleTime: 5 * 60 * 1000,
   });
-
-  const suggestions = useMemo(() => {
-    if (!playerName.trim() || !playerList) return [];
-    const q = playerName.toLowerCase();
-    return playerList.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 10);
-  }, [playerName, playerList]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) && !inputRef.current?.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
 
   // Fetch both positions in parallel for discovery view
   const discoveryQueries = useQueries({
@@ -845,7 +822,7 @@ export function PlayerFormUI() {
     })),
   });
 
-  const { data, isLoading, error, isFetching } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["player-form", searchParams],
     queryFn: ({ signal }) => searchParams ? fetchPlayerForm(searchParams.name, searchParams.position, signal) : null,
     enabled: !!searchParams,
@@ -897,45 +874,6 @@ export function PlayerFormUI() {
     });
   }, [data?.underperformers, targetMinutes, minutesMap]);
 
-  const handleSearch = useCallback(() => {
-    if (playerName.trim()) {
-      setSearchParams({ name: playerName.trim(), position });
-      setShowDropdown(false);
-    }
-  }, [playerName, position]);
-
-  function handleSelect(player: PlayerStats) {
-    setPlayerName(player.name);
-    setShowDropdown(false);
-    setHighlightIndex(-1);
-    setSearchParams({ name: player.name, position });
-  }
-
-  function handleInputChange(value: string) {
-    setPlayerName(value);
-    setShowDropdown(true);
-    setHighlightIndex(-1);
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (showDropdown && suggestions.length > 0) {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setHighlightIndex((prev) => (prev + 1) % suggestions.length);
-        return;
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setHighlightIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
-        return;
-      } else if (e.key === "Enter" && highlightIndex >= 0) {
-        e.preventDefault();
-        handleSelect(suggestions[highlightIndex]);
-        return;
-      }
-    }
-    if (e.key === "Enter") handleSearch();
-  }
-
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
@@ -952,94 +890,39 @@ export function PlayerFormUI() {
           </p>
         </div>
         {/* Search Form */}
-        <Card className="p-3 sm:p-4 mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <div className="relative flex-1">
-              <Input
-                ref={inputRef}
-                type="text"
-                value={playerName}
-                onChange={(e) => handleInputChange(e.target.value)}
-                onFocus={() => playerName.trim() && setShowDropdown(true)}
-                onKeyDown={handleKeyDown}
-                placeholder="Search player (e.g. Kenan Yildiz)"
-                className="h-11 pr-10"
-              />
-              {isFetching && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <svg className="h-5 w-5 animate-spin text-[#ffd700]" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-6 sm:mb-8">
+          <div className="flex-1">
+            <PlayerAutocomplete
+              players={playerList || []}
+              value={playerName}
+              onChange={(val) => {
+                setPlayerName(val);
+                if (!val.trim()) setSearchParams(null);
+              }}
+              onSelect={(player) => {
+                setPlayerName(player.name);
+                setSearchParams({ name: player.name, position });
+              }}
+              placeholder="Search player (e.g. Kenan Yildiz)"
+              renderTrailing={(player) => (
+                <div className="text-xs tabular-nums shrink-0" style={{ color: "#00ff87" }}>
+                  {player.points} pts
                 </div>
               )}
-
-              {/* Autocomplete dropdown */}
-              {showDropdown && suggestions.length > 0 && (
-                <div
-                  ref={dropdownRef}
-                  className="absolute z-50 left-0 right-0 mt-1 rounded-xl overflow-hidden shadow-xl"
-                  style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}
-                >
-                  {suggestions.map((player, i) => (
-                    <button
-                      key={player.playerId}
-                      type="button"
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors"
-                      style={{
-                        background: i === highlightIndex ? "rgba(255, 215, 0, 0.1)" : "transparent",
-                        borderBottom: i < suggestions.length - 1 ? "1px solid var(--border-subtle)" : "none",
-                      }}
-                      onMouseEnter={() => setHighlightIndex(i)}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        handleSelect(player);
-                      }}
-                    >
-                      {player.imageUrl ? (
-                        <img src={player.imageUrl} alt="" className="w-8 h-8 rounded-md object-cover shrink-0" style={{ background: "var(--bg-card)" }} />
-                      ) : (
-                        <div className="w-8 h-8 rounded-md flex items-center justify-center text-sm font-bold shrink-0" style={{ background: "var(--bg-card)", color: "var(--text-muted)" }}>
-                          {player.name.charAt(0)}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{player.name}</div>
-                        <div className="text-[10px] truncate" style={{ color: "var(--text-muted)" }}>
-                          {player.position} · {player.club} · {player.marketValueDisplay}
-                        </div>
-                      </div>
-                      <div className="text-xs tabular-nums shrink-0" style={{ color: "#00ff87" }}>
-                        {player.points} pts
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-2 sm:gap-3">
-              <SelectNative
-                value={position}
-                onChange={(e) => setPosition(e.target.value)}
-                className="h-11 flex-1 sm:w-auto sm:flex-none"
-              >
-                <option value="all">All Players</option>
-                <option value="forward">All Forwards</option>
-                <option value="cf">Centre-Forward</option>
-                <option value="midfielder">Midfielders</option>
-              </SelectNative>
-
-              <Button
-                onClick={handleSearch}
-                disabled={!playerName.trim() || isLoading}
-                className="h-11 bg-gradient-to-br from-[#ffd700] to-[#ff8c00] text-black shadow-[0_4px_20px_rgba(255,215,0,0.3)] hover:opacity-90"
-              >
-                Scout
-              </Button>
-            </div>
+            />
           </div>
-        </Card>
+
+          <SelectNative
+            value={position}
+            onChange={(e) => setPosition(e.target.value)}
+            className="h-11 flex-1 sm:w-auto sm:flex-none"
+          >
+            <option value="all">All Players</option>
+            <option value="forward">All Forwards</option>
+            <option value="cf">Centre-Forward</option>
+            <option value="midfielder">Midfielders</option>
+          </SelectNative>
+        </div>
 
         {/* Loading State */}
         {isLoading && <SearchSkeleton />}

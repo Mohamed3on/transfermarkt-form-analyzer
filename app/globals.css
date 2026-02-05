@@ -33,6 +33,17 @@
 @theme inline {
   --color-background: var(--bg-base);
   --color-foreground: var(--text-primary);
+  --color-popover: var(--bg-elevated);
+  --color-popover-foreground: var(--text-primary);
+  --color-card: var(--bg-card);
+  --color-card-foreground: var(--text-primary);
+  --color-muted: var(--bg-card);
+  --color-muted-foreground: var(--text-muted);
+  --color-accent: var(--bg-card-hover);
+  --color-accent-foreground: var(--text-primary);
+  --color-border: var(--border-subtle);
+  --color-input: var(--border-subtle);
+  --color-ring: var(--accent-blue);
 }
 
 * {
