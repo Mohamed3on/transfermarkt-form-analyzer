@@ -85,8 +85,6 @@ function BenchmarkCard({ player }: { player: MinutesValuePlayer }) {
             </a>
             <div className="flex items-center gap-2 mt-0.5 text-xs" style={{ color: "var(--text-secondary)" }}>
               <span className="font-medium">{player.position}</span>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span className="truncate opacity-80">{player.club}</span>
             </div>
           </div>
         </div>
@@ -103,10 +101,7 @@ function BenchmarkCard({ player }: { player: MinutesValuePlayer }) {
           </a>
           <div className="flex items-center gap-2 mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
             <span className="font-medium">{player.position}</span>
-            <span style={{ opacity: 0.4 }}>·</span>
-            <span className="truncate opacity-80">{player.club}</span>
-            <span style={{ opacity: 0.4 }}>·</span>
-            <span>{player.nationality}</span>
+            {player.nationality && <><span style={{ opacity: 0.4 }}>·</span><span>{player.nationality}</span></>}
           </div>
           <div className="flex items-center gap-4 mt-4 text-sm" style={{ color: "var(--text-secondary)" }}>
             <span className="tabular-nums">{player.totalMatches} games</span>
@@ -203,8 +198,6 @@ function PlayerCard({ player, target, index, minutesLoading }: { player: Minutes
           </a>
           <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mt-0.5 flex-wrap" style={{ color: "var(--text-muted)" }}>
             <span>{player.position}</span>
-            <span style={{ opacity: 0.4 }}>·</span>
-            <span className="truncate max-w-[100px] sm:max-w-none">{player.club}</span>
             <span className="hidden sm:inline" style={{ opacity: 0.4 }}>·</span>
             <span className="hidden sm:inline">{player.age}y</span>
           </div>
