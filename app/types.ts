@@ -141,7 +141,16 @@ export interface MinutesValuePlayer {
   clubMatches: number;
   intlMatches: number;
   totalMatches: number;
+  goals: number;
+  assists: number;
   imageUrl: string;
   profileUrl: string;
   playerId: string;
+}
+
+export interface PlayerStatsResult {
+  minutes: number;
+  appearances: number;
+  goals: number;
+  assists: number;
 }

@@ -1,10 +1,13 @@
 import { unstable_cache } from "next/cache";
 import * as cheerio from "cheerio";
+import type { PlayerStatsResult } from "@/app/types";
 import { BASE_URL } from "./constants";
 import { fetchPage } from "./fetch";
 
-export async function fetchPlayerMinutes(playerId: string): Promise<number> {
-  if (!playerId) return 0;
+const ZERO_STATS: PlayerStatsResult = { minutes: 0, appearances: 0, goals: 0, assists: 0 };
+
+export async function fetchPlayerMinutes(playerId: string): Promise<PlayerStatsResult> {
+  if (!playerId) return ZERO_STATS;
   return unstable_cache(
     async () => {
       try {
@@ -12,16 +15,29 @@ export async function fetchPlayerMinutes(playerId: string): Promise<number> {
         const htmlContent = await fetchPage(url);
         const $ = cheerio.load(htmlContent);
 
-        // "Career stats" = didn't play this season
-        const headline = $("h2.content-box-headline").first().text().trim();
-        if (headline.includes("Career stats")) return 0;
+        // Detect career-stats-only page (no current season data).
+        // Active players have headline "Stats", inactive have "Career stats".
+        const headlines = $("h2.content-box-headline")
+          .map((_, el) => $(el).text().trim().toLowerCase())
+          .get();
+        if (headlines.some((h) => h.includes("career stats"))) return ZERO_STATS;
 
-        const minutesText = $("table.items tfoot tr td.rechts").last().text().trim();
-        const cleaned = minutesText.replace(/[.']/g, "").replace(/,/g, "");
-        return parseInt(cleaned) || 0;
+        // Footer layout: [Total label][hide][apps][goals][assists][yellows][2nd yellow][reds][minutes]
+        const footer = $("table.items tfoot tr").last();
+        const parse = (s: string) => parseInt(s.trim().replace(/[.']/g, "").replace(/,/g, "")) || 0;
+
+        const zentriert = footer.find("td.zentriert");
+        const rechts = footer.find("td.rechts");
+
+        const appearances = parse(zentriert.eq(0).text());
+        const goals = parse(zentriert.eq(1).text());
+        const assists = parse(zentriert.eq(2).text());
+        const minutes = parse(rechts.last().text());
+
+        return { minutes, appearances, goals, assists };
       } catch (err) {
         console.error(`[player-minutes] ${playerId}: ERROR`, err);
-        return 0;
+        return ZERO_STATS;
       }
     },
     [`player-minutes-${playerId}`],

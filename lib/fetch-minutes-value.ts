@@ -130,6 +130,8 @@ export const getMinutesValueData = unstable_cache(
         clubMatches: mins?.clubMatches ?? 0,
         intlMatches: mins?.intlMatches ?? 0,
         totalMatches: mins?.totalMatches ?? 0,
+        goals: 0,
+        assists: 0,
         imageUrl: mv.imageUrl || "",
         profileUrl: mv.profileUrl || "",
         playerId,

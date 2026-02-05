@@ -5,14 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
-import type { MinutesValuePlayer } from "@/app/types";
+import type { MinutesValuePlayer, PlayerStatsResult } from "@/app/types";
 
 async function fetchMinutesValue(signal?: AbortSignal): Promise<{ players: MinutesValuePlayer[] }> {
   const res = await fetch("/api/minutes-value", { signal });
   return res.json();
 }
 
-async function fetchMinutesBatch(playerIds: string[], signal?: AbortSignal): Promise<Record<string, number>> {
+async function fetchMinutesBatch(playerIds: string[], signal?: AbortSignal): Promise<Record<string, PlayerStatsResult>> {
   const res = await fetch("/api/player-minutes/batch", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -20,7 +20,7 @@ async function fetchMinutesBatch(playerIds: string[], signal?: AbortSignal): Pro
     signal,
   });
   const data = await res.json();
-  return data.minutes || {};
+  return data.stats || {};
 }
 
 function formatValue(v: number): string {
@@ -113,8 +113,9 @@ function BenchmarkCard({ player }: { player: MinutesValuePlayer }) {
             <span>{player.nationality}</span>
           </div>
           <div className="flex items-center gap-4 mt-4 text-sm" style={{ color: "var(--text-secondary)" }}>
-            <span className="tabular-nums">{player.totalMatches} apps</span>
-            <span className="tabular-nums">{player.minutes.toLocaleString()}&apos;</span>
+            <span className="tabular-nums">{player.totalMatches} games</span>
+            <span className="tabular-nums">{player.goals} goals</span>
+            <span className="tabular-nums">{player.assists} assists</span>
             <span className="opacity-60">Age {player.age}</span>
           </div>
         </div>
@@ -136,8 +137,8 @@ function BenchmarkCard({ player }: { player: MinutesValuePlayer }) {
 
         <div className="sm:hidden flex items-center justify-between gap-3 pt-3" style={{ borderTop: "1px solid rgba(255, 215, 0, 0.15)" }}>
           <div className="flex items-center gap-3 text-xs" style={{ color: "var(--text-secondary)" }}>
-            <span className="tabular-nums">{player.totalMatches} apps</span>
-            <span className="tabular-nums">{player.minutes.toLocaleString()}&apos;</span>
+            <span className="tabular-nums">{player.totalMatches} games</span>
+            <span className="tabular-nums">{player.goals}G {player.assists}A</span>
             <span className="opacity-60">Age {player.age}</span>
           </div>
           <div className="flex gap-4 shrink-0">
@@ -229,11 +230,25 @@ function PlayerCard({ player, target, index }: { player: MinutesValuePlayer; tar
             </div>}
           </div>
           <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
-          <div className="text-right min-w-[3rem]">
-            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
-              {player.totalMatches}
+          <div className="flex items-center gap-2.5 text-right">
+            <div>
+              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
+                {player.totalMatches}
+              </div>
+              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>games</div>
             </div>
-            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>apps</div>
+            <div>
+              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
+                {player.goals}
+              </div>
+              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>goals</div>
+            </div>
+            <div>
+              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
+                {player.assists}
+              </div>
+              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>assists</div>
+            </div>
           </div>
         </div>
 
@@ -247,12 +262,14 @@ function PlayerCard({ player, target, index }: { player: MinutesValuePlayer; tar
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 mt-2 sm:mt-3 pt-2 sm:pt-3 text-[10px] sm:text-xs" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.clubMatches} club</span>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.intlMatches} intl</span>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.nationality}</span>
+        <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.totalMatches} games</span>
+        <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.goals}G {player.assists}A</span>
         <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
-        <span className="hidden sm:block ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+        <span className="hidden sm:inline text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
           {player.league}
+        </span>
+        <span className="hidden sm:inline ml-auto tabular-nums" style={{ color: "var(--text-muted)" }}>
+          {player.nationality}
         </span>
       </div>
     </div>
@@ -291,7 +308,7 @@ export function MinutesValueUI() {
   const [selected, setSelected] = useState<MinutesValuePlayer | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
-  const [sortBy, setSortBy] = useState<"value" | "minutes">("value");
+  const [sortBy, setSortBy] = useState<"value" | "minutes" | "games">("value");
   const [sortAsc, setSortAsc] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -316,8 +333,15 @@ export function MinutesValueUI() {
   const players = useMemo(() => {
     if (!batchMinutes || zeroMinuteIds.length === 0) return rawPlayers;
     return rawPlayers.map((p) => {
-      const corrected = batchMinutes[p.playerId];
-      return corrected !== undefined && corrected > 0 ? { ...p, minutes: corrected } : p;
+      const stats = batchMinutes[p.playerId];
+      if (!stats || stats.minutes <= 0) return p;
+      return {
+        ...p,
+        minutes: stats.minutes,
+        totalMatches: stats.appearances || p.totalMatches,
+        goals: stats.goals,
+        assists: stats.assists,
+      };
     });
   }, [rawPlayers, zeroMinuteIds, batchMinutes]);
 
@@ -336,7 +360,7 @@ export function MinutesValueUI() {
 
   const sortedPlayers = useMemo(() => {
     const sorted = [...players].sort((a, b) => {
-      const diff = sortBy === "minutes" ? a.minutes - b.minutes : b.marketValue - a.marketValue;
+      const diff = sortBy === "minutes" ? b.minutes - a.minutes : sortBy === "games" ? b.totalMatches - a.totalMatches : b.marketValue - a.marketValue;
       return sortAsc ? -diff : diff;
     });
     return sorted;
@@ -539,7 +563,7 @@ export function MinutesValueUI() {
                   All Players
                 </h2>
                 <div className="flex items-center rounded-lg overflow-hidden ml-2" style={{ border: "1px solid var(--border-subtle)" }}>
-                  {(["value", "minutes"] as const).map((key) => (
+                  {(["value", "minutes", "games"] as const).map((key) => (
                     <button
                       key={key}
                       type="button"
@@ -553,7 +577,7 @@ export function MinutesValueUI() {
                         color: sortBy === key ? "var(--text-primary)" : "var(--text-muted)",
                       }}
                     >
-                      {key === "value" ? "Value" : "Mins"}
+                      {key === "value" ? "Value" : key === "minutes" ? "Mins" : "Games"}
                       {sortBy === key && (
                         <span className="text-[10px]">{sortAsc ? "\u25B2" : "\u25BC"}</span>
                       )}

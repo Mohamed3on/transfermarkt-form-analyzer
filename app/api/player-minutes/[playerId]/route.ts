@@ -12,8 +12,8 @@ export async function GET(
   }
 
   try {
-    const minutes = await fetchPlayerMinutes(playerId);
-    return NextResponse.json({ playerId, minutes });
+    const stats = await fetchPlayerMinutes(playerId);
+    return NextResponse.json({ playerId, ...stats });
   } catch (error) {
     console.error("Error fetching player minutes:", error);
     return NextResponse.json({ error: "Failed to fetch player minutes" }, { status: 500 });

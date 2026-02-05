@@ -59,10 +59,12 @@ export async function GET(request: Request) {
     const underperformers = findUnderperformers(allPlayers, targetPlayer);
 
     if (includeMinutes) {
-      targetPlayer.minutes = await fetchPlayerMinutes(targetPlayer.playerId);
+      const targetStats = await fetchPlayerMinutes(targetPlayer.playerId);
+      targetPlayer.minutes = targetStats.minutes;
       await Promise.all(
         underperformers.map(async (p) => {
-          p.minutes = await fetchPlayerMinutes(p.playerId);
+          const stats = await fetchPlayerMinutes(p.playerId);
+          p.minutes = stats.minutes;
         })
       );
     }

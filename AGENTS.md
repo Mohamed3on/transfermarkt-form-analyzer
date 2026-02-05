@@ -41,6 +41,14 @@ revalidateTag("your-new-tag");
 
 This ensures the header refresh button properly busts all caches.
 
+## Debugging Transfermarkt Pages
+
+Use `curl` (not WebFetch) to inspect Transfermarkt HTML — match the headers from `lib/fetch.ts`:
+
+```bash
+curl -s -L -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" "https://www.transfermarkt.com/x/leistungsdaten/spieler/294057" | grep -A1 'content-box-headline'
+```
+
 ## Current Cache Tags
 
 - `underperformers` - Player underperformer candidates
