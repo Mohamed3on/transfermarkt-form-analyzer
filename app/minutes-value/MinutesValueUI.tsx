@@ -1,49 +1,13 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { PlayerAutocomplete } from "@/components/PlayerAutocomplete";
 import { Card } from "@/components/ui/card";
-import type { MinutesValuePlayer, PlayerStatsResult } from "@/app/types";
+import type { MinutesValuePlayer } from "@/app/types";
 
-const CHUNK_SIZE = 30;
 const PROFIL_RE = /\/profil\//;
 const EMPTY_PLAYERS: MinutesValuePlayer[] = [];
-
-async function fetchMinutesBatch(playerIds: string[]): Promise<Record<string, PlayerStatsResult>> {
-  const res = await fetch("/api/player-minutes/batch", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ playerIds }),
-  });
-  const data = await res.json();
-  return data.stats || {};
-}
-
-function useProgressiveBatchMinutes(playerIds: string[]) {
-  const [stats, setStats] = useState<Record<string, PlayerStatsResult>>({});
-  const key = useMemo(() => playerIds.join(","), [playerIds]);
-
-  useEffect(() => {
-    if (playerIds.length === 0) return;
-    setStats({});
-    let cancelled = false;
-
-    for (let i = 0; i < playerIds.length; i += CHUNK_SIZE) {
-      const chunk = playerIds.slice(i, i + CHUNK_SIZE);
-      fetchMinutesBatch(chunk)
-        .then((result) => {
-          if (cancelled) return;
-          setStats((prev) => ({ ...prev, ...result }));
-        })
-        .catch(() => {});
-    }
-
-    return () => { cancelled = true; };
-  }, [key]);
-
-  return { stats };
-}
 
 function formatValue(v: number): string {
   if (v >= 1_000_000) return `\u20AC${(v / 1_000_000).toFixed(1)}m`;
@@ -308,24 +272,7 @@ function VirtualPlayerList({ items, target }: { items: MinutesValuePlayer[]; tar
   );
 }
 
-export function MinutesValueUI({ initialData }: { initialData: MinutesValuePlayer[] }) {
-  const zeroMinuteIds = useMemo(() => {
-    const ids: string[] = [];
-    for (const p of initialData) if (p.minutes === 0) ids.push(p.playerId);
-    return ids;
-  }, [initialData]);
-
-  const { stats: batchMinutes } = useProgressiveBatchMinutes(zeroMinuteIds);
-
-  const players = useMemo(() => {
-    if (Object.keys(batchMinutes).length === 0) return initialData;
-    return initialData.map((p) => {
-      const stats = batchMinutes[p.playerId];
-      if (!stats || stats.minutes <= 0) return p;
-      return { ...p, minutes: stats.minutes, totalMatches: stats.appearances || p.totalMatches, goals: stats.goals, assists: stats.assists };
-    });
-  }, [initialData, batchMinutes]);
-
+export function MinutesValueUI({ initialData: players }: { initialData: MinutesValuePlayer[] }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<MinutesValuePlayer | null>(null);
   const [sortBy, setSortBy] = useState<"value" | "minutes" | "games">("minutes");
