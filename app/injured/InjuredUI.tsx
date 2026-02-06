@@ -217,6 +217,9 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                 <img src={player.imageUrl} alt={player.name} className="w-4 h-4 sm:w-5 sm:h-5 rounded-full object-cover" />
               )}
               <span className="truncate max-w-[80px] sm:max-w-[120px] text-[var(--text-primary)]">{player.name}</span>
+              {player.injury && (
+                <span className="truncate max-w-[60px] sm:max-w-[100px] text-[var(--text-secondary)]">{player.injury}</span>
+              )}
               <span className="text-[var(--accent-hot)] font-medium font-value">{player.marketValue}</span>
             </a>
           ))}

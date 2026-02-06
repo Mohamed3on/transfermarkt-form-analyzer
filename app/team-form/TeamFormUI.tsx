@@ -55,13 +55,7 @@ function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: strin
       >
         <ToggleGroupItem
           value="all"
-          className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
-          style={{
-            backgroundColor: selectedLeague === "all" ? "var(--bg-card)" : "transparent",
-            border: selectedLeague === "all" ? "1px solid var(--accent-blue)" : "1px solid var(--border-subtle)",
-            color: selectedLeague === "all" ? "var(--accent-blue)" : "var(--text-muted)",
-            boxShadow: selectedLeague === "all" ? "0 0 12px rgba(88, 166, 255, 0.2)" : "none",
-          }}
+          className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-card)]/50 active:scale-[0.97] data-[state=on]:bg-[var(--bg-card)] data-[state=on]:border-[var(--accent-blue)] data-[state=on]:text-[var(--accent-blue)] data-[state=on]:shadow-[0_0_12px_rgba(88,166,255,0.2)]"
         >
           All Leagues
         </ToggleGroupItem>
@@ -74,13 +68,13 @@ function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: strin
             <ToggleGroupItem
               key={league.code}
               value={league.name}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2"
-              style={{
-                backgroundColor: isSelected ? color : "var(--bg-card)",
-                border: `1px solid ${isSelected ? color : "var(--border-subtle)"}`,
-                color: isSelected ? (league.name === "Ligue 1" ? "#000" : "#fff") : "var(--text-secondary)",
-                boxShadow: isSelected ? `0 0 12px ${color}40` : "none",
-              }}
+              className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] active:scale-[0.97]"
+              style={isSelected ? {
+                backgroundColor: color,
+                borderColor: color,
+                color: league.name === "Ligue 1" ? "#000" : "#fff",
+                boxShadow: `0 0 12px ${color}40`,
+              } : undefined}
             >
               <img src={getLeagueLogoUrl(league.name)} alt="" className="w-4 h-4 object-contain rounded-sm bg-white p-px" />
               {league.name}

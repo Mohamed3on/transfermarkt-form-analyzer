@@ -4,6 +4,7 @@ import { useState, useMemo, useRef } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { PlayerAutocomplete } from "@/components/PlayerAutocomplete";
 import { Card } from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { MinutesValuePlayer } from "@/app/types";
 
 const PROFIL_RE = /\/profil\//;
@@ -386,28 +387,30 @@ export function MinutesValueUI({ initialData: players }: { initialData: MinutesV
                 <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
                   All Players
                 </h2>
-                <div className="flex items-center rounded-lg overflow-hidden ml-2" style={{ border: "1px solid var(--border-subtle)" }}>
+                <ToggleGroup
+                  type="single"
+                  value={sortBy}
+                  onValueChange={(value) => {
+                    if (!value) { setSortAsc((v) => !v); return; }
+                    setSortBy(value as "value" | "minutes" | "games");
+                    setSortAsc(false);
+                  }}
+                  className="ml-2 rounded-lg overflow-hidden"
+                  style={{ border: "1px solid var(--border-subtle)" }}
+                >
                   {(["value", "minutes", "games"] as const).map((key) => (
-                    <button
+                    <ToggleGroupItem
                       key={key}
-                      type="button"
-                      onClick={() => {
-                        if (sortBy === key) setSortAsc((v) => !v);
-                        else { setSortBy(key); setSortAsc(false); }
-                      }}
-                      className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide transition-colors flex items-center gap-1"
-                      style={{
-                        background: sortBy === key ? "var(--bg-elevated)" : "transparent",
-                        color: sortBy === key ? "var(--text-primary)" : "var(--text-muted)",
-                      }}
+                      value={key}
+                      className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-[var(--text-muted)] data-[state=on]:bg-[var(--bg-elevated)] data-[state=on]:text-[var(--text-primary)]"
                     >
                       {key === "value" ? "Value" : key === "minutes" ? "Mins" : "Games"}
                       {sortBy === key && (
-                        <span className="text-[10px]">{sortAsc ? "\u25B2" : "\u25BC"}</span>
+                        <span className="text-[10px]">{sortAsc ? "▲" : "▼"}</span>
                       )}
-                    </button>
+                    </ToggleGroupItem>
                   ))}
-                </div>
+                </ToggleGroup>
               </div>
               <span
                 className="text-sm font-bold px-2.5 py-1 rounded-lg tabular-nums"
