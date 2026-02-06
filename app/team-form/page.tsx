@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getTeamFormData } from "@/lib/team-form";
 import { TeamFormUI } from "./TeamFormUI";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Football Teams Over/Underperforming",
   description:
