@@ -32,7 +32,6 @@ function useProgressiveBatchMinutes(playerIds: string[]) {
     setStats({});
     let cancelled = false;
 
-    // Fire all chunks in parallel
     for (let i = 0; i < playerIds.length; i += CHUNK_SIZE) {
       const chunk = playerIds.slice(i, i + CHUNK_SIZE);
       fetchMinutesBatch(chunk)
@@ -330,13 +329,12 @@ function VirtualPlayerList({ items, target, pendingPlayerIds }: { items: Minutes
   );
 }
 
-export function MinutesValueUI({ initialData, serverHydrated = false }: { initialData: MinutesValuePlayer[]; serverHydrated?: boolean }) {
+export function MinutesValueUI({ initialData }: { initialData: MinutesValuePlayer[] }) {
   const zeroMinuteIds = useMemo(() => {
-    if (serverHydrated) return [];
     const ids: string[] = [];
     for (const p of initialData) if (p.minutes === 0) ids.push(p.playerId);
     return ids;
-  }, [initialData, serverHydrated]);
+  }, [initialData]);
 
   const { stats: batchMinutes, pending } = useProgressiveBatchMinutes(zeroMinuteIds);
   const batchLoading = pending.size > 0;
