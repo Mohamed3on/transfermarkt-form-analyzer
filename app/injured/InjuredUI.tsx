@@ -118,11 +118,11 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
                   href={player.profileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-bold text-sm sm:text-base hover:underline block truncate text-[var(--text-primary)]"
+                  className="font-bold text-sm sm:text-base hover:underline block text-[var(--text-primary)]"
                 >
                   {player.name}
                 </a>
-                <p className="text-xs sm:text-sm truncate text-[var(--text-muted)]">
+                <p className="text-xs sm:text-sm text-[var(--text-muted)]">
                   {player.position}
                 </p>
               </div>
@@ -136,7 +136,7 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
               {player.clubLogoUrl && (
                 <img src={player.clubLogoUrl} alt={player.club} className="w-5 h-5 sm:w-6 sm:h-6 object-contain bg-white rounded p-0.5" />
               )}
-              <span className="text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none text-[var(--text-secondary)]">
+              <span className="text-xs sm:text-sm text-[var(--text-secondary)]">
                 {player.club}
               </span>
               <Badge className={cn("text-[10px] sm:text-xs flex items-center gap-1", leagueStyle.bg, leagueStyle.text)}>
@@ -151,7 +151,7 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                <span className="truncate max-w-[150px] sm:max-w-none">{player.injury}</span>
+                <span>{player.injury}</span>
               </Badge>
               {player.returnDate && (
                 <Badge variant="secondary" className="text-[10px] sm:text-xs">
@@ -191,7 +191,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="font-bold text-sm sm:text-base truncate text-[var(--text-primary)]">
+                <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
                   {team.club}
                 </h3>
                 <Badge className={cn("mt-0.5 text-[10px] sm:text-xs flex items-center gap-1", leagueStyle.bg, leagueStyle.text)}>
@@ -224,9 +224,9 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
               {player.imageUrl && !player.imageUrl.includes("data:image") && (
                 <img src={player.imageUrl} alt={player.name} className="w-4 h-4 sm:w-5 sm:h-5 rounded-full object-cover" />
               )}
-              <span className="truncate max-w-[80px] sm:max-w-[120px] text-[var(--text-primary)]">{player.name}</span>
+              <span className="text-[var(--text-primary)]">{player.name}</span>
               {player.injury && (
-                <span className="truncate max-w-[60px] sm:max-w-[100px] text-[var(--text-secondary)]">{player.injury}</span>
+                <span className="text-[var(--text-secondary)]">{player.injury}</span>
               )}
               <span className="text-[var(--accent-hot)] font-medium font-value">{player.marketValue}</span>
             </a>
@@ -266,7 +266,7 @@ function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; ra
               {player.imageUrl && !player.imageUrl.includes("data:image") && (
                 <img src={player.imageUrl} alt={player.name} className="w-4 h-4 sm:w-5 sm:h-5 rounded-full object-cover" />
               )}
-              <span className="max-w-[80px] sm:max-w-[120px] text-[var(--text-primary)]">{player.name}</span>
+              <span className="text-[var(--text-primary)]">{player.name}</span>
               <span className="text-[var(--text-secondary)]">{player.club}</span>
               <span className="text-[var(--accent-hot)] font-medium font-value">{player.marketValue}</span>
             </a>
