@@ -3,7 +3,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { PlayerAutocomplete } from "@/components/PlayerAutocomplete";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import type { MinutesValuePlayer, PlayerStatsResult } from "@/app/types";
 
@@ -23,12 +22,10 @@ async function fetchMinutesBatch(playerIds: string[]): Promise<Record<string, Pl
 
 function useProgressiveBatchMinutes(playerIds: string[]) {
   const [stats, setStats] = useState<Record<string, PlayerStatsResult>>({});
-  const [pending, setPending] = useState<Set<string>>(new Set());
   const key = useMemo(() => playerIds.join(","), [playerIds]);
 
   useEffect(() => {
     if (playerIds.length === 0) return;
-    setPending(new Set(playerIds));
     setStats({});
     let cancelled = false;
 
@@ -39,21 +36,13 @@ function useProgressiveBatchMinutes(playerIds: string[]) {
           if (cancelled) return;
           setStats((prev) => ({ ...prev, ...result }));
         })
-        .catch(() => {})
-        .finally(() => {
-          if (cancelled) return;
-          setPending((prev) => {
-            const next = new Set(prev);
-            for (const id of chunk) next.delete(id);
-            return next;
-          });
-        });
+        .catch(() => {});
     }
 
     return () => { cancelled = true; };
   }, [key]);
 
-  return { stats, pending };
+  return { stats };
 }
 
 function formatValue(v: number): string {
@@ -178,7 +167,7 @@ function BenchmarkCard({ player }: { player: MinutesValuePlayer }) {
   );
 }
 
-function PlayerCard({ player, target, index, minutesLoading }: { player: MinutesValuePlayer; target?: MinutesValuePlayer; index: number; minutesLoading?: boolean }) {
+function PlayerCard({ player, target, index }: { player: MinutesValuePlayer; target?: MinutesValuePlayer; index: number }) {
   const valueDiff = target ? player.marketValue - target.marketValue : 0;
   const valueDiffDisplay = valueDiff > 0 ? `+${formatValue(valueDiff)}` : formatValue(valueDiff);
   const minsDiff = target ? target.minutes - player.minutes : 0;
@@ -244,18 +233,12 @@ function PlayerCard({ player, target, index, minutesLoading }: { player: Minutes
           </div>
           <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
           <div className="text-right min-w-[4rem]">
-            {minutesLoading ? (
-              <Skeleton className="h-5 w-14 ml-auto" />
-            ) : (
-              <>
-                <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>
-                  {player.minutes.toLocaleString()}&apos;
-                </div>
-                {target && <div className="text-[10px] font-medium tabular-nums" style={{ color: "#ff6b7a" }}>
-                  &minus;{minsDiff.toLocaleString()}&apos;
-                </div>}
-              </>
-            )}
+            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>
+              {player.minutes.toLocaleString()}&apos;
+            </div>
+            {target && <div className="text-[10px] font-medium tabular-nums" style={{ color: "#ff6b7a" }}>
+              &minus;{minsDiff.toLocaleString()}&apos;
+            </div>}
           </div>
           <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
           <div className="flex items-center gap-2.5 text-right">
@@ -283,13 +266,9 @@ function PlayerCard({ player, target, index, minutesLoading }: { player: Minutes
         {/* Mobile metrics */}
         <div className="sm:hidden text-right shrink-0">
           <div className="text-xs font-bold tabular-nums" style={{ color: "#ff6b7a" }}>{player.marketValueDisplay}</div>
-          {minutesLoading ? (
-            <Skeleton className="h-3 w-10 ml-auto mt-0.5" />
-          ) : (
-            <div className="text-[10px] tabular-nums" style={{ color: "var(--accent-blue)" }}>
-              {player.minutes.toLocaleString()}&apos;
-            </div>
-          )}
+          <div className="text-[10px] tabular-nums" style={{ color: "var(--accent-blue)" }}>
+            {player.minutes.toLocaleString()}&apos;
+          </div>
         </div>
       </div>
 
@@ -300,7 +279,7 @@ function PlayerCard({ player, target, index, minutesLoading }: { player: Minutes
 const ROW_HEIGHT = 100;
 const GAP = 12;
 
-function VirtualPlayerList({ items, target, pendingPlayerIds }: { items: MinutesValuePlayer[]; target?: MinutesValuePlayer; pendingPlayerIds?: Set<string> }) {
+function VirtualPlayerList({ items, target }: { items: MinutesValuePlayer[]; target?: MinutesValuePlayer }) {
   const listRef = useRef<HTMLDivElement>(null);
   const virtualizer = useWindowVirtualizer({
     count: items.length,
@@ -321,7 +300,7 @@ function VirtualPlayerList({ items, target, pendingPlayerIds }: { items: Minutes
             className="absolute left-0 w-full"
             style={{ top: virtualRow.start - (virtualizer.options.scrollMargin || 0) }}
           >
-            <PlayerCard player={items[virtualRow.index]} target={target} index={virtualRow.index} minutesLoading={pendingPlayerIds?.has(items[virtualRow.index].playerId)} />
+            <PlayerCard player={items[virtualRow.index]} target={target} index={virtualRow.index} />
           </div>
         ))}
       </div>
@@ -336,8 +315,7 @@ export function MinutesValueUI({ initialData }: { initialData: MinutesValuePlaye
     return ids;
   }, [initialData]);
 
-  const { stats: batchMinutes, pending } = useProgressiveBatchMinutes(zeroMinuteIds);
-  const batchLoading = pending.size > 0;
+  const { stats: batchMinutes } = useProgressiveBatchMinutes(zeroMinuteIds);
 
   const players = useMemo(() => {
     if (Object.keys(batchMinutes).length === 0) return initialData;
@@ -377,11 +355,6 @@ export function MinutesValueUI({ initialData }: { initialData: MinutesValuePlaye
           <p className="text-xs sm:text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
             High-value players getting the fewest minutes
           </p>
-          {batchLoading && (
-            <p className="text-[11px] mt-2 animate-pulse" style={{ color: "var(--accent-blue)" }}>
-              Updating minutes data...
-            </p>
-          )}
         </div>
 
         {/* Search */}
@@ -444,7 +417,7 @@ export function MinutesValueUI({ initialData }: { initialData: MinutesValuePlaye
                   </p>
                 </div>
               ) : (
-                <VirtualPlayerList items={results} target={selected} pendingPlayerIds={pending} />
+                <VirtualPlayerList items={results} target={selected} />
               )}
             </section>
 
@@ -496,7 +469,7 @@ export function MinutesValueUI({ initialData }: { initialData: MinutesValuePlaye
                 {players.length}
               </span>
             </div>
-            <VirtualPlayerList items={sortedPlayers} pendingPlayerIds={pending} />
+            <VirtualPlayerList items={sortedPlayers} />
           </section>
         )}
       </div>
