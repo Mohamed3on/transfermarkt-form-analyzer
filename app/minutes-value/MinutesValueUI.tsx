@@ -330,12 +330,13 @@ function VirtualPlayerList({ items, target, pendingPlayerIds }: { items: Minutes
   );
 }
 
-export function MinutesValueUI({ initialData }: { initialData: MinutesValuePlayer[] }) {
+export function MinutesValueUI({ initialData, serverHydrated = false }: { initialData: MinutesValuePlayer[]; serverHydrated?: boolean }) {
   const zeroMinuteIds = useMemo(() => {
+    if (serverHydrated) return [];
     const ids: string[] = [];
     for (const p of initialData) if (p.minutes === 0) ids.push(p.playerId);
     return ids;
-  }, [initialData]);
+  }, [initialData, serverHydrated]);
 
   const { stats: batchMinutes, pending } = useProgressiveBatchMinutes(zeroMinuteIds);
   const batchLoading = pending.size > 0;

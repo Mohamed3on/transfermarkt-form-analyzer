@@ -13,6 +13,7 @@ export default async function MinutesValuePage() {
   const players = await getMinutesValueData();
 
   // Hydrate zero-minute players from cache (bail after 3s, client handles the rest)
+  let serverHydrated = true;
   const zeroMinute = players.filter((p) => p.minutes === 0);
   if (zeroMinute.length > 0) {
     const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000));
@@ -32,8 +33,10 @@ export default async function MinutesValuePage() {
           }
         }
       });
-    } catch {}
+    } catch {
+      serverHydrated = false;
+    }
   }
 
-  return <MinutesValueUI initialData={players} />;
+  return <MinutesValueUI initialData={players} serverHydrated={serverHydrated} />;
 }
