@@ -10,6 +10,8 @@ Don't run `bun run build` during development - the dev server is already running
 
 Use [shadcn/ui](https://ui.shadcn.com) for all UI components. Install new components with `npx shadcn@latest add <component>`. Never build custom UI primitives when a shadcn component exists.
 
+**No inline styles:** Use Tailwind classes (including `data-[state=on]:`, `hover:`, `active:` variants) instead of `style={{}}`. Inline styles override Tailwind's interactive states.
+
 ## Performance
 
 - **Server-side data fetching:** Always fetch data in async server components and pass as `initialData` props to client components. Never use client-side `useQuery`/`fetch` waterfalls. Use Next.js `loading.tsx` for streaming skeletons while server fetches. See `team-form`, `injured`, `minutes-value` pages for the pattern.
