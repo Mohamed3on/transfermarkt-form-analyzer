@@ -1,12 +1,12 @@
-import { unstable_cache } from "next/cache";
 import * as cheerio from "cheerio";
+import { readFile } from "fs/promises";
+import { join } from "path";
 import type { MinutesValuePlayer } from "@/app/types";
 import { BASE_URL } from "./constants";
 import { fetchPage } from "./fetch";
 import { parseMarketValue } from "./parse-market-value";
 import { getCurrentSeasonId } from "./player-parsing";
 
-const CACHE_REVALIDATE = 259200; // 3 days
 const MV_PAGES = 20;
 const MINUTES_PAGES = 80;
 
@@ -66,82 +66,79 @@ function parseMinutesRow($: cheerio.CheerioAPI, row: any): { playerId: string; m
   return { playerId: playerIdMatch[1], minutes, clubMatches, intlMatches, totalMatches };
 }
 
-export const getMinutesValueData = unstable_cache(
-  async (): Promise<MinutesValuePlayer[]> => {
-    const seasonId = getCurrentSeasonId();
+/** Raw scraper — no caching. Used by the offline refresh script. */
+export async function fetchMinutesValueRaw(): Promise<MinutesValuePlayer[]> {
+  const seasonId = getCurrentSeasonId();
 
-    // Build MV URLs
-    const mvBaseUrl = `${BASE_URL}/spieler-statistik/wertvollstespieler/marktwertetop`;
-    const mvUrls = Array.from({ length: MV_PAGES }, (_, i) => {
-      const page = i + 1;
-      const base = `${mvBaseUrl}?ajax=yw1&altersklasse=alle&ausrichtung=alle&land_id=0&yt0=Show`;
-      return page === 1 ? base : `${base}&page=${page}`;
+  const mvBaseUrl = `${BASE_URL}/spieler-statistik/wertvollstespieler/marktwertetop`;
+  const mvUrls = Array.from({ length: MV_PAGES }, (_, i) => {
+    const page = i + 1;
+    const base = `${mvBaseUrl}?ajax=yw1&altersklasse=alle&ausrichtung=alle&land_id=0&yt0=Show`;
+    return page === 1 ? base : `${base}&page=${page}`;
+  });
+
+  const minutesBaseUrl = `${BASE_URL}/meisteeinsaetze/gesamteinsaetze/statistik/${seasonId}/ajax/yw1/selectedOptionKey/6/land_id/0/saison_id/${seasonId}/altersklasse/alle/plus/1/sort/gesamtminuten.desc`;
+  const minutesUrls = Array.from({ length: MINUTES_PAGES }, (_, i) => {
+    const page = i + 1;
+    return page === 1 ? `${minutesBaseUrl}?ajax=yw1` : `${minutesBaseUrl}/page/${page}?ajax=yw1`;
+  });
+
+  const [mvResults, minutesResults] = await Promise.all([
+    Promise.allSettled(mvUrls.map((url) => fetchPage(url))),
+    Promise.allSettled(minutesUrls.map((url) => fetchPage(url))),
+  ]);
+
+  const mvMap = new Map<string, Partial<MinutesValuePlayer>>();
+  for (const result of mvResults) {
+    if (result.status !== "fulfilled") continue;
+    const $ = cheerio.load(result.value);
+    $("table.items > tbody > tr").each((_, row) => {
+      const player = parseMarketValueRow($, row);
+      if (player?.playerId) mvMap.set(player.playerId, player);
     });
+  }
 
-    // Build Minutes URLs
-    const minutesBaseUrl = `${BASE_URL}/meisteeinsaetze/gesamteinsaetze/statistik/${seasonId}/ajax/yw1/selectedOptionKey/6/land_id/0/saison_id/${seasonId}/altersklasse/alle/plus/1/sort/gesamtminuten.desc`;
-    const minutesUrls = Array.from({ length: MINUTES_PAGES }, (_, i) => {
-      const page = i + 1;
-      return page === 1 ? `${minutesBaseUrl}?ajax=yw1` : `${minutesBaseUrl}/page/${page}?ajax=yw1`;
+  const minutesMap = new Map<string, { minutes: number; clubMatches: number; intlMatches: number; totalMatches: number }>();
+  for (const result of minutesResults) {
+    if (result.status !== "fulfilled") continue;
+    const $ = cheerio.load(result.value);
+    $("table.items > tbody > tr").each((_, row) => {
+      const data = parseMinutesRow($, row);
+      if (data) minutesMap.set(data.playerId, data);
     });
+  }
 
-    // Fetch both in parallel
-    const [mvResults, minutesResults] = await Promise.all([
-      Promise.allSettled(mvUrls.map((url) => fetchPage(url))),
-      Promise.allSettled(minutesUrls.map((url) => fetchPage(url))),
-    ]);
+  const players: MinutesValuePlayer[] = [];
+  for (const [playerId, mv] of mvMap) {
+    const mins = minutesMap.get(playerId);
+    players.push({
+      name: mv.name!,
+      position: mv.position || "",
+      age: mv.age || 0,
+      club: mv.club || "",
+      league: mv.league || "",
+      nationality: mv.nationality || "",
+      marketValue: mv.marketValue || 0,
+      marketValueDisplay: mv.marketValueDisplay || "",
+      minutes: mins?.minutes ?? 0,
+      clubMatches: mins?.clubMatches ?? 0,
+      intlMatches: mins?.intlMatches ?? 0,
+      totalMatches: mins?.totalMatches ?? 0,
+      goals: 0,
+      assists: 0,
+      imageUrl: mv.imageUrl || "",
+      profileUrl: mv.profileUrl || "",
+      playerId,
+    });
+  }
 
-    // Parse MV data
-    const mvMap = new Map<string, Partial<MinutesValuePlayer>>();
-    for (const result of mvResults) {
-      if (result.status !== "fulfilled") continue;
-      const $ = cheerio.load(result.value);
-      $("table.items > tbody > tr").each((_, row) => {
-        const player = parseMarketValueRow($, row);
-        if (player?.playerId) mvMap.set(player.playerId, player);
-      });
-    }
+  players.sort((a, b) => b.marketValue - a.marketValue);
+  return players;
+}
 
-    // Parse minutes data
-    const minutesMap = new Map<string, { minutes: number; clubMatches: number; intlMatches: number; totalMatches: number }>();
-    for (const result of minutesResults) {
-      if (result.status !== "fulfilled") continue;
-      const $ = cheerio.load(result.value);
-      $("table.items > tbody > tr").each((_, row) => {
-        const data = parseMinutesRow($, row);
-        if (data) minutesMap.set(data.playerId, data);
-      });
-    }
-
-    // Merge: start from MV list, attach minutes (default 0 if not in minutes list)
-    const players: MinutesValuePlayer[] = [];
-    for (const [playerId, mv] of mvMap) {
-      const mins = minutesMap.get(playerId);
-      players.push({
-        name: mv.name!,
-        position: mv.position || "",
-        age: mv.age || 0,
-        club: mv.club || "",
-        league: mv.league || "",
-        nationality: mv.nationality || "",
-        marketValue: mv.marketValue || 0,
-        marketValueDisplay: mv.marketValueDisplay || "",
-        minutes: mins?.minutes ?? 0,
-        clubMatches: mins?.clubMatches ?? 0,
-        intlMatches: mins?.intlMatches ?? 0,
-        totalMatches: mins?.totalMatches ?? 0,
-        goals: 0,
-        assists: 0,
-        imageUrl: mv.imageUrl || "",
-        profileUrl: mv.profileUrl || "",
-        playerId,
-      });
-    }
-
-    // Sort by market value descending
-    players.sort((a, b) => b.marketValue - a.marketValue);
-    return players;
-  },
-  ["minutes-value"],
-  { revalidate: CACHE_REVALIDATE, tags: ["minutes-value"] }
-);
+/** Reads pre-built JSON data committed to the repo. */
+export async function getMinutesValueData(): Promise<MinutesValuePlayer[]> {
+  const filePath = join(process.cwd(), "data", "minutes-value.json");
+  const raw = await readFile(filePath, "utf-8");
+  return JSON.parse(raw) as MinutesValuePlayer[];
+}

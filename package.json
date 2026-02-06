@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "refresh:minutes-value": "bun run scripts/refresh-minutes-value.ts"
   },
   "dependencies": {
     "@radix-ui/react-collapsible": "^1.1.12",
