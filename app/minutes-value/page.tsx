@@ -15,13 +15,15 @@ export default async function MinutesValuePage() {
   const players = await getMinutesValueData();
 
   const zeroMinute = players.filter((p) => p.minutes === 0);
-  if (zeroMinute.length > 0) {
+  const CONCURRENCY = 25;
+  for (let i = 0; i < zeroMinute.length; i += CONCURRENCY) {
+    const batch = zeroMinute.slice(i, i + CONCURRENCY);
     const results = await Promise.allSettled(
-      zeroMinute.map((p) => fetchPlayerMinutes(p.playerId))
+      batch.map((p) => fetchPlayerMinutes(p.playerId))
     );
-    zeroMinute.forEach((p, i) => {
-      if (results[i].status === "fulfilled" && results[i].value.minutes > 0) {
-        const s = results[i].value;
+    batch.forEach((p, j) => {
+      if (results[j].status === "fulfilled" && results[j].value.minutes > 0) {
+        const s = results[j].value;
         p.minutes = s.minutes;
         p.totalMatches = s.appearances || p.totalMatches;
         p.goals = s.goals;
