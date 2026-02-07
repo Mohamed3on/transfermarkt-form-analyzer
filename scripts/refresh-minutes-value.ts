@@ -4,7 +4,7 @@ import { fetchMinutesValueRaw } from "@/lib/fetch-minutes-value";
 import { fetchPlayerMinutesRaw } from "@/lib/fetch-player-minutes";
 import type { PlayerStatsResult } from "@/app/types";
 
-const CONCURRENCY = 5;
+const CONCURRENCY = 10;
 const BATCH_DELAY_MS = 2000;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
