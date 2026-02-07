@@ -136,7 +136,7 @@ function MatchedTeamsSection({ teams, type }: { teams: QualifiedTeam[]; type: "t
         >
           {isTop ? "↑" : "↓"}
         </span>
-        {isTop ? "Top Signal Cluster" : "Bottom Signal Cluster"}
+        {isTop ? "Best Form" : "Worst Form"}
       </h3>
       <div className="space-y-2 sm:space-y-3">
         {teams.map((t, index) => (
@@ -186,7 +186,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
             borderColor: "var(--accent-hot)",
           } : undefined}
         >
-          {period.hasMatch ? "✓ Strong Signal" : "No Strong Signal"}
+          {period.hasMatch ? "✓ Clear Standouts" : "No Clear Standouts"}
         </Badge>
       </div>
 
@@ -204,7 +204,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
               className="text-sm font-semibold mb-3 flex items-center gap-2"
               style={{ color: "var(--accent-hot)" }}
             >
-              <span>↑</span> Met 2+ Signal Metrics ({period.topTeams.length})
+              <span>↑</span> Leading 2+ Categories ({period.topTeams.length})
             </h4>
             <div className="space-y-2">
               {period.topTeams.map((t) => (
@@ -215,7 +215,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
         ) : (
           <Card className="h-full p-4 text-center bg-[var(--bg-elevated)] flex items-center justify-center">
             <p style={{ color: "var(--text-muted)" }} className="text-sm">
-              No team led at least 2 top-side metrics in this window
+              No team leads 2+ categories in this window
             </p>
           </Card>
         )}
@@ -226,7 +226,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
               className="text-sm font-semibold mb-3 flex items-center gap-2"
               style={{ color: "var(--accent-cold)" }}
             >
-              <span>↓</span> Met 2+ Signal Metrics ({period.bottomTeams.length})
+              <span>↓</span> Trailing 2+ Categories ({period.bottomTeams.length})
             </h4>
             <div className="space-y-2">
               {period.bottomTeams.map((t) => (
@@ -237,7 +237,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
         ) : (
           <Card className="h-full p-4 text-center bg-[var(--bg-elevated)] flex items-center justify-center">
             <p style={{ color: "var(--text-muted)" }} className="text-sm">
-              No team led at least 2 bottom-side metrics in this window
+              No team trails 2+ categories in this window
             </p>
           </Card>
         )}
@@ -281,7 +281,7 @@ function LeaderCard({
           className="w-2 h-2 rounded-full"
           style={{ background: accentColor, boxShadow: `0 0 8px ${accentColor}` }}
         />
-        {isTop ? "Top Leaders" : "Bottom Leaders"}
+        {isTop ? "Best In Class" : "Worst In Class"}
       </h4>
       <div className="space-y-1.5 sm:space-y-2">
         {rows.map((row) => (
@@ -329,11 +329,12 @@ export function AnalyzerUI() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-black mb-2" style={{ color: "var(--text-primary)" }}>
-            Form Signals
+            Recent Form
           </h1>
           <p className="text-sm sm:text-base max-w-3xl" style={{ color: "var(--text-muted)" }}>
-            We scan 5, 10, 15, and 20-match windows across Europe&apos;s top leagues. A team is flagged when it leads at
-            least 2 metrics in the same window: points, goal difference, goals scored, or goals conceded.
+            Who&apos;s hot and who&apos;s not across Europe&apos;s top 5 leagues. We compare the last 5, 10, 15, and 20
+            matches and highlight teams that lead (or trail) in at least 2 of: points, goal difference, goals scored,
+            goals conceded.
           </p>
         </div>
 
@@ -411,17 +412,17 @@ export function AnalyzerUI() {
                         className="text-xl sm:text-2xl font-bold"
                         style={{ color: "var(--text-primary)" }}
                       >
-                        Strong Signal Found
+                        Clear Pattern Found
                       </h2>
                       <p className="text-sm sm:text-base" style={{ color: "var(--text-secondary)" }}>
-                        In the last{" "}
+                        Over the last{" "}
                         <span
                           className="font-bold"
                           style={{ color: "var(--accent-hot)" }}
                         >
                           {data.analysis.find((p) => p.hasMatch)?.period}
                         </span>{" "}
-                        matches, both top and bottom clusters are clear.
+                        matches, there are clear standouts at the top and bottom.
                       </p>
                     </div>
                   </div>
@@ -448,10 +449,10 @@ export function AnalyzerUI() {
                   className="text-lg sm:text-xl font-bold mb-2"
                   style={{ color: "var(--accent-cold)" }}
                 >
-                  No Balanced Window Found
+                  No Clear Pattern
                 </h2>
                 <p className="text-sm sm:text-base" style={{ color: "var(--text-secondary)" }}>
-                  None of the 5/10/15/20-match windows produced both a clear top and clear bottom signal cluster.
+                  No match window has clear standouts at both the top and bottom right now.
                 </p>
               </Card>
             )}
@@ -466,10 +467,10 @@ export function AnalyzerUI() {
                   className="w-1 h-6 rounded-full"
                   style={{ background: "var(--accent-blue)" }}
                 />
-                Window-by-Window Breakdown
+                By Match Window
               </h2>
               <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-                Read each window independently. Teams shown below are only those that led at least 2 metrics.
+                Each window is independent. Only teams leading or trailing 2+ categories are shown.
               </p>
               <div className="space-y-4">
                 {data.analysis.map((period, index) => (

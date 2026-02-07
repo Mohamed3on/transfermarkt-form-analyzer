@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { AnalyzerUI } from "@/app/components/AnalyzerUI";
 
 export const metadata: Metadata = {
-  title: "Recent Form Signals",
+  title: "Recent Form",
   description:
-    "Identify best and worst recent form across Europe's top 5 leagues. Teams are flagged when they lead at least 2 metrics in the same match window.",
+    "Who's hot and who's not across Europe's top 5 leagues. Compare form over 5, 10, 15, and 20 match windows.",
 };
 
 export default function FormSignalsPage() {

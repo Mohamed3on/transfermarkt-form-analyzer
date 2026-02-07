@@ -184,31 +184,18 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
         className="text-[10px] sm:text-xs mt-3 sm:mt-4 flex flex-wrap gap-2 sm:gap-4"
         style={{ color: "var(--text-muted)" }}
       >
-        <span>
-          <span className="font-bold" style={{ color: "var(--text-secondary)" }}>
-            {team.stats.points}
-          </span>{" "}
-          Points
+        <span style={team.criteria.includes("Most Points") || team.criteria.includes("Least Points") ? { color: accentColor, fontWeight: 700 } : undefined}>
+          {team.stats.points} Points
         </span>
-        <span>
-          Goal Diff:{" "}
-          <span
-            className="font-bold"
-            style={{
-              color:
-                team.stats.goalDiff > 0
-                  ? "var(--accent-hot)"
-                  : team.stats.goalDiff < 0
-                  ? "var(--accent-cold)"
-                  : "var(--text-secondary)",
-            }}
-          >
-            {team.stats.goalDiff > 0 ? "+" : ""}
-            {team.stats.goalDiff}
-          </span>
+        <span style={team.criteria.includes("Best GD") || team.criteria.includes("Worst GD") ? { color: accentColor, fontWeight: 700 } : undefined}>
+          GD: {team.stats.goalDiff > 0 ? "+" : ""}{team.stats.goalDiff}
         </span>
-        <span>Goals For: {team.stats.goalsScored}</span>
-        <span>Goals Against: {team.stats.goalsConceded}</span>
+        <span style={team.criteria.includes("Most Goals") || team.criteria.includes("Least Goals") ? { color: accentColor, fontWeight: 700 } : undefined}>
+          GF: {team.stats.goalsScored}
+        </span>
+        <span style={team.criteria.includes("Best Defense") || team.criteria.includes("Worst Defense") ? { color: accentColor, fontWeight: 700 } : undefined}>
+          GA: {team.stats.goalsConceded}
+        </span>
       </div>
 
       {/* Manager info */}

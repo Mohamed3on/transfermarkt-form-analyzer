@@ -17,12 +17,12 @@ export const metadata: Metadata = {
 
 const pages = [
   {
-    title: "Recent Form Signals",
+    title: "Recent Form",
     href: "/form-signals",
     tag: "FORM",
     description:
-      "Clubs with the strongest and weakest recent form across 5, 10, 15, and 20-match windows.",
-    detail: "Spot momentum shifts before the market does.",
+      "Who's hot and who's not. Compare form over 5, 10, 15, and 20-match windows across all leagues.",
+    detail: "Spot momentum shifts before the table does.",
     icon: Activity,
     accentVar: "--accent-hot",
     glowVar: "--accent-hot-glow",
