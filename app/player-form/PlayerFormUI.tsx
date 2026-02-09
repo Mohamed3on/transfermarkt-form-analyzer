@@ -6,6 +6,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { PlayerAutocomplete } from "@/components/PlayerAutocomplete";
 import { SelectNative } from "@/components/ui/select-native";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getLeagueLogoUrl } from "@/lib/leagues";
 
 interface PlayerStats {
@@ -29,6 +31,7 @@ interface PlayerStats {
 interface PlayerFormResult {
   targetPlayer: PlayerStats;
   underperformers: PlayerStats[];
+  outperformers: PlayerStats[];
   totalPlayers: number;
   error?: string;
   searchedName?: string;
@@ -405,6 +408,154 @@ function UnderperformerCard({
   );
 }
 
+function OutperformerCard({
+  player,
+  targetPlayer,
+  index = 0,
+}: {
+  player: PlayerStats;
+  targetPlayer: PlayerStats;
+  index?: number;
+}) {
+  const valueSaved = targetPlayer.marketValue - player.marketValue;
+  const valueSavedDisplay = valueSaved >= 1_000_000
+    ? `€${(valueSaved / 1_000_000).toFixed(1)}m less`
+    : valueSaved > 0
+    ? `€${(valueSaved / 1_000).toFixed(0)}k less`
+    : "Same value";
+  const pointsMore = player.points - targetPlayer.points;
+
+  return (
+    <div
+      className="group rounded-xl p-3 sm:p-4 animate-slide-up hover-lift"
+      style={{
+        background: "linear-gradient(135deg, rgba(0, 255, 135, 0.06) 0%, var(--bg-card) 100%)",
+        border: "1px solid rgba(0, 255, 135, 0.15)",
+        animationDelay: `${Math.min(index * 0.03, 0.3)}s`,
+      }}
+    >
+      <div className="flex items-center gap-3 sm:gap-4">
+        {/* Rank indicator */}
+        <div
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold shrink-0"
+          style={{
+            background: "rgba(0, 255, 135, 0.15)",
+            color: "#00ff87",
+          }}
+        >
+          {index + 1}
+        </div>
+
+        {/* Player image */}
+        <div className="relative shrink-0">
+          {player.imageUrl ? (
+            <img
+              src={player.imageUrl}
+              alt={player.name}
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover"
+              style={{
+                background: "var(--bg-elevated)",
+                border: "1px solid rgba(0, 255, 135, 0.2)",
+              }}
+            />
+          ) : (
+            <div
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-base sm:text-lg font-bold"
+              style={{
+                background: "var(--bg-elevated)",
+                color: "var(--text-muted)",
+                border: "1px solid var(--border-subtle)",
+              }}
+            >
+              {player.name.charAt(0)}
+            </div>
+          )}
+        </div>
+
+        {/* Player info */}
+        <div className="flex-1 min-w-0">
+          <a
+            href={`https://www.transfermarkt.com${player.profileUrl}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-sm sm:text-base hover:underline block truncate transition-colors"
+            style={{ color: "var(--text-primary)" }}
+          >
+            {player.name}
+          </a>
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mt-0.5 flex-wrap" style={{ color: "var(--text-muted)" }}>
+            <span>{player.position}</span>
+            <span style={{ opacity: 0.4 }}>•</span>
+            <span className="truncate max-w-[100px] sm:max-w-none">{player.club}</span>
+            <span className="hidden sm:inline" style={{ opacity: 0.4 }}>•</span>
+            <span className="hidden sm:inline">{player.age}y</span>
+          </div>
+        </div>
+
+        {/* Comparison metrics - desktop */}
+        <div className="hidden sm:flex items-center gap-3 shrink-0">
+          <div className="text-right">
+            <div className="text-sm font-bold tabular-nums" style={{ color: "#00ff87" }}>
+              {player.marketValueDisplay}
+            </div>
+            <div
+              className="text-[10px] font-medium tabular-nums"
+              style={{ color: "rgba(0, 255, 135, 0.7)" }}
+            >
+              {valueSavedDisplay}
+            </div>
+          </div>
+
+          <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
+
+          <div className="text-right min-w-[3rem]">
+            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
+              {player.points} pts
+            </div>
+            <div
+              className="text-[10px] font-medium tabular-nums"
+              style={{ color: "#00ff87" }}
+            >
+              +{pointsMore}
+            </div>
+          </div>
+
+          <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
+
+          <div className="min-w-[4.5rem]">
+            <MinutesDisplay minutes={player.minutes} />
+          </div>
+        </div>
+
+        {/* Mobile: compact metrics */}
+        <div className="sm:hidden text-right shrink-0">
+          <div className="text-xs font-bold tabular-nums" style={{ color: "#00ff87" }}>
+            {player.marketValueDisplay}
+          </div>
+          <div className="text-[10px] tabular-nums" style={{ color: "var(--text-primary)" }}>
+            {player.points} pts
+          </div>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="flex items-center gap-2 sm:gap-3 mt-2 sm:mt-3 pt-2 sm:pt-3 text-[10px] sm:text-xs" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.goals}G</span>
+        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.assists}A</span>
+        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.matches} apps</span>
+        <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
+        <div className="sm:hidden ml-auto">
+          <MinutesDisplay minutes={player.minutes} />
+        </div>
+        <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+          {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
+          {player.league}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function SearchSkeleton() {
   return (
     <div className="space-y-6 animate-fade-in">
@@ -718,6 +869,183 @@ function UnderperformersSection({
   );
 }
 
+function ScorerRow({
+  player,
+  rank,
+}: {
+  player: PlayerStats;
+  rank: number;
+}) {
+  return (
+    <div
+      className="flex items-center gap-3 sm:gap-4 py-2.5 sm:py-3 px-3 sm:px-4 transition-colors hover:bg-[var(--bg-card-hover)]"
+      style={{ borderBottom: "1px solid var(--border-subtle)" }}
+    >
+      <span
+        className="w-6 text-center text-xs font-bold tabular-nums shrink-0"
+        style={{ color: rank <= 3 ? "#ffd700" : "var(--text-muted)" }}
+      >
+        {rank}
+      </span>
+
+      {player.imageUrl ? (
+        <img
+          src={player.imageUrl}
+          alt={player.name}
+          className="w-8 h-8 rounded-md object-cover shrink-0"
+          style={{ background: "var(--bg-elevated)" }}
+        />
+      ) : (
+        <div
+          className="w-8 h-8 rounded-md flex items-center justify-center text-sm font-bold shrink-0"
+          style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}
+        >
+          {player.name.charAt(0)}
+        </div>
+      )}
+
+      <div className="flex-1 min-w-0">
+        <a
+          href={`https://www.transfermarkt.com${player.profileUrl}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-sm hover:underline truncate block"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {player.name}
+        </a>
+        <div className="text-[10px] truncate" style={{ color: "var(--text-muted)" }}>
+          {player.position} · {player.club}
+        </div>
+      </div>
+
+      {/* Desktop stats */}
+      <div className="hidden sm:flex items-center gap-4 shrink-0 text-sm tabular-nums">
+        <span style={{ color: "var(--text-secondary)" }}>{player.goals}G</span>
+        <span style={{ color: "var(--text-secondary)" }}>{player.assists}A</span>
+        <span className="font-bold min-w-[3rem] text-right" style={{ color: "#00ff87" }}>
+          {player.points} pts
+        </span>
+        <span className="min-w-[4rem] text-right" style={{ color: "var(--accent-blue)" }}>
+          {player.minutes?.toLocaleString() || "—"}&apos;
+        </span>
+        <span className="min-w-[4rem] text-right font-medium" style={{ color: "var(--text-secondary)" }}>
+          {player.marketValueDisplay}
+        </span>
+      </div>
+
+      {/* Mobile stats */}
+      <div className="sm:hidden text-right shrink-0">
+        <div className="text-xs font-bold tabular-nums" style={{ color: "#00ff87" }}>
+          {player.points} pts
+        </div>
+        <div className="text-[10px] tabular-nums" style={{ color: "var(--text-muted)" }}>
+          {player.minutes?.toLocaleString() || "—"}&apos; · {player.marketValueDisplay}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type ScorerSortKey = "points" | "minutes";
+type ScorerPositionFilter = "all" | "forward" | "cf" | "midfielder";
+
+const SCORER_POSITION_MAP: Record<string, string[]> = {
+  forward: ["Centre-Forward", "Left Winger", "Right Winger", "Second Striker"],
+  cf: ["Centre-Forward"],
+  midfielder: ["Central Midfield", "Attacking Midfield", "Defensive Midfield"],
+};
+
+function ScorersSection({
+  players,
+  isLoading,
+}: {
+  players: PlayerStats[];
+  isLoading: boolean;
+}) {
+  const [sortBy, setSortBy] = useState<ScorerSortKey>("points");
+  const [posFilter, setPosFilter] = useState<ScorerPositionFilter>("all");
+
+  const filtered = useMemo(() => {
+    let list = players;
+    if (posFilter !== "all") {
+      const positions = SCORER_POSITION_MAP[posFilter] || [];
+      list = list.filter((p) => positions.some((pos) => p.position === pos));
+    }
+    const sorted = [...list].sort((a, b) => {
+      if (sortBy === "points") return b.points - a.points || (b.minutes || 0) - (a.minutes || 0);
+      return (b.minutes || 0) - (a.minutes || 0) || b.points - a.points;
+    });
+    return sorted.slice(0, 50);
+  }, [players, sortBy, posFilter]);
+
+  if (isLoading) return <DiscoverySkeleton />;
+
+  return (
+    <div className="space-y-4">
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+        <ToggleGroup
+          type="single"
+          value={posFilter}
+          onValueChange={(v) => v && setPosFilter(v as ScorerPositionFilter)}
+          size="sm"
+          className="flex-wrap"
+        >
+          <ToggleGroupItem value="all" className="rounded-lg px-3">All</ToggleGroupItem>
+          <ToggleGroupItem value="forward" className="rounded-lg px-3">Forwards</ToggleGroupItem>
+          <ToggleGroupItem value="cf" className="rounded-lg px-3">CF</ToggleGroupItem>
+          <ToggleGroupItem value="midfielder" className="rounded-lg px-3">Midfielders</ToggleGroupItem>
+        </ToggleGroup>
+
+        <ToggleGroup
+          type="single"
+          value={sortBy}
+          onValueChange={(v) => v && setSortBy(v as ScorerSortKey)}
+          size="sm"
+        >
+          <ToggleGroupItem value="points" className="rounded-lg px-3">
+            <svg className="w-3 h-3 mr-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            Points
+          </ToggleGroupItem>
+          <ToggleGroupItem value="minutes" className="rounded-lg px-3">
+            <svg className="w-3 h-3 mr-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Minutes
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
+      {/* Scorer list */}
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
+      >
+        {filtered.map((player, i) => (
+          <ScorerRow key={player.playerId} player={player} rank={i + 1} />
+        ))}
+        {filtered.length === 0 && (
+          <div
+            className="p-8 text-center"
+            style={{ color: "var(--text-muted)" }}
+          >
+            No players found for this position
+          </div>
+        )}
+      </div>
+
+      {filtered.length > 0 && (
+        <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
+          Showing top {filtered.length} by {sortBy === "points" ? "goal contributions" : "minutes played"}
+        </p>
+      )}
+    </div>
+  );
+}
+
 const DISCOVERY_POSITIONS = [
   { key: "forward", title: "All Forwards" },
   { key: "cf", title: "Centre-Forwards" },
@@ -753,6 +1081,13 @@ export function PlayerFormUI() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // All players for scorer leaderboard
+  const { data: allPlayersData, isLoading: allPlayersLoading } = useQuery({
+    queryKey: ["all-players-scorers"],
+    queryFn: ({ signal }) => fetchPlayers("all", signal),
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch both positions in parallel for discovery view
   const discoveryQueries = useQueries({
     queries: DISCOVERY_POSITIONS.map((pos) => ({
@@ -782,6 +1117,14 @@ export function PlayerFormUI() {
     );
   }, [data?.underperformers, targetMinutes]);
 
+  const filteredOutperformers = useMemo(() => {
+    if (!data?.outperformers) return [];
+    if (targetMinutes === undefined) return data.outperformers;
+    return data.outperformers.filter((p) =>
+      p.minutes === undefined || p.minutes <= targetMinutes
+    );
+  }, [data?.outperformers, targetMinutes]);
+
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
@@ -791,10 +1134,10 @@ export function PlayerFormUI() {
             className="text-lg sm:text-xl font-bold"
             style={{ color: "var(--text-primary)" }}
           >
-            Player <span style={{ color: "#ff6b7a" }}>Flops</span>
+            Player <span style={{ color: "var(--accent-blue)" }}>Output</span> vs Value
           </h2>
           <p className="text-xs sm:text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Expensive players underdelivering on goals &amp; assists
+            Overpriced flops and hidden gems across top European leagues
           </p>
         </div>
         {/* Search Form */}
@@ -874,10 +1217,10 @@ export function PlayerFormUI() {
           </div>
         )}
 
-        {/* Results */}
+        {/* Search Results */}
         {hasResults && (
-          <div className="space-y-8">
-            {/* Target Player */}
+          <div className="space-y-6">
+            {/* Benchmark Player */}
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <div
@@ -894,61 +1237,64 @@ export function PlayerFormUI() {
               />
             </section>
 
-            {/* Underperformers */}
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-1 h-5 rounded-full"
-                    style={{ background: "#ff4757" }}
-                  />
-                  <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "#ff6b7a" }}>
-                    Overpriced &amp; Underperforming
-                  </h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  {data.underperformers.length !== filteredUnderperformers.length && (
-                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      {data.underperformers.length - filteredUnderperformers.length} filtered
-                    </span>
-                  )}
+            {/* Tabs: Overpriced / Better Value */}
+            <Tabs defaultValue="overpriced">
+              <TabsList className="w-full">
+                <TabsTrigger value="overpriced" className="flex-1 gap-2">
+                  Overpriced
                   <span
-                    className="text-sm font-bold px-2.5 py-1 rounded-lg tabular-nums"
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums"
                     style={{ background: "rgba(255, 71, 87, 0.15)", color: "#ff6b7a" }}
                   >
                     {filteredUnderperformers.length}
                   </span>
-                </div>
-              </div>
+                </TabsTrigger>
+                <TabsTrigger value="better-value" className="flex-1 gap-2">
+                  Better Value
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums"
+                    style={{ background: "rgba(0, 255, 135, 0.15)", color: "#00ff87" }}
+                  >
+                    {filteredOutperformers.length}
+                  </span>
+                </TabsTrigger>
+              </TabsList>
 
-              {filteredUnderperformers.length === 0 ? (
-                <div
-                  className="rounded-xl p-6 sm:p-8 animate-fade-in"
-                  style={{ background: "rgba(255, 71, 87, 0.06)", border: "1px solid rgba(255, 71, 87, 0.2)" }}
-                >
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: "rgba(255, 71, 87, 0.15)" }}
-                    >
-                      <svg className="w-5 h-5" style={{ color: "#ff6b7a" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-base" style={{ color: "#ff6b7a" }}>
-                        {data.targetPlayer.name} is the biggest underperformer
-                      </p>
-                      <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                        Every player worth {data.targetPlayer.marketValueDisplay} or more has better goal contributions.
-                        At {data.targetPlayer.points} points and {data.targetPlayer.marketValueDisplay}, {data.targetPlayer.name} has the worst output relative to their price tag.
-                      </p>
+              {/* Overpriced Tab */}
+              <TabsContent value="overpriced">
+                {filteredUnderperformers.length === 0 ? (
+                  <div
+                    className="rounded-xl p-6 sm:p-8 animate-fade-in"
+                    style={{ background: "rgba(255, 71, 87, 0.06)", border: "1px solid rgba(255, 71, 87, 0.2)" }}
+                  >
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: "rgba(255, 71, 87, 0.15)" }}
+                      >
+                        <svg className="w-5 h-5" style={{ color: "#ff6b7a" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-base" style={{ color: "#ff6b7a" }}>
+                          {data.targetPlayer.name} is the biggest underperformer
+                        </p>
+                        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+                          Every player worth {data.targetPlayer.marketValueDisplay} or more has better goal contributions.
+                          At {data.targetPlayer.points} points and {data.targetPlayer.marketValueDisplay}, {data.targetPlayer.name} has the worst output relative to their price tag.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filteredUnderperformers.map((player, index) => (
+                ) : (
+                  <div className="space-y-3">
+                    {data.underperformers.length !== filteredUnderperformers.length && (
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {data.underperformers.length - filteredUnderperformers.length} players filtered (fewer minutes than benchmark)
+                      </p>
+                    )}
+                    {filteredUnderperformers.map((player, index) => (
                       <UnderperformerCard
                         key={player.playerId}
                         player={player}
@@ -956,10 +1302,57 @@ export function PlayerFormUI() {
                         minutes={player.minutes}
                         index={index}
                       />
-                  ))}
-                </div>
-              )}
-            </section>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Better Value Tab */}
+              <TabsContent value="better-value">
+                {filteredOutperformers.length === 0 ? (
+                  <div
+                    className="rounded-xl p-6 sm:p-8 animate-fade-in"
+                    style={{ background: "rgba(0, 255, 135, 0.06)", border: "1px solid rgba(0, 255, 135, 0.2)" }}
+                  >
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: "rgba(0, 255, 135, 0.15)" }}
+                      >
+                        <svg className="w-5 h-5" style={{ color: "#00ff87" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-base" style={{ color: "#00ff87" }}>
+                          {data.targetPlayer.name} is a top performer for their price
+                        </p>
+                        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+                          No cheaper player with fewer minutes has produced more goal contributions.
+                          At {data.targetPlayer.points} points for {data.targetPlayer.marketValueDisplay}, {data.targetPlayer.name} offers excellent value.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {data.outperformers.length !== filteredOutperformers.length && (
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {data.outperformers.length - filteredOutperformers.length} players filtered (more minutes than benchmark)
+                      </p>
+                    )}
+                    {filteredOutperformers.map((player, index) => (
+                      <OutperformerCard
+                        key={player.playerId}
+                        player={player}
+                        targetPlayer={data.targetPlayer}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
 
             {/* Footer */}
             <div
@@ -973,17 +1366,37 @@ export function PlayerFormUI() {
 
         {/* Default Discovery View */}
         {!isLoading && !data && (
-          <div className="space-y-10">
-            {DISCOVERY_POSITIONS.map((pos, idx) => (
-              <UnderperformersSection
-                key={pos.key}
-                title={pos.title}
-                candidates={discoveryQueries[idx]?.data?.underperformers || []}
-                isLoading={discoveryQueries[idx]?.isLoading ?? true}
-                error={discoveryQueries[idx]?.error ?? null}
+          <Tabs defaultValue="underperformers">
+            <TabsList className="w-full mb-2">
+              <TabsTrigger value="underperformers" className="flex-1">
+                Underperformers
+              </TabsTrigger>
+              <TabsTrigger value="scorers" className="flex-1">
+                Top Scorers
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="underperformers">
+              <div className="space-y-10">
+                {DISCOVERY_POSITIONS.map((pos, idx) => (
+                  <UnderperformersSection
+                    key={pos.key}
+                    title={pos.title}
+                    candidates={discoveryQueries[idx]?.data?.underperformers || []}
+                    isLoading={discoveryQueries[idx]?.isLoading ?? true}
+                    error={discoveryQueries[idx]?.error ?? null}
+                  />
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="scorers">
+              <ScorersSection
+                players={allPlayersData || []}
+                isLoading={allPlayersLoading}
               />
-            ))}
-          </div>
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </main>

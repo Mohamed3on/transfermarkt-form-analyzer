@@ -33,6 +33,15 @@ function findUnderperformers(players: PlayerStats[], target: PlayerStats): Playe
   );
 }
 
+function findOutperformers(players: PlayerStats[], target: PlayerStats): PlayerStats[] {
+  return players.filter(
+    (p) =>
+      p.name !== target.name &&
+      p.marketValue <= target.marketValue &&
+      p.points > target.points
+  );
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const playerName = searchParams.get("name");
@@ -60,10 +69,13 @@ export async function GET(request: Request) {
     }
 
     const underperformers = findUnderperformers(allPlayers, targetPlayer);
+    const outperformers = findOutperformers(allPlayers, targetPlayer)
+      .sort((a, b) => b.points - a.points || a.marketValue - b.marketValue);
 
     return NextResponse.json({
       targetPlayer,
       underperformers,
+      outperformers,
       totalPlayers: allPlayers.length,
     });
   } catch (error) {
