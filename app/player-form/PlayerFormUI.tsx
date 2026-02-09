@@ -2,7 +2,7 @@
 
 import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PlayerAutocomplete } from "@/components/PlayerAutocomplete";
@@ -1000,13 +1000,13 @@ function ScorersSection({
     return sorted;
   }, [players, sortBy, top5Only, newSigningsOnly, leagueFilter, clubFilter]);
 
-  const parentRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  const virtualizer = useVirtualizer({
+  const virtualizer = useWindowVirtualizer({
     count: filtered.length,
-    getScrollElement: () => parentRef.current,
     estimateSize: () => 60,
-    overscan: 20,
+    overscan: 10,
+    scrollMargin: listRef.current?.offsetTop ?? 0,
   });
 
   if (isLoading) return <DiscoverySkeleton />;
@@ -1090,30 +1090,20 @@ function ScorersSection({
       </div>
 
       {/* Scorer list */}
-      <div
-        ref={parentRef}
-        className="rounded-xl overflow-y-auto"
-        style={{
-          background: "var(--bg-card)",
-          border: "1px solid var(--border-subtle)",
-          maxHeight: "70vh",
-        }}
-      >
-        {filtered.length === 0 ? (
-          <div
-            className="p-8 text-center"
-            style={{ color: "var(--text-muted)" }}
-          >
-            No players found for this filter combination
-          </div>
-        ) : (
-          <div
-            style={{
-              height: `${virtualizer.getTotalSize()}px`,
-              width: "100%",
-              position: "relative",
-            }}
-          >
+      {filtered.length === 0 ? (
+        <div
+          className="rounded-xl p-8 text-center"
+          style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", color: "var(--text-muted)" }}
+        >
+          No players found for this filter combination
+        </div>
+      ) : (
+        <div
+          ref={listRef}
+          className="rounded-xl overflow-hidden"
+          style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
+        >
+          <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
             {virtualizer.getVirtualItems().map((virtualRow) => {
               const player = filtered[virtualRow.index];
               return (
@@ -1121,21 +1111,16 @@ function ScorersSection({
                   key={player.playerId}
                   data-index={virtualRow.index}
                   ref={virtualizer.measureElement}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
+                  className="absolute left-0 w-full"
+                  style={{ top: virtualRow.start - (virtualizer.options.scrollMargin || 0) }}
                 >
                   <ScorerRow player={player} rank={virtualRow.index + 1} />
                 </div>
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {filtered.length > 0 && (
         <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
