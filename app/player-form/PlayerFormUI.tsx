@@ -948,13 +948,15 @@ function ScorerRow({
 }
 
 type ScorerSortKey = "points" | "minutes";
-type ScorerPositionFilter = "all" | "forward" | "cf" | "midfielder";
+type ScorerPositionFilter = "all" | "forward" | "cf" | "non-forward";
 
+const SCORER_FORWARD_POSITIONS = ["Centre-Forward", "Left Winger", "Right Winger", "Second Striker"];
 const SCORER_POSITION_MAP: Record<string, string[]> = {
-  forward: ["Centre-Forward", "Left Winger", "Right Winger", "Second Striker"],
+  forward: SCORER_FORWARD_POSITIONS,
   cf: ["Centre-Forward"],
-  midfielder: ["Central Midfield", "Attacking Midfield", "Defensive Midfield"],
 };
+
+const TOP_5_LEAGUES = ["Premier League", "LaLiga", "Bundesliga", "Serie A", "Ligue 1"];
 
 function ScorersSection({
   players,
@@ -965,58 +967,84 @@ function ScorersSection({
 }) {
   const [sortBy, setSortBy] = useState<ScorerSortKey>("points");
   const [posFilter, setPosFilter] = useState<ScorerPositionFilter>("all");
+  const [top5Only, setTop5Only] = useState(false);
 
   const filtered = useMemo(() => {
     let list = players;
-    if (posFilter !== "all") {
+    if (posFilter === "non-forward") {
+      list = list.filter((p) => !SCORER_FORWARD_POSITIONS.includes(p.position));
+    } else if (posFilter !== "all") {
       const positions = SCORER_POSITION_MAP[posFilter] || [];
       list = list.filter((p) => positions.some((pos) => p.position === pos));
+    }
+    if (top5Only) {
+      list = list.filter((p) => TOP_5_LEAGUES.includes(p.league));
     }
     const sorted = [...list].sort((a, b) => {
       if (sortBy === "points") return b.points - a.points || (b.minutes || 0) - (a.minutes || 0);
       return (b.minutes || 0) - (a.minutes || 0) || b.points - a.points;
     });
     return sorted.slice(0, 50);
-  }, [players, sortBy, posFilter]);
+  }, [players, sortBy, posFilter, top5Only]);
 
   if (isLoading) return <DiscoverySkeleton />;
 
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <ToggleGroup
-          type="single"
-          value={posFilter}
-          onValueChange={(v) => v && setPosFilter(v as ScorerPositionFilter)}
-          size="sm"
-          className="flex-wrap"
-        >
-          <ToggleGroupItem value="all" className="rounded-lg px-3">All</ToggleGroupItem>
-          <ToggleGroupItem value="forward" className="rounded-lg px-3">Forwards</ToggleGroupItem>
-          <ToggleGroupItem value="cf" className="rounded-lg px-3">CF</ToggleGroupItem>
-          <ToggleGroupItem value="midfielder" className="rounded-lg px-3">Midfielders</ToggleGroupItem>
-        </ToggleGroup>
+      <div className="flex flex-col gap-3">
+        {/* Position filter */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <ToggleGroup
+            type="single"
+            value={posFilter}
+            onValueChange={(v) => v && setPosFilter(v as ScorerPositionFilter)}
+            size="sm"
+            className="flex-wrap"
+          >
+            <ToggleGroupItem value="all" className="rounded-lg px-3">All</ToggleGroupItem>
+            <ToggleGroupItem value="forward" className="rounded-lg px-3">Forwards</ToggleGroupItem>
+            <ToggleGroupItem value="cf" className="rounded-lg px-3">CF</ToggleGroupItem>
+            <ToggleGroupItem value="non-forward" className="rounded-lg px-3">Non-Forwards</ToggleGroupItem>
+          </ToggleGroup>
 
-        <ToggleGroup
-          type="single"
-          value={sortBy}
-          onValueChange={(v) => v && setSortBy(v as ScorerSortKey)}
-          size="sm"
+          <ToggleGroup
+            type="single"
+            value={sortBy}
+            onValueChange={(v) => v && setSortBy(v as ScorerSortKey)}
+            size="sm"
+          >
+            <ToggleGroupItem value="points" className="rounded-lg px-3">
+              <svg className="w-3 h-3 mr-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+              </svg>
+              Points
+            </ToggleGroupItem>
+            <ToggleGroupItem value="minutes" className="rounded-lg px-3">
+              <svg className="w-3 h-3 mr-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Minutes
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+
+        {/* League filter */}
+        <button
+          type="button"
+          onClick={() => setTop5Only((v) => !v)}
+          className="self-start flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+          style={{
+            background: top5Only ? "rgba(88, 166, 255, 0.15)" : "var(--bg-elevated)",
+            color: top5Only ? "var(--accent-blue)" : "var(--text-muted)",
+            border: top5Only ? "1px solid rgba(88, 166, 255, 0.3)" : "1px solid var(--border-subtle)",
+          }}
         >
-          <ToggleGroupItem value="points" className="rounded-lg px-3">
-            <svg className="w-3 h-3 mr-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-            </svg>
-            Points
-          </ToggleGroupItem>
-          <ToggleGroupItem value="minutes" className="rounded-lg px-3">
-            <svg className="w-3 h-3 mr-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Minutes
-          </ToggleGroupItem>
-        </ToggleGroup>
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Top 5 leagues only
+        </button>
       </div>
 
       {/* Scorer list */}
@@ -1032,7 +1060,7 @@ function ScorersSection({
             className="p-8 text-center"
             style={{ color: "var(--text-muted)" }}
           >
-            No players found for this position
+            No players found for this filter combination
           </div>
         )}
       </div>
@@ -1040,6 +1068,7 @@ function ScorersSection({
       {filtered.length > 0 && (
         <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
           Showing top {filtered.length} by {sortBy === "points" ? "goal contributions" : "minutes played"}
+          {top5Only ? " (Top 5 leagues)" : ""}
         </p>
       )}
     </div>

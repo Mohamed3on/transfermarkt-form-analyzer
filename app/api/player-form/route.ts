@@ -24,6 +24,8 @@ function findPlayerByName(players: PlayerStats[], searchName: string): PlayerSta
   return players.find((p) => normalizeForSearch(p.name).includes(normalized)) || null;
 }
 
+const FORWARD_POSITIONS = ["Centre-Forward", "Left Winger", "Right Winger", "Second Striker"];
+
 function findUnderperformers(players: PlayerStats[], target: PlayerStats): PlayerStats[] {
   return players.filter(
     (p) =>
@@ -68,8 +70,14 @@ export async function GET(request: Request) {
       }, { status: 404 });
     }
 
-    const underperformers = findUnderperformers(allPlayers, targetPlayer);
-    const outperformers = findOutperformers(allPlayers, targetPlayer)
+    // If benchmark is not a forward, only compare against non-forwards
+    const isTargetForward = FORWARD_POSITIONS.includes(targetPlayer.position);
+    const comparisonPool = isTargetForward
+      ? allPlayers
+      : allPlayers.filter((p) => !FORWARD_POSITIONS.includes(p.position));
+
+    const underperformers = findUnderperformers(comparisonPool, targetPlayer);
+    const outperformers = findOutperformers(comparisonPool, targetPlayer)
       .sort((a, b) => b.points - a.points || a.marketValue - b.marketValue);
 
     return NextResponse.json({
