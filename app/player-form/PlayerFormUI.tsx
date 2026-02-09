@@ -1103,13 +1103,10 @@ export function PlayerFormUI({ initialAllPlayers }: PlayerFormUIProps) {
 
   const urlName = urlParams.get("name") || "";
   const [playerName, setPlayerName] = useState(urlName);
-  const [searchParams, setSearchParams] = useState<{ name: string } | null>(
-    urlName ? { name: urlName } : null
-  );
+  const selectedName = urlName || null;
 
   useEffect(() => {
     setPlayerName(urlName);
-    setSearchParams(urlName ? { name: urlName } : null);
   }, [urlName]);
 
   const updateQueryParams = useCallback((updates: Record<string, string | null>) => {
@@ -1152,13 +1149,13 @@ export function PlayerFormUI({ initialAllPlayers }: PlayerFormUIProps) {
     queryKey: ["underperformers"],
     queryFn: ({ signal }) => fetchUnderperformers(signal),
     staleTime: 5 * 60 * 1000,
-    enabled: !searchParams,
+    enabled: !selectedName,
   });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["player-form", searchParams],
-    queryFn: ({ signal }) => searchParams ? fetchPlayerForm(searchParams.name, signal) : null,
-    enabled: !!searchParams,
+    queryKey: ["player-form", selectedName],
+    queryFn: ({ signal }) => selectedName ? fetchPlayerForm(selectedName, signal) : null,
+    enabled: !!selectedName,
     staleTime: 2 * 60 * 1000,
   });
 
@@ -1210,13 +1207,11 @@ export function PlayerFormUI({ initialAllPlayers }: PlayerFormUIProps) {
               onChange={(val) => {
                 setPlayerName(val);
                 if (!val.trim()) {
-                  setSearchParams(null);
                   updateUrl(null);
                 }
               }}
               onSelect={(player) => {
                 setPlayerName(player.name);
-                setSearchParams({ name: player.name });
                 updateUrl(player.name);
               }}
               placeholder="Search player (e.g. Kenan Yildiz)"
