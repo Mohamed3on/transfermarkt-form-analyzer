@@ -736,14 +736,20 @@ function UnderperformersSection({
   candidates,
   isLoading,
   error,
+  leagueFilter,
+  clubFilter,
+  onLeagueFilterChange,
+  onClubFilterChange,
 }: {
   title: string;
   candidates: PlayerStats[];
   isLoading: boolean;
   error: Error | null;
+  leagueFilter: string;
+  clubFilter: string;
+  onLeagueFilterChange: (value: string) => void;
+  onClubFilterChange: (value: string) => void;
 }) {
-  const [leagueFilter, setLeagueFilter] = useState("all");
-  const [clubFilter, setClubFilter] = useState("");
   const leagueOptions = useMemo(
     () => Array.from(new Set(candidates.map((p) => p.league).filter(Boolean))).sort(),
     [candidates]
@@ -783,7 +789,7 @@ function UnderperformersSection({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
         <SelectNative
           value={leagueFilter}
-          onChange={(e) => setLeagueFilter(e.target.value)}
+          onChange={(e) => onLeagueFilterChange(e.target.value)}
           className="h-10"
         >
           <option value="all">All leagues</option>
@@ -795,7 +801,7 @@ function UnderperformersSection({
         </SelectNative>
         <Input
           value={clubFilter}
-          onChange={(e) => setClubFilter(e.target.value)}
+          onChange={(e) => onClubFilterChange(e.target.value)}
           placeholder="Filter by club"
           className="h-10"
         />
@@ -928,15 +934,30 @@ const TOP_5_LEAGUES = ["Premier League", "LaLiga", "Bundesliga", "Serie A", "Lig
 function ScorersSection({
   players,
   isLoading,
+  sortBy,
+  onSortChange,
+  top5Only,
+  onTop5OnlyChange,
+  newSigningsOnly,
+  onNewSigningsOnlyChange,
+  leagueFilter,
+  onLeagueFilterChange,
+  clubFilter,
+  onClubFilterChange,
 }: {
   players: PlayerStats[];
   isLoading: boolean;
+  sortBy: ScorerSortKey;
+  onSortChange: (value: ScorerSortKey) => void;
+  top5Only: boolean;
+  onTop5OnlyChange: (value: boolean) => void;
+  newSigningsOnly: boolean;
+  onNewSigningsOnlyChange: (value: boolean) => void;
+  leagueFilter: string;
+  onLeagueFilterChange: (value: string) => void;
+  clubFilter: string;
+  onClubFilterChange: (value: string) => void;
 }) {
-  const [sortBy, setSortBy] = useState<ScorerSortKey>("points");
-  const [top5Only, setTop5Only] = useState(false);
-  const [newSigningsOnly, setNewSigningsOnly] = useState(false);
-  const [leagueFilter, setLeagueFilter] = useState("all");
-  const [clubFilter, setClubFilter] = useState("");
   const leagueOptions = useMemo(
     () => Array.from(new Set(players.map((p) => p.league).filter(Boolean))).sort(),
     [players]
@@ -973,7 +994,7 @@ function ScorersSection({
         <ToggleGroup
           type="single"
           value={sortBy}
-          onValueChange={(v) => v && setSortBy(v as ScorerSortKey)}
+          onValueChange={(v) => v && onSortChange(v as ScorerSortKey)}
           size="sm"
           className="self-start"
         >
@@ -994,7 +1015,7 @@ function ScorersSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <SelectNative
             value={leagueFilter}
-            onChange={(e) => setLeagueFilter(e.target.value)}
+            onChange={(e) => onLeagueFilterChange(e.target.value)}
             className="h-10"
           >
             <option value="all">All leagues</option>
@@ -1006,7 +1027,7 @@ function ScorersSection({
           </SelectNative>
           <Input
             value={clubFilter}
-            onChange={(e) => setClubFilter(e.target.value)}
+            onChange={(e) => onClubFilterChange(e.target.value)}
             placeholder="Filter by club"
             className="h-10"
           />
@@ -1016,7 +1037,7 @@ function ScorersSection({
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setTop5Only((v) => !v)}
+            onClick={() => onTop5OnlyChange(!top5Only)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
             style={{
               background: top5Only ? "rgba(88, 166, 255, 0.15)" : "var(--bg-elevated)",
@@ -1031,7 +1052,7 @@ function ScorersSection({
           </button>
           <button
             type="button"
-            onClick={() => setNewSigningsOnly((v) => !v)}
+            onClick={() => onNewSigningsOnlyChange(!newSigningsOnly)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
             style={{
               background: newSigningsOnly ? "rgba(0, 255, 135, 0.15)" : "var(--bg-elevated)",
@@ -1092,14 +1113,33 @@ export function PlayerFormUI({ initialAllPlayers }: PlayerFormUIProps) {
     setSearchParams(urlName ? { name: urlName } : null);
   }, [urlName]);
 
-  const updateUrl = useCallback((name: string | null) => {
-    const params = new URLSearchParams();
-    if (name) {
-      params.set("name", name);
+  const updateQueryParams = useCallback((updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(urlParams.toString());
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (value === null || value === "") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
     }
+
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : "/player-form", { scroll: false });
-  }, [router]);
+  }, [router, urlParams]);
+
+  const updateUrl = useCallback((name: string | null) => {
+    updateQueryParams({ name });
+  }, [updateQueryParams]);
+
+  const underLeagueFilter = urlParams.get("uLeague") || "all";
+  const underClubFilter = urlParams.get("uClub") || "";
+  const scorersSortBy = urlParams.get("sSort") === "minutes" ? "minutes" : "points";
+  const scorersTop5Only = urlParams.get("sTop5") === "1";
+  const scorersNewOnly = urlParams.get("sNew") === "1";
+  const scorersLeagueFilter = urlParams.get("sLeague") || "all";
+  const scorersClubFilter = urlParams.get("sClub") || "";
+  const benchTop5Only = urlParams.get("bTop5") === "1";
 
   // Fetch player list for autocomplete
   const { data: playersData, isLoading: playersLoading } = useQuery({
@@ -1126,7 +1166,6 @@ export function PlayerFormUI({ initialAllPlayers }: PlayerFormUIProps) {
   const hasResults = data?.targetPlayer && !data?.error;
 
   const targetMinutes = data?.targetPlayer?.minutes;
-  const [benchTop5Only, setBenchTop5Only] = useState(false);
 
   const filteredUnderperformers = useMemo(() => {
     if (!data?.underperformers) return [];
@@ -1246,7 +1285,7 @@ export function PlayerFormUI({ initialAllPlayers }: PlayerFormUIProps) {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => setBenchTop5Only((v) => !v)}
+                onClick={() => updateQueryParams({ bTop5: benchTop5Only ? null : "1" })}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                 style={{
                   background: benchTop5Only ? "rgba(88, 166, 255, 0.15)" : "var(--bg-elevated)",
@@ -1408,6 +1447,10 @@ export function PlayerFormUI({ initialAllPlayers }: PlayerFormUIProps) {
                 candidates={discoveryQuery.data?.underperformers || []}
                 isLoading={discoveryQuery.isLoading}
                 error={(discoveryQuery.error as Error | null) ?? null}
+                leagueFilter={underLeagueFilter}
+                clubFilter={underClubFilter}
+                onLeagueFilterChange={(value) => updateQueryParams({ uLeague: value === "all" ? null : value })}
+                onClubFilterChange={(value) => updateQueryParams({ uClub: value || null })}
               />
             </TabsContent>
 
@@ -1415,6 +1458,16 @@ export function PlayerFormUI({ initialAllPlayers }: PlayerFormUIProps) {
               <ScorersSection
                 players={playersData || []}
                 isLoading={playersLoading}
+                sortBy={scorersSortBy}
+                onSortChange={(value) => updateQueryParams({ sSort: value === "points" ? null : value })}
+                top5Only={scorersTop5Only}
+                onTop5OnlyChange={(value) => updateQueryParams({ sTop5: value ? "1" : null })}
+                newSigningsOnly={scorersNewOnly}
+                onNewSigningsOnlyChange={(value) => updateQueryParams({ sNew: value ? "1" : null })}
+                leagueFilter={scorersLeagueFilter}
+                onLeagueFilterChange={(value) => updateQueryParams({ sLeague: value === "all" ? null : value })}
+                clubFilter={scorersClubFilter}
+                onClubFilterChange={(value) => updateQueryParams({ sClub: value || null })}
               />
             </TabsContent>
           </Tabs>
