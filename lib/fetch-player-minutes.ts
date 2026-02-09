@@ -3,7 +3,15 @@ import type { PlayerStatsResult } from "@/app/types";
 import { BASE_URL } from "./constants";
 import { fetchPage } from "./fetch";
 
-const ZERO_STATS: PlayerStatsResult = { minutes: 0, appearances: 0, goals: 0, assists: 0, club: "", league: "" };
+const ZERO_STATS: PlayerStatsResult = {
+  minutes: 0,
+  appearances: 0,
+  goals: 0,
+  assists: 0,
+  club: "",
+  league: "",
+  isNewSigning: false,
+};
 
 /** Raw fetch — no caching. Used by the offline refresh script. */
 export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerStatsResult> {
@@ -33,5 +41,8 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const assists = parse(zentriert.eq(2).text());
   const minutes = parse(rechts.last().text());
 
-  return { minutes, appearances, goals, assists, club, league };
+  const ribbonText = $(".data-header__ribbon span").text().trim().toLowerCase();
+  const isNewSigning = ribbonText === "new arrival" || ribbonText === "on loan";
+
+  return { minutes, appearances, goals, assists, club, league, isNewSigning };
 }
