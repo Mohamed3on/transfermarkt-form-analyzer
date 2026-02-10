@@ -5,8 +5,11 @@ import { fetchTopScorersRaw } from "@/lib/fetch-top-scorers";
 import { fetchPlayerMinutesRaw } from "@/lib/fetch-player-minutes";
 import type { PlayerStatsResult } from "@/app/types";
 
-const CONCURRENCY = 10;
-const BATCH_DELAY_MS = 2000;
+const INITIAL_CONCURRENCY = 30;
+const MIN_CONCURRENCY = 5;
+const INITIAL_DELAY_MS = 500;
+const BACKOFF_MULTIPLIER = 2;
+const FAILURE_THRESHOLD = 0.3; // back off if >30% of batch fails
 
 type PlayerCache = Record<string, PlayerStatsResult>;
 
@@ -37,23 +40,34 @@ async function main() {
 
   const cache: PlayerCache = {};
 
-  console.log(`[refresh] Fetching stats for ${players.length} players...`);
+  let concurrency = INITIAL_CONCURRENCY;
+  let delayMs = INITIAL_DELAY_MS;
+  console.log(`[refresh] Fetching stats for ${players.length} players (concurrency: ${concurrency})...`);
 
-  for (let i = 0; i < players.length; i += CONCURRENCY) {
-    const batch = players.slice(i, i + CONCURRENCY);
+  for (let i = 0; i < players.length; i += concurrency) {
+    const batch = players.slice(i, i + concurrency);
     const results = await Promise.allSettled(
       batch.map((p) => fetchPlayerMinutesRaw(p.playerId))
     );
+    const failures = results.filter((r) => r.status === "rejected").length;
     batch.forEach((p, j) => {
       if (results[j].status === "fulfilled") {
         cache[p.playerId] = results[j].value;
       }
     });
-    console.log(`[refresh] Batch ${Math.floor(i / CONCURRENCY) + 1}/${Math.ceil(players.length / CONCURRENCY)}`);
-    // Write cache after each batch for crash-safe partial progress
+
+    const batchNum = Math.floor(i / concurrency) + 1;
+    if (failures / batch.length > FAILURE_THRESHOLD && concurrency > MIN_CONCURRENCY) {
+      concurrency = Math.max(MIN_CONCURRENCY, Math.floor(concurrency / 2));
+      delayMs *= BACKOFF_MULTIPLIER;
+      console.log(`[refresh] Batch ${batchNum}: ${failures}/${batch.length} failed, backing off → concurrency=${concurrency}, delay=${delayMs}ms`);
+    } else {
+      console.log(`[refresh] Batch ${batchNum}: ${batch.length - failures}/${batch.length} ok`);
+    }
+
     await saveCache(cache);
-    if (i + CONCURRENCY < players.length) {
-      await new Promise((r) => setTimeout(r, BATCH_DELAY_MS));
+    if (i + concurrency < players.length) {
+      await new Promise((r) => setTimeout(r, delayMs));
     }
   }
 
