@@ -17,12 +17,13 @@ export function useProgressiveFetch<T>(
   fetchRef.current = fetchFn;
 
   useEffect(() => {
-    if (keys.length === 0) return;
-    setPending(new Set(keys));
+    const currentKeys = stableKey ? stableKey.split("\0") : [];
+    if (currentKeys.length === 0) return;
+    setPending(new Set(currentKeys));
     setResults([]);
     let cancelled = false;
 
-    for (const key of keys) {
+    for (const key of currentKeys) {
       fetchRef.current(key)
         .then((result) => {
           if (cancelled) return;

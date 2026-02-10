@@ -255,7 +255,7 @@ function LeaderCard({
 }) {
   const isTop = type === "top";
   const accentColor = isTop ? "var(--accent-hot)" : "var(--accent-cold)";
-  const glowColor = isTop ? "var(--accent-hot-glow)" : "var(--accent-cold-glow)";
+
 
   const rows = isTop
     ? [
