@@ -11,6 +11,8 @@ const INITIAL_DELAY_MS = 500;
 const BACKOFF_MULTIPLIER = 2;
 const FAILURE_THRESHOLD = 0.3;
 const CLEAN_BATCHES_TO_RAMP_UP = 3;
+const MAX_RETRY_ROUNDS = 5;
+const MIN_EXPECTED_PLAYERS = 100;
 
 type PlayerCache = Record<string, PlayerStatsResult>;
 type PlayerEntry = { playerId: string };
@@ -78,10 +80,35 @@ async function fetchBatched(
   return failed;
 }
 
+async function fetchWithRetry(
+  players: PlayerEntry[],
+  cache: PlayerCache,
+): Promise<void> {
+  const state = { concurrency: INITIAL_CONCURRENCY, delayMs: INITIAL_DELAY_MS };
+  let remaining = players;
+
+  for (let round = 0; round < MAX_RETRY_ROUNDS; round++) {
+    if (round > 0) {
+      state.concurrency = MIN_CONCURRENCY;
+      state.delayMs = INITIAL_DELAY_MS * 2 ** round;
+      console.log(`[refresh] Retry round ${round}: ${remaining.length} players (concurrency=${state.concurrency}, delay=${state.delayMs}ms)`);
+    }
+
+    remaining = await fetchBatched(remaining, cache, state);
+    if (remaining.length === 0) return;
+  }
+
+  throw new Error(`${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds: ${remaining.map((p) => p.playerId).join(", ")}`);
+}
+
 async function main() {
   console.log("[refresh] Fetching MV pages...");
   const players = await fetchMinutesValueRaw();
   console.log(`[refresh] Got ${players.length} players from MV pages`);
+
+  if (players.length === 0) {
+    throw new Error("Got 0 players from MV pages — likely rate-limited. Aborting to protect existing data.");
+  }
 
   console.log("[refresh] Fetching top scorers...");
   const scorers = await fetchTopScorersRaw();
@@ -96,22 +123,14 @@ async function main() {
   }
   console.log(`[refresh] Added ${added} new players from top scorers (${scorers.length} total, ${scorers.length - added} already in MV)`);
 
-  const cache: PlayerCache = {};
-  const state = { concurrency: INITIAL_CONCURRENCY, delayMs: INITIAL_DELAY_MS };
-  console.log(`[refresh] Fetching stats for ${players.length} players (concurrency: ${state.concurrency})...`);
-
-  const failed = await fetchBatched(players, cache, state);
-
-  // Retry failures once with conservative settings
-  if (failed.length > 0) {
-    console.log(`[refresh] Retrying ${failed.length} failed players...`);
-    state.concurrency = MIN_CONCURRENCY;
-    state.delayMs = INITIAL_DELAY_MS * 4;
-    const stillFailed = await fetchBatched(failed, cache, state);
-    if (stillFailed.length > 0) {
-      console.warn(`[refresh] ${stillFailed.length} players failed permanently: ${stillFailed.map((p) => p.playerId).join(", ")}`);
-    }
+  if (players.length < MIN_EXPECTED_PLAYERS) {
+    throw new Error(`Only got ${players.length} players (expected ${MIN_EXPECTED_PLAYERS}+). Aborting to protect existing data.`);
   }
+
+  const cache: PlayerCache = {};
+  console.log(`[refresh] Fetching stats for ${players.length} players (concurrency: ${INITIAL_CONCURRENCY})...`);
+
+  await fetchWithRetry(players, cache);
 
   // Merge stats into players
   for (const p of players) {
@@ -135,7 +154,7 @@ async function main() {
   await mkdir(outDir, { recursive: true });
   const outPath = join(outDir, "minutes-value.json");
   await writeFile(outPath, JSON.stringify(players));
-  console.log(`[refresh] Done: ${Object.keys(cache).length}/${players.length} players fetched → ${outPath}`);
+  console.log(`[refresh] Done: ${Object.keys(cache).length}/${players.length} players → ${outPath}`);
 }
 
 main().catch((err) => {
