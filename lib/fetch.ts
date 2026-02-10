@@ -1,6 +1,7 @@
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Cache-Control": "no-cache",
 };
 
 const MAX_RETRIES = 5;
@@ -10,7 +11,7 @@ export async function fetchPage(url: string, revalidate?: number): Promise<strin
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const response = await fetch(url, {
       headers: HEADERS,
-      ...(revalidate !== undefined && { next: { revalidate } }),
+      ...(revalidate !== undefined ? { next: { revalidate } } : { cache: "no-store" }),
     });
     const html = await response.text();
     // Transfermarkt rate-limit responses are ~146 bytes
