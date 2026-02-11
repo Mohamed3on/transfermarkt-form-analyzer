@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import * as cheerio from "cheerio";
 import type { ManagerInfo, ManagerTrivia } from "@/app/types";
 import { BASE_URL } from "./constants";
+import { fetchPage } from "./fetch";
 
 interface ManagerHistoryEntry {
   name: string;
@@ -74,56 +75,43 @@ function parseManagerTable($: cheerio.CheerioAPI): ManagerHistoryEntry[] {
 }
 
 async function fetchManagerInfoUncached(clubId: string): Promise<ManagerInfo | null> {
-  try {
-    const historyUrl = `${BASE_URL}/placeholder/mitarbeiterhistorie/verein/${clubId}`;
-    const response = await fetch(historyUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      },
-      redirect: "follow",
-    });
+  const historyUrl = `${BASE_URL}/placeholder/mitarbeiterhistorie/verein/${clubId}`;
+  const html = await fetchPage(historyUrl);
+  const $ = cheerio.load(html);
 
-    const html = await response.text();
-    const $ = cheerio.load(html);
-
-    const allManagers = parseManagerTable($);
-    if (allManagers.length === 0) return null;
-
-    const firstManager = allManagers[0];
-    const endDate = firstManager.endDate ? parseDate(firstManager.endDate) : null;
-    const isCurrentManager = !endDate || endDate > new Date();
-
-    if (!isCurrentManager) return null;
-
-    const minMatches = firstManager.matches;
-    const since1995 = allManagers.filter((m) => {
-      const appointed = parseDate(m.appointedDate);
-      return appointed && appointed.getFullYear() >= 1995 && m.matches >= minMatches && m.ppg !== null;
-    });
-
-    const sorted = [...since1995].sort((a, b) => (b.ppg ?? 0) - (a.ppg ?? 0));
-    const rank = sorted.findIndex((m) => m.name === firstManager.name && m.appointedDate === firstManager.appointedDate) + 1;
-
-    const bestManager = sorted.length > 0 ? toTrivia(sorted[0]) : undefined;
-    const worstManager = sorted.length > 0 ? toTrivia(sorted[sorted.length - 1]) : undefined;
-
-    return {
-      name: firstManager.name,
-      profileUrl: firstManager.profileUrl,
-      appointedDate: firstManager.appointedDate,
-      matches: firstManager.matches,
-      ppg: firstManager.ppg,
-      isCurrentManager: true,
-      ppgRank: rank > 0 ? rank : undefined,
-      totalComparableManagers: since1995.length > 0 ? since1995.length : undefined,
-      bestManager,
-      worstManager,
-    };
-  } catch (err) {
-    console.error(`Error fetching manager for club ${clubId}:`, err);
-    return null;
+  const allManagers = parseManagerTable($);
+  if (allManagers.length === 0) {
+    throw new Error(`No manager data found for club ${clubId}`);
   }
+
+  const firstManager = allManagers[0];
+  const endDate = firstManager.endDate ? parseDate(firstManager.endDate) : null;
+  const isCurrentManager = !endDate || endDate > new Date();
+
+  const minMatches = firstManager.matches;
+  const since1995 = allManagers.filter((m) => {
+    const appointed = parseDate(m.appointedDate);
+    return appointed && appointed.getFullYear() >= 1995 && m.matches >= minMatches && m.ppg !== null;
+  });
+
+  const sorted = [...since1995].sort((a, b) => (b.ppg ?? 0) - (a.ppg ?? 0));
+  const rank = sorted.findIndex((m) => m.name === firstManager.name && m.appointedDate === firstManager.appointedDate) + 1;
+
+  const bestManager = sorted.length > 0 ? toTrivia(sorted[0]) : undefined;
+  const worstManager = sorted.length > 0 ? toTrivia(sorted[sorted.length - 1]) : undefined;
+
+  return {
+    name: firstManager.name,
+    profileUrl: firstManager.profileUrl,
+    appointedDate: firstManager.appointedDate,
+    matches: firstManager.matches,
+    ppg: firstManager.ppg,
+    isCurrentManager,
+    ppgRank: rank > 0 ? rank : undefined,
+    totalComparableManagers: since1995.length > 0 ? since1995.length : undefined,
+    bestManager,
+    worstManager,
+  };
 }
 
 export const getManagerInfo = (clubId: string) =>

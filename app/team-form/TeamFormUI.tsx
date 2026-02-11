@@ -180,10 +180,22 @@ function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-semibold hover:underline"
-                    style={{ color: "var(--accent-blue)" }}
+                    style={{ color: manager.isCurrentManager ? "var(--accent-blue)" : "var(--text-muted)" }}
                   >
                     {manager.name}
                   </a>
+                  {!manager.isCurrentManager && (
+                    <span
+                      className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium"
+                      style={{
+                        background: "rgba(220, 38, 38, 0.15)",
+                        color: "#ef4444",
+                        border: "1px solid rgba(220, 38, 38, 0.3)",
+                      }}
+                    >
+                      Sacked
+                    </span>
+                  )}
                 </span>
                 <ManagerPPGBadge manager={manager} />
               </div>
