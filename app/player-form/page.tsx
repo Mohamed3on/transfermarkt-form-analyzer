@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
+import { DataLastUpdated } from "@/app/components/DataLastUpdated";
 import { PlayerFormUI } from "./PlayerFormUI";
 
 export const metadata: Metadata = {
@@ -13,8 +14,11 @@ export default async function PlayerFormPage() {
   const initialAllPlayers = (await getMinutesValueData()).map(toPlayerStats);
 
   return (
-    <Suspense>
-      <PlayerFormUI initialAllPlayers={initialAllPlayers} />
-    </Suspense>
+    <>
+      <Suspense>
+        <PlayerFormUI initialAllPlayers={initialAllPlayers} />
+      </Suspense>
+      <DataLastUpdated />
+    </>
   );
 }

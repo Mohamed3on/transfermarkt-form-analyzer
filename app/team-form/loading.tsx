@@ -20,6 +20,11 @@ function SkeletonCard() {
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-4 w-24" />
       </div>
+      <div className="flex items-center gap-2 mt-3 pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+        <Skeleton className="h-3.5 w-24" />
+        <Skeleton className="h-3.5 w-16" />
+        <Skeleton className="h-4 w-20 rounded" />
+      </div>
     </div>
   );
 }

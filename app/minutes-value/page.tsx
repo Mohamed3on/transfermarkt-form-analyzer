@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getMinutesValueData } from "@/lib/fetch-minutes-value";
+import { DataLastUpdated } from "@/app/components/DataLastUpdated";
 import { MinutesValueUI } from "./MinutesValueUI";
 
 export const metadata: Metadata = {
@@ -10,5 +11,10 @@ export const metadata: Metadata = {
 
 export default async function MinutesValuePage() {
   const players = await getMinutesValueData();
-  return <MinutesValueUI initialData={players} />;
+  return (
+    <>
+      <MinutesValueUI initialData={players} />
+      <DataLastUpdated />
+    </>
+  );
 }

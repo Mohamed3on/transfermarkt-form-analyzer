@@ -55,7 +55,11 @@ export function TeamCardSkeleton({ compact }: { compact?: boolean }) {
         <Skeleton className="h-6 w-24 rounded-full" />
       </div>
       <Skeleton className="h-3 w-full mt-3" />
-      <Skeleton className="h-4 w-32 mt-3" />
+      <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-5 w-20 rounded" />
+      </div>
     </Card>
   );
 }
