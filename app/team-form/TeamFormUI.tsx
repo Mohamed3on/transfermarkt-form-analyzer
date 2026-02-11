@@ -5,7 +5,7 @@ import type { TeamFormEntry } from "@/app/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { ManagerPPGBadge } from "@/app/components/ManagerPPGBadge";
+import { ManagerPPGBadge, ManagerSackedBadge } from "@/app/components/ManagerPPGBadge";
 import { LEAGUES, getLeagueLogoUrl } from "@/lib/leagues";
 
 export interface TeamFormResponse {
@@ -184,18 +184,7 @@ function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
                   >
                     {manager.name}
                   </a>
-                  {!manager.isCurrentManager && (
-                    <span
-                      className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium"
-                      style={{
-                        background: "rgba(220, 38, 38, 0.15)",
-                        color: "#ef4444",
-                        border: "1px solid rgba(220, 38, 38, 0.3)",
-                      }}
-                    >
-                      Sacked
-                    </span>
-                  )}
+                  <ManagerSackedBadge manager={manager} />
                 </span>
                 <ManagerPPGBadge manager={manager} />
               </div>

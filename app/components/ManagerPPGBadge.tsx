@@ -18,6 +18,15 @@ interface ManagerPPGBadgeProps {
   manager: ManagerInfo;
 }
 
+export function ManagerSackedBadge({ manager }: ManagerPPGBadgeProps) {
+  if (manager.isCurrentManager) return null;
+  return (
+    <span className="px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium bg-red-500/15 text-red-500 border border-red-500/30">
+      Sacked
+    </span>
+  );
+}
+
 export function ManagerSkeleton() {
   return (
     <div className="flex items-center gap-2">

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ManagerPPGBadge, ManagerSkeleton } from "./ManagerPPGBadge";
+import { ManagerPPGBadge, ManagerSackedBadge, ManagerSkeleton } from "./ManagerPPGBadge";
 import { getLeagueLogoUrl } from "@/lib/leagues";
 
 interface TeamCardProps {
@@ -215,10 +215,11 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
                 rel="noopener noreferrer"
                 title="Open manager profile on Transfermarkt"
                 className="font-semibold hover:underline transition-colors truncate"
-                style={{ color: "var(--accent-blue)" }}
+                style={{ color: manager.isCurrentManager ? "var(--accent-blue)" : "var(--text-muted)" }}
               >
                 {manager.name}
               </a>
+              <ManagerSackedBadge manager={manager} />
               <ManagerPPGBadge manager={manager} />
             </div>
           ) : (
