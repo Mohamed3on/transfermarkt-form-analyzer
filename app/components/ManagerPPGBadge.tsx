@@ -21,7 +21,7 @@ interface ManagerPPGBadgeProps {
 export function ManagerSackedBadge({ manager }: ManagerPPGBadgeProps) {
   if (manager.isCurrentManager) return null;
   return (
-    <span className="px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium bg-red-500/15 text-red-500 border border-red-500/30">
+    <span className="shrink-0 px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium bg-red-500/15 text-red-500 border border-red-500/30">
       Sacked
     </span>
   );
