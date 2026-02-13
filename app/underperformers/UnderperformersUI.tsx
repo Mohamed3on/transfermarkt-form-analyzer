@@ -110,9 +110,9 @@ const CARD_THEMES = {
 
 type ComparisonCardVariant = "underperformer" | "outperformer";
 
-function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement, showExternalIcon = true, subtitle, desktopStats, mobileStats, footer }: {
+function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement, subtitle, desktopStats, mobileStats, footer }: {
   index?: number; theme: CardTheme; name: string; imageUrl: string; profileUrl: string;
-  nameElement: ReactNode; showExternalIcon?: boolean; subtitle: ReactNode;
+  nameElement: ReactNode; subtitle: ReactNode;
   desktopStats: ReactNode; mobileStats: ReactNode; footer?: ReactNode;
 }) {
   return (
@@ -140,11 +140,9 @@ function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement,
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             {nameElement}
-            {showExternalIcon && (
-              <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 opacity-40 hover:opacity-100 transition-opacity" style={{ color: "var(--text-muted)" }}>
-                <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </a>
-            )}
+            <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 opacity-40 hover:opacity-100 transition-opacity" style={{ color: "var(--text-muted)" }}>
+              <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            </a>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mt-0.5 flex-wrap" style={{ color: "var(--text-muted)" }}>
             {subtitle}
@@ -166,12 +164,26 @@ function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement,
   );
 }
 
-function ComparisonCard({ player, index = 0, minutes, variant, valueDeltaLabel, pointsDeltaLabel }: {
-  player: PlayerStats; index?: number; minutes?: number; variant: ComparisonCardVariant; valueDeltaLabel: string; pointsDeltaLabel: string;
+function ComparisonCard({ player, targetPlayer, index = 0, variant }: {
+  player: PlayerStats; targetPlayer: PlayerStats; index?: number; variant: ComparisonCardVariant;
 }) {
   const theme = CARD_THEMES[variant];
   const mutedColor = variant === "underperformer" ? "var(--accent-cold-muted)" : "var(--accent-hot-muted)";
   const leistungsdatenUrl = getLeistungsdatenUrl(player.profileUrl);
+  const minutes = player.minutes;
+
+  let valueDeltaLabel: string;
+  let pointsDeltaLabel: string;
+  if (variant === "underperformer") {
+    const valueDiff = player.marketValue - targetPlayer.marketValue;
+    valueDeltaLabel = valueDiff >= 1_000_000 ? `+€${(valueDiff / 1_000_000).toFixed(1)}m` : `+€${(valueDiff / 1_000).toFixed(0)}k`;
+    pointsDeltaLabel = `−${targetPlayer.points - player.points}`;
+  } else {
+    const valueSaved = targetPlayer.marketValue - player.marketValue;
+    valueDeltaLabel = valueSaved >= 1_000_000 ? `€${(valueSaved / 1_000_000).toFixed(1)}m less` : valueSaved > 0 ? `€${(valueSaved / 1_000).toFixed(0)}k less` : "Same value";
+    pointsDeltaLabel = `+${player.points - targetPlayer.points}`;
+  }
+
   return (
     <PlayerCard
       index={index}
@@ -180,17 +192,10 @@ function ComparisonCard({ player, index = 0, minutes, variant, valueDeltaLabel, 
       imageUrl={player.imageUrl}
       profileUrl={leistungsdatenUrl}
       nameElement={
-        variant === "underperformer" ? (
-          <Link href={getPlayerBenchmarkHref(player.name)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors" style={{ color: "var(--text-primary)" }}>
-            {player.name}
-          </Link>
-        ) : (
-          <a href={leistungsdatenUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors" style={{ color: "var(--text-primary)" }}>
-            {player.name}
-          </a>
-        )
+        <Link href={getPlayerBenchmarkHref(player.name)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors" style={{ color: "var(--text-primary)" }}>
+          {player.name}
+        </Link>
       }
-      showExternalIcon={variant === "underperformer"}
       subtitle={<>
         <span>{player.position}</span>
         <span style={{ opacity: 0.4 }}>•</span>
@@ -228,20 +233,6 @@ function ComparisonCard({ player, index = 0, minutes, variant, valueDeltaLabel, 
       </>}
     />
   );
-}
-
-function UnderperformerCard({ player, targetPlayer, minutes, index = 0 }: { player: PlayerStats; targetPlayer: PlayerStats; minutes?: number; index?: number }) {
-  const valueDiff = player.marketValue - targetPlayer.marketValue;
-  const valueDiffDisplay = valueDiff >= 1_000_000 ? `+€${(valueDiff / 1_000_000).toFixed(1)}m` : `+€${(valueDiff / 1_000).toFixed(0)}k`;
-  const pointsDiff = targetPlayer.points - player.points;
-  return <ComparisonCard player={player} index={index} minutes={minutes} variant="underperformer" valueDeltaLabel={valueDiffDisplay} pointsDeltaLabel={`−${pointsDiff}`} />;
-}
-
-function OutperformerCard({ player, targetPlayer, index = 0 }: { player: PlayerStats; targetPlayer: PlayerStats; index?: number }) {
-  const valueSaved = targetPlayer.marketValue - player.marketValue;
-  const valueSavedDisplay = valueSaved >= 1_000_000 ? `€${(valueSaved / 1_000_000).toFixed(1)}m less` : valueSaved > 0 ? `€${(valueSaved / 1_000).toFixed(0)}k less` : "Same value";
-  const pointsMore = player.points - targetPlayer.points;
-  return <ComparisonCard player={player} index={index} minutes={player.minutes} variant="outperformer" valueDeltaLabel={valueSavedDisplay} pointsDeltaLabel={`+${pointsMore}`} />;
 }
 
 function CardSkeletonList({ count = 5, fadeStep = 0.1 }: { count?: number; fadeStep?: number }) {
@@ -832,7 +823,7 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                           <p className="text-xs" style={{ color: "var(--text-muted)" }}>{gaData!.underperformers.length - filteredUnderperformers.length} players filtered (fewer minutes than benchmark)</p>
                         )}
                         {filteredUnderperformers.map((player, index) => (
-                          <UnderperformerCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} minutes={player.minutes} index={index} />
+                          <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="underperformer" index={index} />
                         ))}
                       </div>
                     )}
@@ -863,7 +854,7 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                           <p className="text-xs" style={{ color: "var(--text-muted)" }}>{gaData!.outperformers.length - filteredOutperformers.length} players filtered (more minutes than benchmark)</p>
                         )}
                         {filteredOutperformers.map((player, index) => (
-                          <OutperformerCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} index={index} />
+                          <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="outperformer" index={index} />
                         ))}
                       </div>
                     )}
