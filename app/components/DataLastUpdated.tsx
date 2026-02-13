@@ -1,4 +1,4 @@
-import { stat } from "fs/promises";
+import { readFile } from "fs/promises";
 import { join } from "path";
 
 function timeAgo(date: Date): string {
@@ -14,10 +14,15 @@ function timeAgo(date: Date): string {
 }
 
 export async function DataLastUpdated() {
-  const filePath = join(process.cwd(), "data", "minutes-value.json");
-  const { mtime } = await stat(filePath);
+  let updatedAt: Date;
+  try {
+    const raw = await readFile(join(process.cwd(), "data", "updated-at.txt"), "utf-8");
+    updatedAt = new Date(raw.trim());
+  } catch {
+    updatedAt = new Date();
+  }
 
-  const formatted = mtime.toLocaleDateString("en-GB", {
+  const formatted = updatedAt.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -30,7 +35,7 @@ export async function DataLastUpdated() {
       <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
       <span>
         Updated {formatted}
-        <span className="ml-1.5 opacity-60">({timeAgo(mtime)})</span>
+        <span className="ml-1.5 opacity-60">({timeAgo(updatedAt)})</span>
       </span>
     </div>
   );

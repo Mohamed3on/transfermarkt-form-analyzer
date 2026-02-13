@@ -590,7 +590,7 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
   // ── G+A state ──
   const underLeagueFilter = params.get("uLeague") || "all";
   const underClubFilter = params.get("uClub") || "";
-  const underSortBy: UnderperformerSortKey = params.get("uSort") === "most-outperformed" ? "most-outperformed" : "value";
+  const underSortBy: UnderperformerSortKey = params.get("uSort") === "value" ? "value" : "most-outperformed";
   const underTop5Only = params.get("uTop5") === "1";
   const benchTop5Only = params.get("bTop5") === "1";
 
@@ -875,7 +875,7 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                 isLoading={discoveryQuery.isLoading}
                 error={(discoveryQuery.error as Error | null) ?? null}
                 sortBy={underSortBy}
-                onSortChange={(value) => update({ uSort: value === "value" ? null : value })}
+                onSortChange={(value) => update({ uSort: value === "most-outperformed" ? null : value })}
                 leagueFilter={underLeagueFilter}
                 clubFilter={underClubFilter}
                 onLeagueFilterChange={(value) => update({ uLeague: value === "all" ? null : value })}

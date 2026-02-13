@@ -154,6 +154,7 @@ async function main() {
   await mkdir(outDir, { recursive: true });
   const outPath = join(outDir, "minutes-value.json");
   await writeFile(outPath, JSON.stringify(players));
+  await writeFile(join(outDir, "updated-at.txt"), new Date().toISOString());
   console.log(`[refresh] Done: ${Object.keys(cache).length}/${players.length} players → ${outPath}`);
 }
 
