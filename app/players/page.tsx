@@ -18,10 +18,10 @@ export default async function PlayersPage() {
     getInjuredPlayers(),
   ]);
 
-  const injuryMap: Record<string, { injury: string; returnDate: string }> = {};
+  const injuryMap: Record<string, { injury: string; returnDate: string; injurySince: string }> = {};
   for (const p of injuredData.players) {
     const m = p.profileUrl.match(SPIELER_RE);
-    if (m) injuryMap[m[1]] = { injury: p.injury, returnDate: p.returnDate };
+    if (m) injuryMap[m[1]] = { injury: p.injury, returnDate: p.returnDate, injurySince: p.injurySince };
   }
 
   return (

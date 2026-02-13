@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import Link from "next/link";
@@ -10,10 +10,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SelectNative } from "@/components/ui/select-native";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ExternalLink } from "lucide-react";
 import { getLeagueLogoUrl } from "@/lib/leagues";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES } from "@/lib/filter-players";
 import { canBeOutperformerAgainst } from "@/lib/positions";
-import { formatReturnInfo, PROFIL_RE } from "@/lib/format";
+import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { BenchmarkCard, BigNumber } from "./BenchmarkCard";
 import type { PlayerStats, MinutesValuePlayer, InjuryMap } from "@/app/types";
@@ -47,6 +48,12 @@ function getPlayerBenchmarkHref(name: string): string {
   return `/underperformers?${new URLSearchParams({ name }).toString()}`;
 }
 
+function getLeistungsdatenUrl(profileUrl: string): string {
+  const now = new Date();
+  const season = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+  return `https://www.transfermarkt.com${profileUrl.replace(PROFIL_RE, "/leistungsdaten/")}/saison/${season}/plus/1`;
+}
+
 async function fetchUnderperformers(signal?: AbortSignal): Promise<UnderperformersResult> {
   const res = await fetch("/api/underperformers", { signal });
   return res.json();
@@ -78,7 +85,7 @@ function TargetPlayerCard({ player, minutes }: { player: PlayerStats; minutes?: 
     <BenchmarkCard
       name={player.name}
       imageUrl={player.imageUrl}
-      href={`https://www.transfermarkt.com${player.profileUrl}`}
+      href={getLeistungsdatenUrl(player.profileUrl)}
       subtitle={<><span className="font-medium">{player.position}</span><span style={{ opacity: 0.4 }}>•</span><span className="truncate opacity-80">{player.club}</span></>}
       desktopStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
@@ -89,23 +96,25 @@ function TargetPlayerCard({ player, minutes }: { player: PlayerStats; minutes?: 
   );
 }
 
+interface CardTheme {
+  gradientStart: string; border: string;
+  rankBg: string; rankColor: string; imageBorder: string;
+}
+
+const CARD_THEMES = {
+  underperformer: { gradientStart: "var(--accent-cold-faint)", border: "var(--accent-cold-glow)", rankBg: "var(--accent-cold-glow)", rankColor: "var(--accent-cold-soft)", imageBorder: "var(--accent-cold-border)" },
+  outperformer: { gradientStart: "var(--accent-hot-faint)", border: "var(--accent-hot-glow)", rankBg: "var(--accent-hot-glow)", rankColor: "var(--accent-hot)", imageBorder: "var(--accent-hot-border)" },
+  discoveryRed: { gradientStart: "rgba(255, 71, 87, 0.06)", border: "rgba(255, 71, 87, 0.15)", rankBg: "rgba(255, 71, 87, 0.15)", rankColor: "#ff6b7a", imageBorder: "rgba(255, 71, 87, 0.2)" },
+  minsMore: { gradientStart: "rgba(34, 197, 94, 0.06)", border: "rgba(34, 197, 94, 0.15)", rankBg: "rgba(34, 197, 94, 0.15)", rankColor: "#22c55e", imageBorder: "rgba(34, 197, 94, 0.2)" },
+} as const satisfies Record<string, CardTheme>;
+
 type ComparisonCardVariant = "underperformer" | "outperformer";
 
-const COMPARISON_CARD_THEME: Record<ComparisonCardVariant, { gradientStart: string; border: string; rankBackground: string; accentColor: string; accentMutedColor: string; imageBorder: string }> = {
-  underperformer: {
-    gradientStart: "var(--accent-cold-faint)", border: "var(--accent-cold-glow)", rankBackground: "var(--accent-cold-glow)",
-    accentColor: "var(--accent-cold-soft)", accentMutedColor: "var(--accent-cold-muted)", imageBorder: "var(--accent-cold-border)",
-  },
-  outperformer: {
-    gradientStart: "var(--accent-hot-faint)", border: "var(--accent-hot-glow)", rankBackground: "var(--accent-hot-glow)",
-    accentColor: "var(--accent-hot)", accentMutedColor: "var(--accent-hot-muted)", imageBorder: "var(--accent-hot-border)",
-  },
-};
-
-function ComparisonCard({ player, index = 0, minutes, variant, valueDeltaLabel, pointsDeltaLabel }: {
-  player: PlayerStats; index?: number; minutes?: number; variant: ComparisonCardVariant; valueDeltaLabel: string; pointsDeltaLabel: string;
+function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement, showExternalIcon = true, subtitle, desktopStats, mobileStats, footer }: {
+  index?: number; theme: CardTheme; name: string; imageUrl: string; profileUrl: string;
+  nameElement: ReactNode; showExternalIcon?: boolean; subtitle: ReactNode;
+  desktopStats: ReactNode; mobileStats: ReactNode; footer?: ReactNode;
 }) {
-  const theme = COMPARISON_CARD_THEME[variant];
   return (
     <div
       className="group rounded-xl p-3 sm:p-4 animate-slide-up hover-lift"
@@ -116,55 +125,97 @@ function ComparisonCard({ player, index = 0, minutes, variant, valueDeltaLabel, 
       }}
     >
       <div className="flex items-center gap-3 sm:gap-4">
-        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold shrink-0" style={{ background: theme.rankBackground, color: theme.accentColor }}>
+        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold shrink-0" style={{ background: theme.rankBg, color: theme.rankColor }}>
           {index + 1}
         </div>
         <div className="relative shrink-0">
-          {player.imageUrl ? (
-            <img src={player.imageUrl} alt={player.name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover" style={{ background: "var(--bg-elevated)", border: `1px solid ${theme.imageBorder}` }} />
+          {imageUrl ? (
+            <img src={imageUrl} alt={name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover" style={{ background: "var(--bg-elevated)", border: `1px solid ${theme.imageBorder}` }} />
           ) : (
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-base sm:text-lg font-bold" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
-              {player.name.charAt(0)}
+              {name.charAt(0)}
             </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          {variant === "underperformer" ? (
-            <Link href={getPlayerBenchmarkHref(player.name)} className="font-semibold text-sm sm:text-base hover:underline block truncate transition-colors" style={{ color: "var(--text-primary)" }}>
-              {player.name}
-            </Link>
-          ) : (
-            <a href={`https://www.transfermarkt.com${player.profileUrl}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-sm sm:text-base hover:underline block truncate transition-colors" style={{ color: "var(--text-primary)" }}>
-              {player.name}
-            </a>
-          )}
+          <div className="flex items-center gap-1.5">
+            {nameElement}
+            {showExternalIcon && (
+              <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 opacity-40 hover:opacity-100 transition-opacity" style={{ color: "var(--text-muted)" }}>
+                <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              </a>
+            )}
+          </div>
           <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mt-0.5 flex-wrap" style={{ color: "var(--text-muted)" }}>
-            <span>{player.position}</span>
-            <span style={{ opacity: 0.4 }}>•</span>
-            <span className="truncate max-w-[100px] sm:max-w-none">{player.club}</span>
-            <span className="hidden sm:inline" style={{ opacity: 0.4 }}>•</span>
-            <span className="hidden sm:inline">{player.age}y</span>
+            {subtitle}
           </div>
         </div>
         <div className="hidden sm:flex items-center gap-3 shrink-0">
-          <div className="text-right">
-            <div className="text-sm font-bold tabular-nums" style={{ color: theme.accentColor }}>{player.marketValueDisplay}</div>
-            <div className="text-[10px] font-medium tabular-nums" style={{ color: theme.accentMutedColor }}>{valueDeltaLabel}</div>
-          </div>
-          <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
-          <div className="text-right min-w-[3rem]">
-            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
-            <div className="text-[10px] font-medium tabular-nums" style={{ color: theme.accentColor }}>{pointsDeltaLabel}</div>
-          </div>
-          <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
-          <div className="min-w-[4.5rem]"><MinutesDisplay minutes={minutes} /></div>
+          {desktopStats}
         </div>
         <div className="sm:hidden text-right shrink-0">
-          <div className="text-xs font-bold tabular-nums" style={{ color: theme.accentColor }}>{player.marketValueDisplay}</div>
-          <div className="text-[10px] tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
+          {mobileStats}
         </div>
       </div>
-      <div className="flex items-center gap-2 sm:gap-3 mt-2 sm:mt-3 pt-2 sm:pt-3 text-[10px] sm:text-xs" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+      {footer && (
+        <div className="flex items-center gap-2 sm:gap-3 mt-2 sm:mt-3 pt-2 sm:pt-3 text-[10px] sm:text-xs" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+          {footer}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ComparisonCard({ player, index = 0, minutes, variant, valueDeltaLabel, pointsDeltaLabel }: {
+  player: PlayerStats; index?: number; minutes?: number; variant: ComparisonCardVariant; valueDeltaLabel: string; pointsDeltaLabel: string;
+}) {
+  const theme = CARD_THEMES[variant];
+  const mutedColor = variant === "underperformer" ? "var(--accent-cold-muted)" : "var(--accent-hot-muted)";
+  const leistungsdatenUrl = getLeistungsdatenUrl(player.profileUrl);
+  return (
+    <PlayerCard
+      index={index}
+      theme={theme}
+      name={player.name}
+      imageUrl={player.imageUrl}
+      profileUrl={leistungsdatenUrl}
+      nameElement={
+        variant === "underperformer" ? (
+          <Link href={getPlayerBenchmarkHref(player.name)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors" style={{ color: "var(--text-primary)" }}>
+            {player.name}
+          </Link>
+        ) : (
+          <a href={leistungsdatenUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors" style={{ color: "var(--text-primary)" }}>
+            {player.name}
+          </a>
+        )
+      }
+      showExternalIcon={variant === "underperformer"}
+      subtitle={<>
+        <span>{player.position}</span>
+        <span style={{ opacity: 0.4 }}>•</span>
+        <span className="truncate max-w-[100px] sm:max-w-none">{player.club}</span>
+        <span className="hidden sm:inline" style={{ opacity: 0.4 }}>•</span>
+        <span className="hidden sm:inline">{player.age}y</span>
+      </>}
+      desktopStats={<>
+        <div className="text-right">
+          <div className="text-sm font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
+          <div className="text-[10px] font-medium tabular-nums" style={{ color: mutedColor }}>{valueDeltaLabel}</div>
+        </div>
+        <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
+        <div className="text-right min-w-[3rem]">
+          <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
+          <div className="text-[10px] font-medium tabular-nums" style={{ color: theme.rankColor }}>{pointsDeltaLabel}</div>
+        </div>
+        <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
+        <div className="min-w-[4.5rem]"><MinutesDisplay minutes={minutes} /></div>
+      </>}
+      mobileStats={<>
+        <div className="text-xs font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
+        <div className="text-[10px] tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
+      </>}
+      footer={<>
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.goals}G</span>
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.assists}A</span>
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.matches} apps</span>
@@ -174,8 +225,8 @@ function ComparisonCard({ player, index = 0, minutes, variant, valueDeltaLabel, 
           {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
           {player.league}
         </span>
-      </div>
-    </div>
+      </>}
+    />
   );
 }
 
@@ -227,73 +278,57 @@ function SearchSkeleton() {
 
 function UnderperformerListCard({ player, index = 0 }: { player: PlayerStats; index?: number }) {
   return (
-    <div
-      className="group rounded-xl p-3 sm:p-4 animate-slide-up hover-lift"
-      style={{
-        background: "linear-gradient(135deg, rgba(255, 71, 87, 0.06) 0%, var(--bg-card) 100%)",
-        border: "1px solid rgba(255, 71, 87, 0.15)",
-        animationDelay: `${Math.min(index * 0.03, 0.3)}s`,
-      }}
-    >
-      <div className="flex items-center gap-3 sm:gap-4">
-        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold shrink-0" style={{ background: "rgba(255, 71, 87, 0.15)", color: "#ff6b7a" }}>
-          {index + 1}
-        </div>
-        <div className="relative shrink-0">
-          {player.imageUrl ? (
-            <img src={player.imageUrl} alt={player.name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover" style={{ background: "var(--bg-elevated)", border: "1px solid rgba(255, 71, 87, 0.2)" }} />
-          ) : (
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-base sm:text-lg font-bold" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
-              {player.name.charAt(0)}
+    <PlayerCard
+      index={index}
+      theme={CARD_THEMES.discoveryRed}
+      name={player.name}
+      imageUrl={player.imageUrl}
+      profileUrl={getLeistungsdatenUrl(player.profileUrl)}
+      nameElement={
+        <Link href={getPlayerBenchmarkHref(player.name)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors" style={{ color: "var(--text-primary)" }}>
+          {player.name}
+        </Link>
+      }
+      subtitle={<>
+        <span>{player.position}</span>
+        <span style={{ opacity: 0.4 }}>•</span>
+        <span className="truncate max-w-[100px] sm:max-w-none">{player.club}</span>
+        <span className="hidden sm:inline" style={{ opacity: 0.4 }}>•</span>
+        <span className="hidden sm:inline">{player.age}y</span>
+      </>}
+      desktopStats={<>
+        {player.outperformedByCount !== undefined && player.outperformedByCount > 0 && (
+          <>
+            <div className="text-right min-w-[4rem]">
+              <div className="text-sm font-bold tabular-nums" style={{ color: "#00ff87" }}>{player.outperformedByCount}</div>
+              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>doing better</div>
             </div>
-          )}
+            <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
+          </>
+        )}
+        <div className="text-right">
+          <div className="text-sm font-bold tabular-nums" style={{ color: "#ff6b7a" }}>{player.marketValueDisplay}</div>
+          <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>value</div>
         </div>
-        <div className="flex-1 min-w-0">
-          <Link href={getPlayerBenchmarkHref(player.name)} className="font-semibold text-sm sm:text-base hover:underline block truncate transition-colors" style={{ color: "var(--text-primary)" }}>
-            {player.name}
-          </Link>
-          <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mt-0.5 flex-wrap" style={{ color: "var(--text-muted)" }}>
-            <span>{player.position}</span>
-            <span style={{ opacity: 0.4 }}>•</span>
-            <span className="truncate max-w-[100px] sm:max-w-none">{player.club}</span>
-            <span className="hidden sm:inline" style={{ opacity: 0.4 }}>•</span>
-            <span className="hidden sm:inline">{player.age}y</span>
-          </div>
+        <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
+        <div className="text-right min-w-[3rem]">
+          <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
+          <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>G+A</div>
         </div>
-        <div className="hidden sm:flex items-center gap-3 shrink-0">
-          {player.outperformedByCount !== undefined && player.outperformedByCount > 0 && (
-            <>
-              <div className="text-right min-w-[4rem]">
-                <div className="text-sm font-bold tabular-nums" style={{ color: "#00ff87" }}>{player.outperformedByCount}</div>
-                <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>doing better</div>
-              </div>
-              <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
-            </>
-          )}
-          <div className="text-right">
-            <div className="text-sm font-bold tabular-nums" style={{ color: "#ff6b7a" }}>{player.marketValueDisplay}</div>
-            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>value</div>
-          </div>
-          <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
-          <div className="text-right min-w-[3rem]">
-            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
-            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>G+A</div>
-          </div>
-          <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
-          <div className="text-right min-w-[4rem]">
-            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes?.toLocaleString() || "—"}&apos;</div>
-            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>mins</div>
-          </div>
+        <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
+        <div className="text-right min-w-[4rem]">
+          <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes?.toLocaleString() || "—"}&apos;</div>
+          <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>mins</div>
         </div>
-        <div className="sm:hidden text-right shrink-0">
-          {player.outperformedByCount !== undefined && player.outperformedByCount > 0 && (
-            <div className="text-[10px] font-bold tabular-nums mb-0.5" style={{ color: "#00ff87" }}>{player.outperformedByCount} doing better</div>
-          )}
-          <div className="text-xs font-bold tabular-nums" style={{ color: "#ff6b7a" }}>{player.marketValueDisplay}</div>
-          <div className="text-[10px] tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 sm:gap-3 mt-2 sm:mt-3 pt-2 sm:pt-3 text-[10px] sm:text-xs" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+      </>}
+      mobileStats={<>
+        {player.outperformedByCount !== undefined && player.outperformedByCount > 0 && (
+          <div className="text-[10px] font-bold tabular-nums mb-0.5" style={{ color: "#00ff87" }}>{player.outperformedByCount} doing better</div>
+        )}
+        <div className="text-xs font-bold tabular-nums" style={{ color: "#ff6b7a" }}>{player.marketValueDisplay}</div>
+        <div className="text-[10px] tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
+      </>}
+      footer={<>
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.goals}G</span>
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.assists}A</span>
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.matches} apps</span>
@@ -303,8 +338,8 @@ function UnderperformerListCard({ player, index = 0 }: { player: PlayerStats; in
           {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
           {player.league}
         </span>
-      </div>
-    </div>
+      </>}
+    />
   );
 }
 
@@ -409,17 +444,12 @@ function UnderperformersSection({ candidates, allPlayers, isLoading, error, sort
 
 /* ── Minutes Components ── */
 
-const MINS_THEME = {
-  less: { bg: "rgba(255, 71, 87, 0.06)", border: "rgba(255, 71, 87, 0.15)", color: "#ff6b7a", rankBg: "rgba(255, 71, 87, 0.15)", imgBorder: "1px solid rgba(255, 71, 87, 0.2)" },
-  more: { bg: "rgba(34, 197, 94, 0.06)", border: "rgba(34, 197, 94, 0.15)", color: "#22c55e", rankBg: "rgba(34, 197, 94, 0.15)", imgBorder: "1px solid rgba(34, 197, 94, 0.2)" },
-} as const;
-
 function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
   return (
     <BenchmarkCard
       name={player.name}
       imageUrl={player.imageUrl}
-      href={`https://www.transfermarkt.com${player.profileUrl.replace(PROFIL_RE, "/leistungsdaten/")}`}
+      href={getLeistungsdatenUrl(player.profileUrl)}
       subtitle={<><span className="font-medium">{player.position}</span>{player.nationality && <><span style={{ opacity: 0.4 }}>·</span><span>{player.nationality}</span></>}</>}
       desktopStats={<><span className="tabular-nums">{player.totalMatches} games</span><span className="tabular-nums">{player.goals} goals</span><span className="tabular-nums">{player.assists} assists</span><span className="opacity-60">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.totalMatches} games</span><span className="tabular-nums">{player.goals}G {player.assists}A</span><span className="opacity-60">Age {player.age}</span></>}
@@ -432,91 +462,87 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
 function MvPlayerCard({ player, target, index, variant = "less", onSelect, injuryMap }: {
   player: MinutesValuePlayer; target?: MinutesValuePlayer; index: number; variant?: CompareTab; onSelect?: (p: MinutesValuePlayer) => void; injuryMap?: InjuryMap;
 }) {
-  const t = MINS_THEME[variant];
+  const theme = variant === "less" ? CARD_THEMES.discoveryRed : CARD_THEMES.minsMore;
   const valueDiff = target ? player.marketValue - target.marketValue : 0;
   const valueDiffDisplay = valueDiff > 0 ? `+${formatValue(valueDiff)}` : formatValue(valueDiff);
   const minsDiff = target ? player.minutes - target.minutes : 0;
 
   return (
-    <div
-      className="group rounded-xl p-3 sm:p-4 animate-slide-up hover-lift"
-      style={{
-        background: `linear-gradient(135deg, ${t.bg} 0%, var(--bg-card) 100%)`,
-        border: `1px solid ${t.border}`,
-        animationDelay: `${Math.min(index * 0.03, 0.3)}s`,
-      }}
-    >
-      <div className="flex items-center gap-3 sm:gap-4">
-        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold shrink-0" style={{ background: t.rankBg, color: t.color }}>
-          {index + 1}
+    <PlayerCard
+      index={index}
+      theme={theme}
+      name={player.name}
+      imageUrl={player.imageUrl}
+      profileUrl={getLeistungsdatenUrl(player.profileUrl)}
+      nameElement={
+        <button type="button" onClick={() => onSelect?.(player)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors text-left" style={{ color: "var(--text-primary)" }}>
+          {player.name}
+        </button>
+      }
+      subtitle={<>
+        <span>{player.position}</span>
+        {variant === "less" && injuryMap?.[player.playerId] && (() => {
+          const info = injuryMap[player.playerId];
+          const dur = formatInjuryDuration(info.injurySince);
+          const ret = formatReturnInfo(info.returnDate);
+          const parts = [info.injury, dur && `since ${dur}`, ret?.label].filter(Boolean);
+          return (
+            <>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[rgba(255,71,87,0.12)] text-[#ff6b7a]">
+                {parts.join(" · ")}
+              </span>
+            </>
+          );
+        })()}
+        <span className="hidden sm:inline" style={{ opacity: 0.4 }}>·</span>
+        <span className="hidden sm:inline">{player.age}y</span>
+      </>}
+      desktopStats={<>
+        <div className="text-right">
+          <div className="text-sm font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
+          {target && <div className="text-[10px] font-medium tabular-nums" style={{ color: theme.rankColor, opacity: 0.7 }}>{valueDiffDisplay}</div>}
         </div>
-        <div className="relative shrink-0">
-          {player.imageUrl ? (
-            <img src={player.imageUrl} alt={player.name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover" style={{ background: "var(--bg-elevated)", border: t.imgBorder }} />
-          ) : (
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-base sm:text-lg font-bold" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
-              {player.name.charAt(0)}
-            </div>
-          )}
+        <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
+        <div className="text-right min-w-[4rem]">
+          <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes.toLocaleString()}&apos;</div>
+          {target && <div className="text-[10px] font-medium tabular-nums" style={{ color: theme.rankColor }}>{variant === "more" ? "+" : "\u2212"}{Math.abs(minsDiff).toLocaleString()}&apos;</div>}
         </div>
-        <div className="flex-1 min-w-0">
-          <button type="button" onClick={() => onSelect?.(player)} className="font-semibold text-sm sm:text-base hover:underline block truncate transition-colors text-left" style={{ color: "var(--text-primary)" }}>
-            {player.name}
-          </button>
-          <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mt-0.5 flex-wrap" style={{ color: "var(--text-muted)" }}>
-            <span>{player.position}</span>
-            {variant === "less" && injuryMap?.[player.playerId] && (() => {
-              const info = injuryMap[player.playerId];
-              const ret = formatReturnInfo(info.returnDate);
-              return (
-                <>
-                  <span style={{ opacity: 0.4 }}>·</span>
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[rgba(255,71,87,0.12)] text-[#ff6b7a]">
-                    {info.injury}{ret ? ` · ${ret.label}` : ""}
-                  </span>
-                </>
-              );
-            })()}
-            <span className="hidden sm:inline" style={{ opacity: 0.4 }}>·</span>
-            <span className="hidden sm:inline">{player.age}y</span>
+        <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
+        <div className="flex items-center gap-2.5 text-right">
+          <div>
+            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.totalMatches}</div>
+            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>games</div>
+          </div>
+          <div>
+            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.goals}</div>
+            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>goals</div>
+          </div>
+          <div>
+            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.assists}</div>
+            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>assists</div>
           </div>
         </div>
-        <div className="hidden sm:flex items-center gap-3 shrink-0">
-          <div className="text-right">
-            <div className="text-sm font-bold tabular-nums" style={{ color: t.color }}>{player.marketValueDisplay}</div>
-            {target && <div className="text-[10px] font-medium tabular-nums" style={{ color: t.color, opacity: 0.7 }}>{valueDiffDisplay}</div>}
-          </div>
-          <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
-          <div className="text-right min-w-[4rem]">
-            <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes.toLocaleString()}&apos;</div>
-            {target && <div className="text-[10px] font-medium tabular-nums" style={{ color: t.color }}>{variant === "more" ? "+" : "\u2212"}{Math.abs(minsDiff).toLocaleString()}&apos;</div>}
-          </div>
-          <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
-          <div className="flex items-center gap-2.5 text-right">
-            <div>
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.totalMatches}</div>
-              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>games</div>
-            </div>
-            <div>
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.goals}</div>
-              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>goals</div>
-            </div>
-            <div>
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.assists}</div>
-              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>assists</div>
-            </div>
-          </div>
-        </div>
-        <div className="sm:hidden text-right shrink-0">
-          <div className="text-xs font-bold tabular-nums" style={{ color: t.color }}>{player.marketValueDisplay}</div>
-          <div className="text-[10px] tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes.toLocaleString()}&apos;</div>
-        </div>
-      </div>
-    </div>
+      </>}
+      mobileStats={<>
+        <div className="text-xs font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
+        <div className="text-[10px] tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes.toLocaleString()}&apos;</div>
+      </>}
+      footer={<>
+        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.goals}G</span>
+        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.assists}A</span>
+        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.totalMatches} games</span>
+        <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
+        <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+          {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
+          {player.league}
+        </span>
+      </>}
+    />
   );
 }
 
-const ROW_HEIGHT = 100;
+const ROW_HEIGHT = 130;
 const GAP = 12;
 
 function MvVirtualPlayerList({ items, target, variant = "less", onSelect, injuryMap }: {
@@ -672,7 +698,7 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
           value={mode}
           onValueChange={(v) => {
             if (!v) return;
-            push({ mode: v === "ga" ? null : v, name: null, tab: null, bTop5: null });
+            push({ mode: v === "ga" ? null : v, tab: null, bTop5: null });
           }}
           className="mb-4"
         >

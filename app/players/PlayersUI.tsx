@@ -7,7 +7,7 @@ import { SelectNative } from "@/components/ui/select-native";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { filterPlayersByLeagueAndClub, filterTop5 } from "@/lib/filter-players";
-import { formatReturnInfo, PROFIL_RE } from "@/lib/format";
+import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
 import type { MinutesValuePlayer, InjuryMap } from "@/app/types";
 
 type SortKey = "value" | "mins" | "games" | "ga";
@@ -64,12 +64,14 @@ function PlayerCard({ player, index, injuryMap }: { player: MinutesValuePlayer; 
             <span>{player.position}</span>
             {injuryMap?.[player.playerId] && (() => {
               const info = injuryMap[player.playerId];
+              const dur = formatInjuryDuration(info.injurySince);
               const ret = formatReturnInfo(info.returnDate);
+              const parts = [info.injury, dur && `since ${dur}`, ret?.label].filter(Boolean);
               return (
                 <>
                   <span style={{ opacity: 0.4 }}>·</span>
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[rgba(255,71,87,0.12)] text-[#ff6b7a]">
-                    {info.injury}{ret ? ` · ${ret.label}` : ""}
+                    {parts.join(" · ")}
                   </span>
                 </>
               );

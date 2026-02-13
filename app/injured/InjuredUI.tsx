@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { cn } from "@/lib/utils";
 import type { InjuredPlayer } from "@/app/types";
 import { getLeagueLogoUrl } from "@/lib/leagues";
-import { formatReturnInfo } from "@/lib/format";
+import { formatReturnInfo, formatInjuryDuration } from "@/lib/format";
 import { useProgressiveFetch } from "@/lib/use-progressive-fetch";
 
 interface TeamInjuryGroup {
@@ -148,25 +148,31 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
             </div>
 
             {/* Injury Info */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 sm:mt-2 text-xs sm:text-sm">
-              <Badge variant="destructive" className="gap-1">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span>{player.injury}</span>
-              </Badge>
-              {returnInfo && (
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    "text-[10px] sm:text-xs",
-                    returnInfo.imminent && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+            {(() => {
+              const dur = formatInjuryDuration(player.injurySince);
+              return (
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 sm:mt-2 text-xs sm:text-sm">
+                  <Badge variant="destructive" className="gap-1">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span>{player.injury}</span>
+                    {dur && <><span className="opacity-50">·</span><span>since {dur}</span></>}
+                  </Badge>
+                  {returnInfo && (
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "text-[10px] sm:text-xs",
+                        returnInfo.imminent && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      )}
+                    >
+                      {returnInfo.label}
+                    </Badge>
                   )}
-                >
-                  {returnInfo.imminent ? "Back " : "Until "}{returnInfo.label}
-                </Badge>
-              )}
-            </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </CardContent>
@@ -223,6 +229,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
         <div className="mt-3 flex flex-wrap gap-1.5 sm:gap-2">
           {team.players.map((player) => {
             const ri = formatReturnInfo(player.returnDate);
+            const dur = formatInjuryDuration(player.injurySince);
             return (
               <a
                 key={player.profileUrl || player.name}
@@ -239,6 +246,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                   <span className="text-[var(--text-secondary)]">{player.injury}</span>
                 )}
                 <span className="text-[var(--accent-hot)] font-medium font-value">{player.marketValue}</span>
+                {dur && <span className="text-[var(--text-muted)]">since {dur}</span>}
                 {ri && <span className={cn("font-medium", ri.imminent ? "text-emerald-500" : "text-[var(--text-muted)]")}>{ri.label}</span>}
               </a>
             );
@@ -269,6 +277,7 @@ function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; ra
         <div className="px-3 py-2 sm:px-4 sm:py-2.5 border-t border-[var(--border-subtle)] flex flex-wrap gap-1.5">
           {group.players.map((player) => {
             const ri = formatReturnInfo(player.returnDate);
+            const dur = formatInjuryDuration(player.injurySince);
             return (
               <a
                 key={player.profileUrl || player.name}
@@ -283,6 +292,7 @@ function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; ra
                 <span className="text-[var(--text-primary)]">{player.name}</span>
                 <span className="text-[var(--text-secondary)]">{player.club}</span>
                 <span className="text-[var(--accent-hot)] font-medium font-value">{player.marketValue}</span>
+                {dur && <span className="text-[var(--text-muted)]">since {dur}</span>}
                 {ri && <span className={cn("font-medium", ri.imminent ? "text-emerald-500" : "text-[var(--text-muted)]")}>{ri.label}</span>}
               </a>
             );

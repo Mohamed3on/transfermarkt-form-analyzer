@@ -11,7 +11,7 @@ function parseInjuredPlayers($: cheerio.CheerioAPI, leagueName: string): Injured
 
   $("table.items > tbody > tr").each((_, row) => {
     const cells = $(row).find("> td");
-    if (cells.length < 5) return;
+    if (cells.length < 8) return;
 
     const nameCell = $(cells[0]);
     const inlineTable = nameCell.find(".inline-table");
@@ -26,9 +26,12 @@ function parseInjuredPlayers($: cheerio.CheerioAPI, leagueName: string): Injured
     const club = clubLink.attr("title") || "";
     const clubLogoUrl = (clubCell.find("img").attr("src") || "").replace("/tiny/", "/head/");
 
-    const injury = $(cells[2]).text().trim();
-    const returnDate = $(cells[3]).text().trim();
-    const marketValue = $(cells[4]).text().trim();
+    const age = parseInt($(cells[2]).text().trim(), 10) || undefined;
+    // cells[3] = nationality (skip)
+    const injury = $(cells[4]).text().trim();
+    const injurySince = $(cells[5]).text().trim();
+    const returnDate = $(cells[6]).text().trim();
+    const marketValue = $(cells[7]).text().trim();
     const marketValueNum = parseMarketValue(marketValue);
 
     if (name && marketValueNum > 0) {
@@ -39,6 +42,8 @@ function parseInjuredPlayers($: cheerio.CheerioAPI, leagueName: string): Injured
         clubLogoUrl,
         injury,
         returnDate,
+        injurySince,
+        age,
         marketValue,
         marketValueNum,
         imageUrl,
@@ -54,7 +59,7 @@ function parseInjuredPlayers($: cheerio.CheerioAPI, leagueName: string): Injured
 function fetchLeagueInjuredCached(league: (typeof LEAGUES)[number]): Promise<InjuredPlayer[]> {
   return unstable_cache(
     async () => {
-      const url = `${BASE_URL}/${league.slug}/verletztespieler/wettbewerb/${league.code}/ajax/yw1/sort/marktwert.desc?ajax=yw1`;
+      const url = `${BASE_URL}/${league.slug}/verletztespieler/wettbewerb/${league.code}/plus/1`;
       const html = await fetchPage(url);
       const $ = cheerio.load(html);
       return parseInjuredPlayers($, league.name);

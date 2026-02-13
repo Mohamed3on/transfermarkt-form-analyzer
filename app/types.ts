@@ -88,6 +88,8 @@ export interface InjuredPlayer {
   clubLogoUrl: string;
   injury: string;
   returnDate: string;
+  injurySince: string;
+  age?: number;
   marketValue: string;
   marketValueNum: number;
   imageUrl: string;
@@ -152,7 +154,7 @@ export interface MinutesValuePlayer {
   isNewSigning?: boolean;
 }
 
-export type InjuryMap = Record<string, { injury: string; returnDate: string }>;
+export type InjuryMap = Record<string, { injury: string; returnDate: string; injurySince: string }>;
 
 export interface PlayerStatsResult {
   minutes: number;

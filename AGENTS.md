@@ -12,6 +12,8 @@ Use [shadcn/ui](https://ui.shadcn.com) for all UI components. Install new compon
 
 **No inline styles:** Use Tailwind classes (including `data-[state=on]:`, `hover:`, `active:` variants) instead of `style={{}}`. Inline styles override Tailwind's interactive states.
 
+**Reusable components:** Always think in reusable components. Before creating a new component, look for existing components with similar structure and extract a shared base. Actively look for opportunities to consolidate duplicated UI patterns and logic across the codebase.
+
 ## Performance
 
 - **Server-side data fetching:** Always fetch data in async server components and pass as `initialData` props to client components. Never use client-side `useQuery`/`fetch` waterfalls. Use Next.js `loading.tsx` for streaming skeletons while server fetches. See `team-form`, `injured`, `minutes-value` pages for the pattern.
