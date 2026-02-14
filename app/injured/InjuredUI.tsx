@@ -10,6 +10,10 @@ import type { InjuredPlayer } from "@/app/types";
 import { getLeagueLogoUrl } from "@/lib/leagues";
 import { formatReturnInfo, formatInjuryDuration } from "@/lib/format";
 import { useProgressiveFetch } from "@/lib/use-progressive-fetch";
+import { useQueryParams } from "@/lib/hooks/use-query-params";
+import { SelectNative } from "@/components/ui/select-native";
+import { DebouncedInput } from "@/components/DebouncedInput";
+import { filterPlayersByLeagueAndClub } from "@/lib/filter-players";
 
 interface TeamInjuryGroup {
   club: string;
@@ -319,7 +323,6 @@ function StatCell({ label, value, sub, accent = false }: { label: string; value:
 }
 
 function StatsHighlights({
-  players,
   teamGroups,
   injuryTypeGroups,
 }: {
@@ -329,22 +332,11 @@ function StatsHighlights({
 }) {
   const hardestHitClub = teamGroups[0] ?? null;
 
-  const leagueImpact = useMemo(() => {
-    const leagueValues: Record<string, { value: number; count: number }> = {};
-    players.forEach((p) => {
-      if (!leagueValues[p.league]) leagueValues[p.league] = { value: 0, count: 0 };
-      leagueValues[p.league].value += p.marketValueNum;
-      leagueValues[p.league].count++;
-    });
-    const sorted = Object.entries(leagueValues).sort((a, b) => b[1].value - a[1].value);
-    return sorted[0] ? { league: sorted[0][0], value: sorted[0][1].value, count: sorted[0][1].count } : null;
-  }, [players]);
-
   const topInjury = injuryTypeGroups[0] ?? null;
 
   return (
     <div className="mb-6 sm:mb-8 animate-scale-in rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] overflow-hidden">
-      <div className="grid grid-cols-3 divide-x divide-[var(--border-subtle)]">
+      <div className="grid grid-cols-2 divide-x divide-[var(--border-subtle)]">
         {/* Hardest Hit Club */}
         {hardestHitClub && (
           <div className="p-3 sm:p-4 flex items-start gap-2.5">
@@ -369,32 +361,34 @@ function StatsHighlights({
             />
           </div>
         )}
-
-        {/* Most Affected League */}
-        {leagueImpact && (
-          <div className="p-3 sm:p-4 flex items-start gap-2.5">
-            {getLeagueLogoUrl(leagueImpact.league) && (
-              <img src={getLeagueLogoUrl(leagueImpact.league)} alt="" className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-sm bg-white p-px shrink-0 mt-3" />
-            )}
-            <StatCell
-              label="Most Affected"
-              value={leagueImpact.league}
-              sub={`${formatValueNum(leagueImpact.value)} · ${leagueImpact.count} players`}
-            />
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
+type GroupSort = "value" | "count";
+
 export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
+  const { params, update } = useQueryParams("/injured");
   const { results: extraResults, pending } = useProgressiveFetch(failedLeagues, fetchLeagueInjured);
 
-  const players = useMemo(() => {
+  const tab = params.get("tab") || "players";
+  const leagueFilter = params.get("league") || "all";
+  const clubFilter = params.get("club") || "";
+  const teamSort: GroupSort = params.get("tSort") === "count" ? "count" : "value";
+  const injurySort: GroupSort = params.get("iSort") === "count" ? "count" : "value";
+
+  const allPlayers = useMemo(() => {
     if (extraResults.length === 0) return initialData.players;
     return [...initialData.players, ...extraResults.flat()].sort((a, b) => b.marketValueNum - a.marketValueNum);
   }, [initialData.players, extraResults]);
+
+  const leagueOptions = useMemo(() => Array.from(new Set(allPlayers.map((p) => p.league).filter(Boolean))).sort(), [allPlayers]);
+
+  const players = useMemo(
+    () => filterPlayersByLeagueAndClub(allPlayers, leagueFilter, clubFilter),
+    [allPlayers, leagueFilter, clubFilter]
+  );
 
   const teamGroups = useMemo(() => {
     const groupMap = new Map<string, TeamInjuryGroup>();
@@ -417,8 +411,11 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
       }
     });
 
-    return Array.from(groupMap.values()).sort((a, b) => b.totalValue - a.totalValue);
-  }, [players]);
+    const groups = Array.from(groupMap.values());
+    return teamSort === "count"
+      ? groups.sort((a, b) => b.count - a.count || b.totalValue - a.totalValue)
+      : groups.sort((a, b) => b.totalValue - a.totalValue);
+  }, [players, teamSort]);
 
   const injuryTypeGroups = useMemo(() => {
     const groupMap = new Map<string, InjuryTypeGroup>();
@@ -440,8 +437,11 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
       }
     });
 
-    return Array.from(groupMap.values()).sort((a, b) => b.totalValue - a.totalValue);
-  }, [players]);
+    const groups = Array.from(groupMap.values());
+    return injurySort === "count"
+      ? groups.sort((a, b) => b.count - a.count || b.totalValue - a.totalValue)
+      : groups.sort((a, b) => b.totalValue - a.totalValue);
+  }, [players, injurySort]);
 
   return (
     <>
@@ -451,6 +451,15 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
         </p>
       )}
 
+      {/* Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4 sm:mb-6">
+        <SelectNative value={leagueFilter} onChange={(e) => update({ league: e.target.value === "all" ? null : e.target.value })} className="h-10">
+          <option value="all">All leagues</option>
+          {leagueOptions.map((league) => (<option key={league} value={league}>{league}</option>))}
+        </SelectNative>
+        <DebouncedInput value={clubFilter} onChange={(value) => update({ club: value || null })} placeholder="Filter by club" className="h-10" />
+      </div>
+
       {/* Stats Highlights */}
       <StatsHighlights
         players={players}
@@ -459,7 +468,7 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
       />
 
       {/* Tabs */}
-      <Tabs defaultValue="players" className="w-full">
+      <Tabs value={tab} onValueChange={(v) => update({ tab: v === "players" ? null : v })} className="w-full">
         <TabsList className="mb-4 sm:mb-6">
           <TabsTrigger value="players">All Players</TabsTrigger>
           <TabsTrigger value="teams">By Team</TabsTrigger>
@@ -475,6 +484,7 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
         </TabsContent>
 
         <TabsContent value="teams">
+          <SortToggle value={teamSort} onChange={(v) => update({ tSort: v === "value" ? null : v })} />
           <div className="space-y-3">
             {teamGroups.map((team, idx) => (
               <TeamInjuryCard key={team.club} team={team} rank={idx + 1} index={idx} />
@@ -483,6 +493,7 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
         </TabsContent>
 
         <TabsContent value="injuries">
+          <SortToggle value={injurySort} onChange={(v) => update({ iSort: v === "value" ? null : v })} />
           <div className="space-y-3">
             {injuryTypeGroups.map((group, idx) => (
               <InjuryTypeCard key={group.injury} group={group} rank={idx + 1} index={idx} />
@@ -491,5 +502,36 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
         </TabsContent>
       </Tabs>
     </>
+  );
+}
+
+function SortToggle({ value, onChange }: { value: GroupSort; onChange: (v: GroupSort) => void }) {
+  return (
+    <div className="flex gap-1 mb-3 text-xs">
+      <button
+        type="button"
+        onClick={() => onChange("value")}
+        className={cn(
+          "px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer",
+          value === "value"
+            ? "bg-[var(--accent-hot)]/15 text-[var(--accent-hot)]"
+            : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+        )}
+      >
+        Total value
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("count")}
+        className={cn(
+          "px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer",
+          value === "count"
+            ? "bg-[var(--accent-hot)]/15 text-[var(--accent-hot)]"
+            : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+        )}
+      >
+        Most players
+      </button>
+    </div>
   );
 }
