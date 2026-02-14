@@ -47,3 +47,13 @@ export function canBeOutperformerAgainst(candidatePosition: string, targetPositi
 export function isDefensivePosition(position: string): boolean {
   return DEFENSIVE_POSITIONS.has(position);
 }
+
+/** `a` got equal or better output in equal or fewer minutes, with at least one strictly better. Falls back to strict points comparison when either side has no minutes data. */
+export function strictlyOutperforms(
+  a: { points: number; minutes?: number },
+  b: { points: number; minutes?: number },
+): boolean {
+  if (a.minutes === undefined || b.minutes === undefined) return a.points > b.points;
+  return a.points >= b.points && a.minutes <= b.minutes &&
+    (a.points > b.points || a.minutes < b.minutes);
+}

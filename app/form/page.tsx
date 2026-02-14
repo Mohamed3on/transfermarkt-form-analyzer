@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getAnalysis } from "@/lib/form-analysis";
 import { AnalyzerUI } from "@/app/components/AnalyzerUI";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 7200;
 
 export const metadata: Metadata = {
   title: "Recent Form",

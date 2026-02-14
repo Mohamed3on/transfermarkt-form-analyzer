@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { PlayerStats } from "@/app/types";
 import { getPlayerStatsData } from "@/lib/fetch-minutes-value";
-import { canBeUnderperformerAgainst, canBeOutperformerAgainst, isDefensivePosition } from "@/lib/positions";
+import { canBeUnderperformerAgainst, canBeOutperformerAgainst, isDefensivePosition, strictlyOutperforms } from "@/lib/positions";
 
 type Candidate = PlayerStats & { outperformedByCount: number };
 
@@ -18,9 +18,8 @@ function findCandidates(players: PlayerStats[]): Candidate[] {
 
     const cheaper = sorted.slice(i + 1);
     const outperformedByCount = cheaper.filter((p) =>
-      p.points > player.points &&
-      canBeOutperformerAgainst(p.position, player.position) &&
-      (p.minutes === undefined || p.minutes <= player.minutes!)
+      strictlyOutperforms(p, player) &&
+      canBeOutperformerAgainst(p.position, player.position)
     ).length;
 
     if (outperformedByCount >= 2) {
@@ -32,18 +31,15 @@ function findCandidates(players: PlayerStats[]): Candidate[] {
 }
 
 function filterUndominated(candidates: Candidate[]): Candidate[] {
-  return candidates.filter((player) => {
-    if (player.minutes === undefined) return true;
-    return !candidates.some(
+  return candidates.filter((player) =>
+    !candidates.some(
       (other) =>
         other.playerId !== player.playerId &&
-        other.minutes !== undefined &&
         canBeUnderperformerAgainst(other.position, player.position) &&
         other.marketValue >= player.marketValue &&
-        other.minutes >= player.minutes! &&
-        other.points < player.points
-    );
-  });
+        strictlyOutperforms(player, other)
+    )
+  );
 }
 
 export async function GET() {

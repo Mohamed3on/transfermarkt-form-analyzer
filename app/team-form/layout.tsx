@@ -7,7 +7,7 @@ export default function TeamFormLayout({ children }: { children: React.ReactNode
             Team Value vs Table
           </h1>
           <p className="text-sm sm:text-lg" style={{ color: "var(--text-muted)" }}>
-            Delta = actual points minus expected points from squad value rank
+            Each team&apos;s expected points are derived from their squad market value rank within the league. The delta shows how many points they&apos;re ahead or behind what their spending level predicts.
           </p>
         </div>
         {children}

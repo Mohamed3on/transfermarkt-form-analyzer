@@ -171,5 +171,5 @@ export const getAnalysis = unstable_cache(
     return { success: false, matchedPeriod: null, analysis };
   },
   ["form-analysis"],
-  { revalidate: 43200, tags: ["form-analysis"] }
+  { revalidate: 7200, tags: ["form-analysis"] }
 );

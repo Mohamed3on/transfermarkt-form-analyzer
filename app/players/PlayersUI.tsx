@@ -162,6 +162,7 @@ export function PlayersUI({ initialData: players, injuryMap }: { initialData: Mi
   const leagueFilter = params.get("league") || "all";
   const clubFilter = params.get("club") || "";
   const top5Only = params.get("top5") === "1";
+  const newSigningsOnly = params.get("new") === "1";
 
   const leagueOptions = useMemo(
     () => Array.from(new Set(players.map((p) => p.league).filter(Boolean))).sort(),
@@ -171,6 +172,7 @@ export function PlayersUI({ initialData: players, injuryMap }: { initialData: Mi
   const sortedPlayers = useMemo(() => {
     let list = filterPlayersByLeagueAndClub(players, leagueFilter, clubFilter);
     if (top5Only) list = filterTop5(list);
+    if (newSigningsOnly) list = list.filter((p) => p.isNewSigning);
     return [...list].sort((a, b) => {
       let diff: number;
       switch (sortBy) {
@@ -181,7 +183,7 @@ export function PlayersUI({ initialData: players, injuryMap }: { initialData: Mi
       }
       return sortAsc ? -diff : diff;
     });
-  }, [players, sortBy, sortAsc, leagueFilter, clubFilter, top5Only]);
+  }, [players, sortBy, sortAsc, leagueFilter, clubFilter, top5Only, newSigningsOnly]);
 
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
@@ -191,7 +193,7 @@ export function PlayersUI({ initialData: players, injuryMap }: { initialData: Mi
             Player <span style={{ color: "var(--accent-blue)" }}>Explorer</span>
           </h2>
           <p className="text-xs sm:text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Browse and filter {players.length.toLocaleString()} elite players by value, minutes, games, and G+A
+            {players.length.toLocaleString()} players from Europe&apos;s top 5 leagues, sortable by market value, minutes played, appearances, and goal contributions. Data from Transfermarkt, updated daily.
           </p>
         </div>
 
@@ -270,6 +272,18 @@ export function PlayersUI({ initialData: players, injuryMap }: { initialData: Mi
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Top 5 leagues
+              </button>
+              <button
+                type="button"
+                onClick={() => update({ new: newSigningsOnly ? null : "1" })}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                style={{
+                  background: newSigningsOnly ? "rgba(0, 255, 135, 0.15)" : "var(--bg-elevated)",
+                  color: newSigningsOnly ? "#00ff87" : "var(--text-muted)",
+                  border: newSigningsOnly ? "1px solid rgba(0, 255, 135, 0.3)" : "1px solid var(--border-subtle)",
+                }}
+              >
+                New signings
               </button>
             </div>
           </div>

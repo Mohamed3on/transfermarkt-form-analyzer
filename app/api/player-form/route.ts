@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { PlayerStats } from "@/app/types";
 import { getPlayerStatsData } from "@/lib/fetch-minutes-value";
-import { canBeOutperformerAgainst, canBeUnderperformerAgainst } from "@/lib/positions";
+import { canBeOutperformerAgainst, canBeUnderperformerAgainst, strictlyOutperforms } from "@/lib/positions";
 
 function normalizeForSearch(str: string): string {
   return str
@@ -27,19 +27,13 @@ function findPlayerByName(players: PlayerStats[], searchName: string): PlayerSta
 
 function findUnderperformers(players: PlayerStats[], target: PlayerStats): PlayerStats[] {
   return players.filter(
-    (p) =>
-      p.name !== target.name &&
-      p.marketValue >= target.marketValue &&
-      p.points < target.points
+    (p) => p.name !== target.name && p.marketValue >= target.marketValue && strictlyOutperforms(target, p)
   );
 }
 
 function findOutperformers(players: PlayerStats[], target: PlayerStats): PlayerStats[] {
   return players.filter(
-    (p) =>
-      p.name !== target.name &&
-      p.marketValue <= target.marketValue &&
-      p.points > target.points
+    (p) => p.name !== target.name && p.marketValue <= target.marketValue && strictlyOutperforms(p, target)
   );
 }
 

@@ -173,5 +173,5 @@ export const getTeamFormData = unstable_cache(
     };
   },
   ["team-form"],
-  { revalidate: 43200, tags: ["team-form"] }
+  { revalidate: 7200, tags: ["team-form"] }
 );

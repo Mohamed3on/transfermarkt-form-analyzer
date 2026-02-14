@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTeamFormData } from "@/lib/team-form";
 import { TeamFormUI } from "./TeamFormUI";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 7200;
 
 export const metadata: Metadata = {
   title: "Value vs Table Performance",

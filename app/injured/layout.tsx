@@ -7,7 +7,7 @@ export default function InjuredLayout({ children }: { children: React.ReactNode 
             Injury Impact
           </h1>
           <p className="text-sm sm:text-lg text-[var(--text-muted)]">
-            Highest market value currently sidelined across Europe&apos;s top 5 leagues
+            Currently injured players ranked by market value across Europe&apos;s top 5 leagues. Team impact is the combined value of all sidelined squad members.
           </p>
         </div>
         {children}

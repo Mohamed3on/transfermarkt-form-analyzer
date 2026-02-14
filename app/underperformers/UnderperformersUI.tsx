@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ExternalLink } from "lucide-react";
 import { getLeagueLogoUrl } from "@/lib/leagues";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES } from "@/lib/filter-players";
-import { canBeOutperformerAgainst } from "@/lib/positions";
+import { canBeOutperformerAgainst, strictlyOutperforms } from "@/lib/positions";
 import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { BenchmarkCard, BigNumber } from "./BenchmarkCard";
@@ -354,9 +354,8 @@ function UnderperformersSection({ candidates, allPlayers, isLoading, error, sort
       filtered = filtered.map((player) => {
         const count = top5Players.filter((p) =>
           p.marketValue < player.marketValue &&
-          p.points > player.points &&
-          canBeOutperformerAgainst(p.position, player.position) &&
-          (p.minutes === undefined || player.minutes === undefined || p.minutes <= player.minutes)
+          strictlyOutperforms(p, player) &&
+          canBeOutperformerAgainst(p.position, player.position)
         ).length;
         return { ...player, outperformedByCount: count };
       });
@@ -621,19 +620,15 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
 
   const filteredUnderperformers = useMemo(() => {
     if (!gaData?.underperformers) return [];
-    let list = gaData.underperformers;
-    if (targetMinutes !== undefined) list = list.filter((p) => p.minutes === undefined || p.minutes >= targetMinutes);
-    if (benchTop5Only) list = list.filter((p) => TOP_5_LEAGUES.includes(p.league));
-    return list;
-  }, [gaData?.underperformers, targetMinutes, benchTop5Only]);
+    if (benchTop5Only) return gaData.underperformers.filter((p) => TOP_5_LEAGUES.includes(p.league));
+    return gaData.underperformers;
+  }, [gaData?.underperformers, benchTop5Only]);
 
   const filteredOutperformers = useMemo(() => {
     if (!gaData?.outperformers) return [];
-    let list = gaData.outperformers;
-    if (targetMinutes !== undefined) list = list.filter((p) => p.minutes === undefined || p.minutes <= targetMinutes);
-    if (benchTop5Only) list = list.filter((p) => TOP_5_LEAGUES.includes(p.league));
-    return list;
-  }, [gaData?.outperformers, targetMinutes, benchTop5Only]);
+    if (benchTop5Only) return gaData.outperformers.filter((p) => TOP_5_LEAGUES.includes(p.league));
+    return gaData.outperformers;
+  }, [gaData?.outperformers, benchTop5Only]);
 
   // ── Minutes player selection ──
   const minsSelected = useMemo(() => {
@@ -678,8 +673,8 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
           </h2>
           <p className="text-xs sm:text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
             {mode === "ga"
-              ? "Are expensive players producing enough goals and assists?"
-              : "Which expensive players are getting the fewest minutes?"}
+              ? "Flags expensive players outperformed by 2+ cheaper peers who produced more G+A in equal or fewer minutes. When multiple players at the same position and value qualify, only the most extreme case is shown."
+              : "Expensive players ranked by fewest minutes played. Search any player to compare against others at the same or higher market value."}
           </p>
         </div>
 
@@ -788,6 +783,10 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                   </button>
                 </div>
 
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  Comparing against players at similar or higher positions. &ldquo;Underdelivering&rdquo; = more expensive, same or worse G+A in same or more minutes. &ldquo;Better Value&rdquo; = cheaper, same or better G+A in same or fewer minutes.
+                </p>
+
                 <Tabs value={gaTab} onValueChange={(v) => push({ tab: v === "underdelivering" ? null : v })}>
                   <TabsList className="w-full">
                     <TabsTrigger value="underdelivering" className="flex-1 gap-2">
@@ -819,9 +818,6 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {gaData!.underperformers.length !== filteredUnderperformers.length && (
-                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>{gaData!.underperformers.length - filteredUnderperformers.length} players filtered (fewer minutes than benchmark)</p>
-                        )}
                         {filteredUnderperformers.map((player, index) => (
                           <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="underperformer" index={index} />
                         ))}
@@ -840,9 +836,7 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                           <div>
                             <p className="font-semibold text-base" style={{ color: "#00ff87" }}>{gaData!.targetPlayer.name} is a top performer for their price</p>
                             <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                              No player at the same or lower market value
-                              {targetMinutes !== undefined ? " with the same or fewer minutes" : ""}
-                              {" "}has produced more goal contributions.
+                              No cheaper player has produced more goal contributions in the same or fewer minutes.
                               At {gaData!.targetPlayer.points} points for {gaData!.targetPlayer.marketValueDisplay}, {gaData!.targetPlayer.name} offers excellent value.
                             </p>
                           </div>
@@ -850,9 +844,6 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {gaData!.outperformers.length !== filteredOutperformers.length && (
-                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>{gaData!.outperformers.length - filteredOutperformers.length} players filtered (more minutes than benchmark)</p>
-                        )}
                         {filteredOutperformers.map((player, index) => (
                           <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="outperformer" index={index} />
                         ))}
