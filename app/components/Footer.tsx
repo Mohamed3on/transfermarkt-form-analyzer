@@ -12,7 +12,17 @@ export function Footer() {
       <div className="max-w-5xl mx-auto px-4 py-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Built with <span className="text-red-500">&#10084;</span> by{" "}
+            Data from{" "}
+            <Link
+              href="https://www.transfermarkt.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium transition-colors duration-150 hover:opacity-80"
+              style={{ color: "var(--accent-blue)" }}
+            >
+              Transfermarkt
+            </Link>
+            {" "}&middot; Built by{" "}
             <Link
               href="https://mohamed3on.com"
               target="_blank"
