@@ -11,6 +11,7 @@ import { SelectNative } from "@/components/ui/select-native";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem, toggleVariants } from "@/components/ui/toggle-group";
 import { ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { getLeagueLogoUrl } from "@/lib/leagues";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES } from "@/lib/filter-players";
 import { canBeOutperformerAgainst, canBeUnderperformerAgainst, strictlyOutperforms } from "@/lib/positions";
@@ -287,13 +288,9 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
   return (
     <button
       type="button"
+      data-state={active ? "on" : "off"}
       onClick={onClick}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-      style={{
-        background: active ? "rgba(88, 166, 255, 0.15)" : "var(--bg-elevated)",
-        color: active ? "var(--accent-blue)" : "var(--text-muted)",
-        border: active ? "1px solid rgba(88, 166, 255, 0.3)" : "1px solid var(--border-subtle)",
-      }}
+      className={cn(toggleVariants({ size: "sm", variant: "outline" }), "gap-1.5 rounded-lg")}
     >
       {children}
     </button>
@@ -406,16 +403,19 @@ function DiscoverySection({ variant, candidates, allPlayers, isLoading, error, s
         return { ...player, comparisonCount: count };
       });
     }
-    if (sortBy === "count") return [...filtered].sort((a, b) => b.comparisonCount - a.comparisonCount);
-    if (sortBy === "value-asc") return [...filtered].sort((a, b) => a.marketValue - b.marketValue);
-    return [...filtered].sort((a, b) => b.marketValue - a.marketValue);
+    const sorted = [...filtered];
+    switch (sortBy) {
+      case "count": return sorted.sort((a, b) => b.comparisonCount - a.comparisonCount);
+      case "value-asc": return sorted.sort((a, b) => a.marketValue - b.marketValue);
+      case "value-desc": return sorted.sort((a, b) => b.marketValue - a.marketValue);
+      case "ga-desc": return sorted.sort((a, b) => b.points - a.points);
+      case "ga-asc": return sorted.sort((a, b) => a.points - b.points);
+    }
   }, [candidates, top5Players, leagueFilter, clubFilter, sortBy, top5Only, isOverpriced]);
 
   const isValueActive = sortBy === "value-asc" || sortBy === "value-desc";
-  const handleValueToggle = () => {
-    if (!isValueActive) onSortChange(isOverpriced ? "value-desc" : "value-asc");
-    else onSortChange(sortBy === "value-asc" ? "value-desc" : "value-asc");
-  };
+  const isGaActive = sortBy === "ga-asc" || sortBy === "ga-desc";
+  const sortGroup = sortBy === "count" ? "count" : isValueActive ? "value" : "ga";
 
   return (
     <section>
@@ -430,23 +430,43 @@ function DiscoverySection({ variant, candidates, allPlayers, isLoading, error, s
           <span className="text-sm font-bold px-2.5 py-1 rounded-lg tabular-nums" style={{ background: `color-mix(in srgb, ${accentColor} 15%, transparent)`, color: accentColor }}>{filteredCandidates.length}</span>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-1.5 mb-4">
-        <FilterButton active={sortBy === "count"} onClick={() => onSortChange("count")}>
-          {isOverpriced ? "Most outperformed" : "Most outperforming"}
-        </FilterButton>
-        <FilterButton active={isValueActive} onClick={handleValueToggle}>
-          Value {isValueActive && (sortBy === "value-asc" ? "\u2191" : "\u2193")}
-        </FilterButton>
-        <div className="hidden sm:block w-px h-4 mx-0.5 rounded-full bg-[var(--border-medium)]" />
-        <SelectNative value={leagueFilter} onChange={(e) => onLeagueFilterChange(e.target.value)} className="h-auto w-auto py-1.5 px-3 pr-7 text-xs font-medium bg-[length:1rem_1rem]">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <ToggleGroup
+          type="single"
+          size="sm"
+          variant="outline"
+          value={sortGroup}
+          onValueChange={(v) => {
+            if (!v) return;
+            if (v === "count") onSortChange("count");
+            else if (v === "value") onSortChange(isOverpriced ? "value-desc" : "value-asc");
+            else if (v === "ga") onSortChange("ga-desc");
+          }}
+        >
+          <ToggleGroupItem value="count" className="rounded-lg">
+            {isOverpriced ? "Most outperformed" : "Most outperforming"}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="value"
+            className="rounded-lg"
+            onClick={() => { if (isValueActive) onSortChange(sortBy === "value-asc" ? "value-desc" : "value-asc"); }}
+          >
+            Value {isValueActive && (sortBy === "value-asc" ? "\u2191" : "\u2193")}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="ga"
+            className="rounded-lg"
+            onClick={() => { if (isGaActive) onSortChange(sortBy === "ga-desc" ? "ga-asc" : "ga-desc"); }}
+          >
+            G+A {isGaActive && (sortBy === "ga-desc" ? "\u2193" : "\u2191")}
+          </ToggleGroupItem>
+        </ToggleGroup>
+        <SelectNative value={leagueFilter} onChange={(e) => onLeagueFilterChange(e.target.value)} className="h-8 w-auto text-xs">
           <option value="all">All leagues</option>
           {leagueOptions.map((league) => (<option key={league} value={league}>{league}</option>))}
         </SelectNative>
-        <DebouncedInput value={clubFilter} onChange={onClubFilterChange} placeholder="Club…" className="h-auto w-28 py-1.5 px-3 text-xs font-medium" />
+        <Input value={clubFilter} onChange={(e) => onClubFilterChange(e.target.value)} placeholder="Club…" className="h-8 w-28 text-xs" />
         <FilterButton active={top5Only} onClick={() => onTop5Change(!top5Only)}>
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
           Top 5 only
         </FilterButton>
       </div>
@@ -1048,16 +1068,13 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap }: V
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1.5 mb-4">
-                  <SelectNative value={minsLeagueFilter} onChange={(e) => update({ mLeague: e.target.value === "all" ? null : e.target.value })} className="h-auto w-auto py-1.5 px-3 pr-7 text-xs font-medium bg-[length:1rem_1rem]">
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <SelectNative value={minsLeagueFilter} onChange={(e) => update({ mLeague: e.target.value === "all" ? null : e.target.value })} className="h-8 w-auto text-xs">
                     <option value="all">All leagues</option>
                     {minsLeagueOptions.map((league) => (<option key={league} value={league}>{league}</option>))}
                   </SelectNative>
-                  <DebouncedInput value={minsClubFilter} onChange={(value) => update({ mClub: value || null })} placeholder="Club…" className="h-auto w-28 py-1.5 px-3 text-xs font-medium" />
+                  <Input value={minsClubFilter} onChange={(e) => update({ mClub: e.target.value || null })} placeholder="Club…" className="h-8 w-28 text-xs" />
                   <FilterButton active={minsHideInjured} onClick={() => update({ noInj: minsHideInjured ? null : "1" })}>
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                    </svg>
                     Exclude injured
                   </FilterButton>
                 </div>
