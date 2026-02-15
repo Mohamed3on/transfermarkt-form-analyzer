@@ -106,7 +106,7 @@ function TargetPlayerCard({ player, minutes }: { player: PlayerStats; minutes?: 
       name={player.name}
       imageUrl={player.imageUrl}
       href={getLeistungsdatenUrl(player.profileUrl)}
-      subtitle={<><span className="font-medium">{player.position}</span><span style={{ opacity: 0.4 }}>•</span><span className="truncate opacity-80">{player.club}</span></>}
+      subtitle={<><span className="font-medium">{player.position}</span><span className="opacity-40">•</span><span className="truncate opacity-80">{player.club}</span></>}
       desktopStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
       desktopBigNumbers={<><BigNumber value={player.marketValueDisplay} label="Value" color="var(--accent-gold)" /><BigNumber value={String(player.points)} label="Points" color="var(--accent-hot)" /></>}
@@ -122,11 +122,9 @@ interface CardTheme {
 }
 
 const CARD_THEMES = {
-  underperformer: { gradientStart: "var(--accent-cold-faint)", border: "var(--accent-cold-glow)", rankBg: "var(--accent-cold-glow)", rankColor: "var(--accent-cold-soft)", imageBorder: "var(--accent-cold-border)" },
-  outperformer: { gradientStart: "var(--accent-hot-faint)", border: "var(--accent-hot-glow)", rankBg: "var(--accent-hot-glow)", rankColor: "var(--accent-hot)", imageBorder: "var(--accent-hot-border)" },
-  discoveryRed: { gradientStart: "var(--accent-cold-faint)", border: "var(--accent-cold-glow)", rankBg: "var(--accent-cold-glow)", rankColor: "var(--accent-cold-soft)", imageBorder: "var(--accent-cold-border)" },
-  discoveryGreen: { gradientStart: "var(--accent-green-faint)", border: "var(--accent-green-glow)", rankBg: "var(--accent-green-glow)", rankColor: "var(--accent-green)", imageBorder: "var(--accent-green-border)" },
-  minsMore: { gradientStart: "var(--accent-green-faint)", border: "var(--accent-green-glow)", rankBg: "var(--accent-green-glow)", rankColor: "var(--accent-green)", imageBorder: "var(--accent-green-border)" },
+  cold: { gradientStart: "var(--accent-cold-faint)", border: "var(--accent-cold-glow)", rankBg: "var(--accent-cold-glow)", rankColor: "var(--accent-cold-soft)", imageBorder: "var(--accent-cold-border)" },
+  hot: { gradientStart: "var(--accent-hot-faint)", border: "var(--accent-hot-glow)", rankBg: "var(--accent-hot-glow)", rankColor: "var(--accent-hot)", imageBorder: "var(--accent-hot-border)" },
+  green: { gradientStart: "var(--accent-green-faint)", border: "var(--accent-green-glow)", rankBg: "var(--accent-green-glow)", rankColor: "var(--accent-green)", imageBorder: "var(--accent-green-border)" },
 } as const satisfies Record<string, CardTheme>;
 
 type ComparisonCardVariant = "underperformer" | "outperformer";
@@ -188,7 +186,7 @@ function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement,
 function ComparisonCard({ player, targetPlayer, index = 0, variant, top5 }: {
   player: PlayerStats; targetPlayer: PlayerStats; index?: number; variant: ComparisonCardVariant; top5?: boolean;
 }) {
-  const theme = CARD_THEMES[variant];
+  const theme = CARD_THEMES[variant === "underperformer" ? "cold" : "hot"];
   const mutedColor = variant === "underperformer" ? "var(--accent-cold-muted)" : "var(--accent-hot-muted)";
   const leistungsdatenUrl = getLeistungsdatenUrl(player.profileUrl);
   const minutes = player.minutes;
@@ -217,13 +215,7 @@ function ComparisonCard({ player, targetPlayer, index = 0, variant, top5 }: {
           {player.name}
         </Link>
       }
-      subtitle={<>
-        <span>{player.position}</span>
-        <span style={{ opacity: 0.4 }}>•</span>
-        <span className="truncate max-w-[100px] sm:max-w-none">{player.club}</span>
-        <span className="hidden sm:inline" style={{ opacity: 0.4 }}>•</span>
-        <span className="hidden sm:inline">{player.age}y</span>
-      </>}
+      subtitle={<PlayerSubtitle position={player.position} club={player.club} age={player.age} />}
       desktopStats={<>
         <div className="text-right">
           <div className="text-sm font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
@@ -247,10 +239,7 @@ function ComparisonCard({ player, targetPlayer, index = 0, variant, top5 }: {
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.matches} apps</span>
         <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
         <div className="sm:hidden ml-auto"><MinutesDisplay minutes={minutes} /></div>
-        <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
-          {player.league}
-        </span>
+        <LeagueLabel league={player.league} />
       </>}
     />
   );
@@ -301,11 +290,32 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
   );
 }
 
+function PlayerSubtitle({ position, club, age }: { position: string; club: string; age: number }) {
+  return (
+    <>
+      <span>{position}</span>
+      <span className="opacity-40">•</span>
+      <span className="truncate max-w-[100px] sm:max-w-none">{club}</span>
+      <span className="hidden sm:inline opacity-40">•</span>
+      <span className="hidden sm:inline">{age}y</span>
+    </>
+  );
+}
+
+function LeagueLabel({ league }: { league: string }) {
+  return (
+    <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+      {getLeagueLogoUrl(league) && <img src={getLeagueLogoUrl(league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
+      {league}
+    </span>
+  );
+}
+
 function DiscoveryListCard({ player, index = 0, top5, variant }: {
   player: DiscoveryCandidate; index?: number; top5?: boolean; variant: DiscoveryTab;
 }) {
   const isOverpriced = variant === "overpriced";
-  const theme = isOverpriced ? CARD_THEMES.discoveryRed : CARD_THEMES.discoveryGreen;
+  const theme = isOverpriced ? CARD_THEMES.cold : CARD_THEMES.green;
   const countColor = isOverpriced ? "var(--accent-hot)" : "var(--accent-green)";
   const countLabel = isOverpriced ? "doing better" : "outperforms";
   const valueColor = isOverpriced ? "var(--accent-cold-soft)" : "var(--accent-green)";
@@ -322,13 +332,7 @@ function DiscoveryListCard({ player, index = 0, top5, variant }: {
           {player.name}
         </Link>
       }
-      subtitle={<>
-        <span>{player.position}</span>
-        <span style={{ opacity: 0.4 }}>•</span>
-        <span className="truncate max-w-[100px] sm:max-w-none">{player.club}</span>
-        <span className="hidden sm:inline" style={{ opacity: 0.4 }}>•</span>
-        <span className="hidden sm:inline">{player.age}y</span>
-      </>}
+      subtitle={<PlayerSubtitle position={player.position} club={player.club} age={player.age} />}
       desktopStats={<>
         {player.comparisonCount > 0 && (
           <>
@@ -367,10 +371,7 @@ function DiscoveryListCard({ player, index = 0, top5, variant }: {
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.matches} apps</span>
         <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
         <span className="sm:hidden ml-auto tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes?.toLocaleString() || "—"}&apos;</span>
-        <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
-          {player.league}
-        </span>
+        <LeagueLabel league={player.league} />
       </>}
     />
   );
@@ -496,7 +497,7 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
       name={player.name}
       imageUrl={player.imageUrl}
       href={getLeistungsdatenUrl(player.profileUrl)}
-      subtitle={<><span className="font-medium">{player.position}</span>{player.nationality && <><span style={{ opacity: 0.4 }}>·</span><span>{player.nationality}</span></>}</>}
+      subtitle={<><span className="font-medium">{player.position}</span>{player.nationality && <><span className="opacity-40">·</span><span>{player.nationality}</span></>}</>}
       desktopStats={<><span className="tabular-nums">{player.totalMatches} games</span><span className="tabular-nums">{player.goals} goals</span><span className="tabular-nums">{player.assists} assists</span><span className="opacity-60">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.totalMatches} games</span><span className="tabular-nums">{player.goals}G {player.assists}A</span><span className="opacity-60">Age {player.age}</span></>}
       desktopBigNumbers={<><BigNumber value={player.marketValueDisplay} label="Value" color="var(--accent-gold)" /><BigNumber value={`${player.minutes.toLocaleString()}'`} label="Minutes" color="var(--accent-blue)" /></>}
@@ -508,7 +509,7 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
 function MvPlayerCard({ player, target, index, variant = "less", onSelect, injuryMap }: {
   player: MinutesValuePlayer; target?: MinutesValuePlayer; index: number; variant?: CompareTab; onSelect?: (p: MinutesValuePlayer) => void; injuryMap?: InjuryMap;
 }) {
-  const theme = variant === "less" ? CARD_THEMES.discoveryRed : CARD_THEMES.minsMore;
+  const theme = variant === "less" ? CARD_THEMES.cold : CARD_THEMES.green;
   const valueDiff = target ? player.marketValue - target.marketValue : 0;
   const valueDiffDisplay = valueDiff > 0 ? `+${formatValue(valueDiff)}` : formatValue(valueDiff);
   const minsDiff = target ? player.minutes - target.minutes : 0;
@@ -534,14 +535,14 @@ function MvPlayerCard({ player, target, index, variant = "less", onSelect, injur
           const parts = [info.injury, dur && `since ${dur}`, ret?.label].filter(Boolean);
           return (
             <>
-              <span style={{ opacity: 0.4 }}>·</span>
+              <span className="opacity-40">·</span>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[var(--accent-cold-glow)] text-[var(--accent-cold-soft)]">
                 {parts.join(" · ")}
               </span>
             </>
           );
         })()}
-        <span className="hidden sm:inline" style={{ opacity: 0.4 }}>·</span>
+        <span className="hidden sm:inline opacity-40">·</span>
         <span className="hidden sm:inline">{player.age}y</span>
       </>}
       desktopStats={<>
@@ -579,10 +580,7 @@ function MvPlayerCard({ player, target, index, variant = "less", onSelect, injur
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.assists}A</span>
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.totalMatches} games</span>
         <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
-        <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
-          {player.league}
-        </span>
+        <LeagueLabel league={player.league} />
       </>}
     />
   );
