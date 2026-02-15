@@ -23,6 +23,10 @@ import type { PlayerStats, MinutesValuePlayer, InjuryMap } from "@/app/types";
 type Mode = "ga" | "mins";
 type CompareTab = "less" | "more";
 type DiscoverySortKey = "count" | "value-asc" | "value-desc" | "ga-desc" | "ga-asc";
+const DISCOVERY_SORT_KEYS = new Set<string>(["count", "value-asc", "value-desc", "ga-desc", "ga-asc"]);
+function parseDiscoverySort(value: string | null): DiscoverySortKey {
+  return value && DISCOVERY_SORT_KEYS.has(value) ? (value as DiscoverySortKey) : "count";
+}
 type DiscoveryTab = "overpriced" | "bargains";
 type DiscoveryCandidate = PlayerStats & { comparisonCount: number };
 
@@ -404,13 +408,11 @@ function DiscoverySection({ variant, candidates, allPlayers, isLoading, error, s
       });
     }
     const sorted = [...filtered];
-    switch (sortBy) {
-      case "count": return sorted.sort((a, b) => b.comparisonCount - a.comparisonCount);
-      case "value-asc": return sorted.sort((a, b) => a.marketValue - b.marketValue);
-      case "value-desc": return sorted.sort((a, b) => b.marketValue - a.marketValue);
-      case "ga-desc": return sorted.sort((a, b) => b.points - a.points);
-      case "ga-asc": return sorted.sort((a, b) => a.points - b.points);
-    }
+    if (sortBy === "value-asc") return sorted.sort((a, b) => a.marketValue - b.marketValue);
+    if (sortBy === "value-desc") return sorted.sort((a, b) => b.marketValue - a.marketValue);
+    if (sortBy === "ga-desc") return sorted.sort((a, b) => b.points - a.points);
+    if (sortBy === "ga-asc") return sorted.sort((a, b) => a.points - b.points);
+    return sorted.sort((a, b) => b.comparisonCount - a.comparisonCount);
   }, [candidates, top5Players, leagueFilter, clubFilter, sortBy, top5Only, isOverpriced]);
 
   const isValueActive = sortBy === "value-asc" || sortBy === "value-desc";
@@ -652,14 +654,14 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap }: V
   // ── G+A state ──
   const underLeagueFilter = params.get("uLeague") || "all";
   const underClubFilter = params.get("uClub") || "";
-  const underSortBy: DiscoverySortKey = (params.get("uSort") as DiscoverySortKey) || "count";
+  const underSortBy = parseDiscoverySort(params.get("uSort"));
   const discoveryTop5Only = params.get("dTop5") === "1";
   const benchTop5Only = params.get("bTop5") === "1";
 
   // ── Overperformer state ──
   const overLeagueFilter = params.get("oLeague") || "all";
   const overClubFilter = params.get("oClub") || "";
-  const overSortBy: DiscoverySortKey = (params.get("oSort") as DiscoverySortKey) || "count";
+  const overSortBy = parseDiscoverySort(params.get("oSort"));
 
   // ── Discovery tab state ──
   const discoveryTab: DiscoveryTab = params.get("dTab") === "bargains" ? "bargains" : "overpriced";
