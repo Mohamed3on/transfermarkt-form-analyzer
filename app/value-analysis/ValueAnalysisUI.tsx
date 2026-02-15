@@ -9,11 +9,12 @@ import { DebouncedInput } from "@/components/DebouncedInput";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SelectNative } from "@/components/ui/select-native";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem, toggleVariants } from "@/components/ui/toggle-group";
 import { ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { getLeagueLogoUrl } from "@/lib/leagues";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES } from "@/lib/filter-players";
-import { canBeOutperformerAgainst, strictlyOutperforms } from "@/lib/positions";
+import { canBeOutperformerAgainst, canBeUnderperformerAgainst, strictlyOutperforms } from "@/lib/positions";
 import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { BenchmarkCard, BigNumber } from "./BenchmarkCard";
@@ -21,7 +22,13 @@ import type { PlayerStats, MinutesValuePlayer, InjuryMap } from "@/app/types";
 
 type Mode = "ga" | "mins";
 type CompareTab = "less" | "more";
-type UnderperformerSortKey = "value" | "most-outperformed";
+type DiscoverySortKey = "count" | "value-asc" | "value-desc" | "ga-desc" | "ga-asc";
+const DISCOVERY_SORT_KEYS = new Set<string>(["count", "value-asc", "value-desc", "ga-desc", "ga-asc"]);
+function parseDiscoverySort(value: string | null): DiscoverySortKey {
+  return value && DISCOVERY_SORT_KEYS.has(value) ? (value as DiscoverySortKey) : "count";
+}
+type DiscoveryTab = "overpriced" | "bargains";
+type DiscoveryCandidate = PlayerStats & { comparisonCount: number };
 
 interface PlayerFormResult {
   targetPlayer: PlayerStats;
@@ -33,7 +40,11 @@ interface PlayerFormResult {
 }
 
 interface UnderperformersResult {
-  underperformers: PlayerStats[];
+  underperformers: (PlayerStats & { outperformedByCount: number })[];
+}
+
+interface OverperformersResult {
+  overperformers: (PlayerStats & { outperformsCount?: number })[];
 }
 
 const EMPTY_MV: MinutesValuePlayer[] = [];
@@ -44,8 +55,10 @@ function formatValue(v: number): string {
   return `\u20AC${v}`;
 }
 
-function getPlayerBenchmarkHref(name: string): string {
-  return `/underperformers?${new URLSearchParams({ name }).toString()}`;
+function getPlayerBenchmarkHref(id: string, name: string, top5?: boolean): string {
+  const p = new URLSearchParams({ id, name });
+  if (top5) p.set("bTop5", "1");
+  return `/value-analysis?${p.toString()}`;
 }
 
 function getLeistungsdatenUrl(profileUrl: string): string {
@@ -59,8 +72,15 @@ async function fetchUnderperformers(signal?: AbortSignal): Promise<Underperforme
   return res.json();
 }
 
-async function fetchPlayerForm(name: string, signal?: AbortSignal): Promise<PlayerFormResult> {
-  const params = new URLSearchParams({ name });
+async function fetchOverperformers(signal?: AbortSignal): Promise<OverperformersResult> {
+  const res = await fetch("/api/overperformers", { signal });
+  return res.json();
+}
+
+async function fetchPlayerForm(id: string, name: string, signal?: AbortSignal): Promise<PlayerFormResult> {
+  const params = new URLSearchParams();
+  if (id) params.set("id", id);
+  if (name) params.set("name", name);
   const res = await fetch(`/api/player-form?${params}`, { signal });
   return res.json();
 }
@@ -86,11 +106,11 @@ function TargetPlayerCard({ player, minutes }: { player: PlayerStats; minutes?: 
       name={player.name}
       imageUrl={player.imageUrl}
       href={getLeistungsdatenUrl(player.profileUrl)}
-      subtitle={<><span className="font-medium">{player.position}</span><span style={{ opacity: 0.4 }}>•</span><span className="truncate opacity-80">{player.club}</span></>}
+      subtitle={<><span className="font-medium">{player.position}</span><span className="opacity-40">•</span><span className="truncate opacity-80">{player.club}</span></>}
       desktopStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
-      desktopBigNumbers={<><BigNumber value={player.marketValueDisplay} label="Value" color="#ffd700" /><BigNumber value={String(player.points)} label="Points" color="#00ff87" /></>}
-      mobileBigNumbers={<><div className="text-lg font-black tabular-nums" style={{ color: "#ffd700" }}>{player.marketValueDisplay}</div><div className="text-lg font-black tabular-nums" style={{ color: "#00ff87" }}>{player.points}</div></>}
+      desktopBigNumbers={<><BigNumber value={player.marketValueDisplay} label="Value" color="var(--accent-gold)" /><BigNumber value={String(player.points)} label="Points" color="var(--accent-hot)" /></>}
+      mobileBigNumbers={<><div className="text-lg font-black tabular-nums" style={{ color: "var(--accent-gold)" }}>{player.marketValueDisplay}</div><div className="text-lg font-black tabular-nums" style={{ color: "var(--accent-hot)" }}>{player.points}</div></>}
       footer={<><span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Minutes Played</span><span className="text-base sm:text-lg font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>{minutes?.toLocaleString() || "—"}&apos;</span></>}
     />
   );
@@ -102,10 +122,9 @@ interface CardTheme {
 }
 
 const CARD_THEMES = {
-  underperformer: { gradientStart: "var(--accent-cold-faint)", border: "var(--accent-cold-glow)", rankBg: "var(--accent-cold-glow)", rankColor: "var(--accent-cold-soft)", imageBorder: "var(--accent-cold-border)" },
-  outperformer: { gradientStart: "var(--accent-hot-faint)", border: "var(--accent-hot-glow)", rankBg: "var(--accent-hot-glow)", rankColor: "var(--accent-hot)", imageBorder: "var(--accent-hot-border)" },
-  discoveryRed: { gradientStart: "rgba(255, 71, 87, 0.06)", border: "rgba(255, 71, 87, 0.15)", rankBg: "rgba(255, 71, 87, 0.15)", rankColor: "#ff6b7a", imageBorder: "rgba(255, 71, 87, 0.2)" },
-  minsMore: { gradientStart: "rgba(34, 197, 94, 0.06)", border: "rgba(34, 197, 94, 0.15)", rankBg: "rgba(34, 197, 94, 0.15)", rankColor: "#22c55e", imageBorder: "rgba(34, 197, 94, 0.2)" },
+  cold: { gradientStart: "var(--accent-cold-faint)", border: "var(--accent-cold-glow)", rankBg: "var(--accent-cold-glow)", rankColor: "var(--accent-cold-soft)", imageBorder: "var(--accent-cold-border)" },
+  hot: { gradientStart: "var(--accent-hot-faint)", border: "var(--accent-hot-glow)", rankBg: "var(--accent-hot-glow)", rankColor: "var(--accent-hot)", imageBorder: "var(--accent-hot-border)" },
+  green: { gradientStart: "var(--accent-green-faint)", border: "var(--accent-green-glow)", rankBg: "var(--accent-green-glow)", rankColor: "var(--accent-green)", imageBorder: "var(--accent-green-border)" },
 } as const satisfies Record<string, CardTheme>;
 
 type ComparisonCardVariant = "underperformer" | "outperformer";
@@ -164,10 +183,10 @@ function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement,
   );
 }
 
-function ComparisonCard({ player, targetPlayer, index = 0, variant }: {
-  player: PlayerStats; targetPlayer: PlayerStats; index?: number; variant: ComparisonCardVariant;
+function ComparisonCard({ player, targetPlayer, index = 0, variant, top5 }: {
+  player: PlayerStats; targetPlayer: PlayerStats; index?: number; variant: ComparisonCardVariant; top5?: boolean;
 }) {
-  const theme = CARD_THEMES[variant];
+  const theme = CARD_THEMES[variant === "underperformer" ? "cold" : "hot"];
   const mutedColor = variant === "underperformer" ? "var(--accent-cold-muted)" : "var(--accent-hot-muted)";
   const leistungsdatenUrl = getLeistungsdatenUrl(player.profileUrl);
   const minutes = player.minutes;
@@ -192,17 +211,11 @@ function ComparisonCard({ player, targetPlayer, index = 0, variant }: {
       imageUrl={player.imageUrl}
       profileUrl={leistungsdatenUrl}
       nameElement={
-        <Link href={getPlayerBenchmarkHref(player.name)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors" style={{ color: "var(--text-primary)" }}>
+        <Link href={getPlayerBenchmarkHref(player.playerId, player.name, top5)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors" style={{ color: "var(--text-primary)" }}>
           {player.name}
         </Link>
       }
-      subtitle={<>
-        <span>{player.position}</span>
-        <span style={{ opacity: 0.4 }}>•</span>
-        <span className="truncate max-w-[100px] sm:max-w-none">{player.club}</span>
-        <span className="hidden sm:inline" style={{ opacity: 0.4 }}>•</span>
-        <span className="hidden sm:inline">{player.age}y</span>
-      </>}
+      subtitle={<PlayerSubtitle position={player.position} club={player.club} age={player.age} />}
       desktopStats={<>
         <div className="text-right">
           <div className="text-sm font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
@@ -226,10 +239,7 @@ function ComparisonCard({ player, targetPlayer, index = 0, variant }: {
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.matches} apps</span>
         <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
         <div className="sm:hidden ml-auto"><MinutesDisplay minutes={minutes} /></div>
-        <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
-          {player.league}
-        </span>
+        <LeagueLabel league={player.league} />
       </>}
     />
   );
@@ -267,38 +277,74 @@ function SearchSkeleton() {
   );
 }
 
-function UnderperformerListCard({ player, index = 0 }: { player: PlayerStats; index?: number }) {
+function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      data-state={active ? "on" : "off"}
+      onClick={onClick}
+      className={cn(toggleVariants({ size: "sm", variant: "outline" }), "gap-1.5 rounded-lg")}
+    >
+      {children}
+    </button>
+  );
+}
+
+function PlayerSubtitle({ position, club, age }: { position: string; club: string; age: number }) {
+  return (
+    <>
+      <span>{position}</span>
+      <span className="opacity-40">•</span>
+      <span className="truncate max-w-[100px] sm:max-w-none">{club}</span>
+      <span className="hidden sm:inline opacity-40">•</span>
+      <span className="hidden sm:inline">{age}y</span>
+    </>
+  );
+}
+
+function LeagueLabel({ league }: { league: string }) {
+  return (
+    <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+      {getLeagueLogoUrl(league) && <img src={getLeagueLogoUrl(league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
+      {league}
+    </span>
+  );
+}
+
+function DiscoveryListCard({ player, index = 0, top5, variant }: {
+  player: DiscoveryCandidate; index?: number; top5?: boolean; variant: DiscoveryTab;
+}) {
+  const isOverpriced = variant === "overpriced";
+  const theme = isOverpriced ? CARD_THEMES.cold : CARD_THEMES.green;
+  const countColor = isOverpriced ? "var(--accent-hot)" : "var(--accent-green)";
+  const countLabel = isOverpriced ? "doing better" : "outperforms";
+  const valueColor = isOverpriced ? "var(--accent-cold-soft)" : "var(--accent-green)";
+
   return (
     <PlayerCard
       index={index}
-      theme={CARD_THEMES.discoveryRed}
+      theme={theme}
       name={player.name}
       imageUrl={player.imageUrl}
       profileUrl={getLeistungsdatenUrl(player.profileUrl)}
       nameElement={
-        <Link href={getPlayerBenchmarkHref(player.name)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors" style={{ color: "var(--text-primary)" }}>
+        <Link href={getPlayerBenchmarkHref(player.playerId, player.name, top5)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors" style={{ color: "var(--text-primary)" }}>
           {player.name}
         </Link>
       }
-      subtitle={<>
-        <span>{player.position}</span>
-        <span style={{ opacity: 0.4 }}>•</span>
-        <span className="truncate max-w-[100px] sm:max-w-none">{player.club}</span>
-        <span className="hidden sm:inline" style={{ opacity: 0.4 }}>•</span>
-        <span className="hidden sm:inline">{player.age}y</span>
-      </>}
+      subtitle={<PlayerSubtitle position={player.position} club={player.club} age={player.age} />}
       desktopStats={<>
-        {player.outperformedByCount !== undefined && player.outperformedByCount > 0 && (
+        {player.comparisonCount > 0 && (
           <>
             <div className="text-right min-w-[4rem]">
-              <div className="text-sm font-bold tabular-nums" style={{ color: "#00ff87" }}>{player.outperformedByCount}</div>
-              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>doing better</div>
+              <div className="text-sm font-bold tabular-nums" style={{ color: countColor }}>{player.comparisonCount}</div>
+              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>{countLabel}</div>
             </div>
             <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
           </>
         )}
         <div className="text-right">
-          <div className="text-sm font-bold tabular-nums" style={{ color: "#ff6b7a" }}>{player.marketValueDisplay}</div>
+          <div className="text-sm font-bold tabular-nums" style={{ color: valueColor }}>{player.marketValueDisplay}</div>
           <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>value</div>
         </div>
         <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
@@ -313,10 +359,10 @@ function UnderperformerListCard({ player, index = 0 }: { player: PlayerStats; in
         </div>
       </>}
       mobileStats={<>
-        {player.outperformedByCount !== undefined && player.outperformedByCount > 0 && (
-          <div className="text-[10px] font-bold tabular-nums mb-0.5" style={{ color: "#00ff87" }}>{player.outperformedByCount} doing better</div>
+        {player.comparisonCount > 0 && (
+          <div className="text-[10px] font-bold tabular-nums mb-0.5" style={{ color: countColor }}>{player.comparisonCount} {countLabel}</div>
         )}
-        <div className="text-xs font-bold tabular-nums" style={{ color: "#ff6b7a" }}>{player.marketValueDisplay}</div>
+        <div className="text-xs font-bold tabular-nums" style={{ color: valueColor }}>{player.marketValueDisplay}</div>
         <div className="text-[10px] tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
       </>}
       footer={<>
@@ -325,22 +371,26 @@ function UnderperformerListCard({ player, index = 0 }: { player: PlayerStats; in
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.matches} apps</span>
         <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
         <span className="sm:hidden ml-auto tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes?.toLocaleString() || "—"}&apos;</span>
-        <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
-          {player.league}
-        </span>
+        <LeagueLabel league={player.league} />
       </>}
     />
   );
 }
 
-function UnderperformersSection({ candidates, allPlayers, isLoading, error, sortBy, onSortChange, leagueFilter, clubFilter, onLeagueFilterChange, onClubFilterChange, top5Only, onTop5Change }: {
-  candidates: PlayerStats[]; allPlayers: PlayerStats[]; isLoading: boolean; error: Error | null;
-  sortBy: UnderperformerSortKey; onSortChange: (value: UnderperformerSortKey) => void;
+function DiscoverySection({ variant, candidates, allPlayers, isLoading, error, sortBy, onSortChange, leagueFilter, clubFilter, onLeagueFilterChange, onClubFilterChange, top5Only, onTop5Change }: {
+  variant: DiscoveryTab;
+  candidates: DiscoveryCandidate[]; allPlayers: PlayerStats[]; isLoading: boolean; error: Error | null;
+  sortBy: DiscoverySortKey; onSortChange: (value: DiscoverySortKey) => void;
   leagueFilter: string; clubFilter: string; onLeagueFilterChange: (value: string) => void; onClubFilterChange: (value: string) => void;
   top5Only: boolean; onTop5Change: (value: boolean) => void;
 }) {
-  const leagueOptions = useMemo(() => Array.from(new Set(candidates.map((p) => p.league).filter(Boolean))).sort(), [candidates]);
+  const isOverpriced = variant === "overpriced";
+  const accentColor = isOverpriced ? "var(--accent-cold-soft)" : "var(--accent-green)";
+
+  const leagueOptions = useMemo(() =>
+    Array.from(new Set(candidates.map((p) => p.league).filter(Boolean))).sort(),
+    [candidates]
+  );
 
   const top5Players = useMemo(
     () => top5Only ? allPlayers.filter((p) => TOP_5_LEAGUES.includes(p.league)) : [],
@@ -352,80 +402,87 @@ function UnderperformersSection({ candidates, allPlayers, isLoading, error, sort
     if (top5Only) {
       filtered = filtered.filter((p) => TOP_5_LEAGUES.includes(p.league));
       filtered = filtered.map((player) => {
-        const count = top5Players.filter((p) =>
-          p.marketValue < player.marketValue &&
-          strictlyOutperforms(p, player) &&
-          canBeOutperformerAgainst(p.position, player.position)
-        ).length;
-        return { ...player, outperformedByCount: count };
+        const count = isOverpriced
+          ? top5Players.filter((p) => p.playerId !== player.playerId && p.marketValue <= player.marketValue && strictlyOutperforms(p, player) && canBeOutperformerAgainst(p.position, player.position)).length
+          : top5Players.filter((p) => p.playerId !== player.playerId && p.marketValue >= player.marketValue && strictlyOutperforms(player, p) && canBeUnderperformerAgainst(p.position, player.position)).length;
+        return { ...player, comparisonCount: count };
       });
     }
-    if (sortBy === "most-outperformed") return [...filtered].sort((a, b) => (b.outperformedByCount || 0) - (a.outperformedByCount || 0));
-    return filtered;
-  }, [candidates, top5Players, leagueFilter, clubFilter, sortBy, top5Only]);
+    const sorted = [...filtered];
+    if (sortBy === "value-asc") return sorted.sort((a, b) => a.marketValue - b.marketValue);
+    if (sortBy === "value-desc") return sorted.sort((a, b) => b.marketValue - a.marketValue);
+    if (sortBy === "ga-desc") return sorted.sort((a, b) => b.points - a.points);
+    if (sortBy === "ga-asc") return sorted.sort((a, b) => a.points - b.points);
+    return sorted.sort((a, b) => b.comparisonCount - a.comparisonCount);
+  }, [candidates, top5Players, leagueFilter, clubFilter, sortBy, top5Only, isOverpriced]);
+
+  const isValueActive = sortBy === "value-asc" || sortBy === "value-desc";
+  const isGaActive = sortBy === "ga-asc" || sortBy === "ga-desc";
+  const sortGroup = sortBy === "count" ? "count" : isValueActive ? "value" : "ga";
 
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-1 h-5 rounded-full" style={{ background: "#ff4757" }} />
-          <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: "#ff6b7a" }}>Underdelivering</h2>
+          <div className="w-1 h-5 rounded-full" style={{ background: accentColor }} />
+          <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: accentColor }}>
+            {isOverpriced ? "Overpriced" : "Bargains"}
+          </h2>
         </div>
         {filteredCandidates.length > 0 && (
-          <span className="text-sm font-bold px-2.5 py-1 rounded-lg tabular-nums" style={{ background: "rgba(255, 71, 87, 0.15)", color: "#ff6b7a" }}>{filteredCandidates.length}</span>
+          <span className="text-sm font-bold px-2.5 py-1 rounded-lg tabular-nums" style={{ background: `color-mix(in srgb, ${accentColor} 15%, transparent)`, color: accentColor }}>{filteredCandidates.length}</span>
         )}
       </div>
-      <div className="flex flex-col gap-3 mb-4">
-        <ToggleGroup type="single" value={sortBy} onValueChange={(v) => v && onSortChange(v as UnderperformerSortKey)} size="sm" className="self-start">
-          <ToggleGroupItem value="value" className="rounded-lg px-3">
-            <svg className="w-3 h-3 mr-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m4 0l4 4m0 0l4-4m-4 4V4" /></svg>
-            Value
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <ToggleGroup
+          type="single"
+          size="sm"
+          variant="outline"
+          value={sortGroup}
+          onValueChange={(v) => {
+            if (v === "count") onSortChange("count");
+            else if (v === "value") onSortChange(isOverpriced ? "value-desc" : "value-asc");
+            else if (v === "ga") onSortChange("ga-desc");
+            else if (isValueActive) onSortChange(sortBy === "value-asc" ? "value-desc" : "value-asc");
+            else if (isGaActive) onSortChange(sortBy === "ga-desc" ? "ga-asc" : "ga-desc");
+          }}
+        >
+          <ToggleGroupItem value="count" className="rounded-lg">
+            {isOverpriced ? "Most outperformed" : "Most outperforming"}
           </ToggleGroupItem>
-          <ToggleGroupItem value="most-outperformed" className="rounded-lg px-3">
-            <svg className="w-3 h-3 mr-1 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
-            Most underperforming
+          <ToggleGroupItem value="value" className="rounded-lg">
+            Value {isValueActive && (sortBy === "value-asc" ? "\u2191" : "\u2193")}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="ga" className="rounded-lg">
+            G+A {isGaActive && (sortBy === "ga-desc" ? "\u2193" : "\u2191")}
           </ToggleGroupItem>
         </ToggleGroup>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <SelectNative value={leagueFilter} onChange={(e) => onLeagueFilterChange(e.target.value)} className="h-10">
-            <option value="all">All leagues</option>
-            {leagueOptions.map((league) => (<option key={league} value={league}>{league}</option>))}
-          </SelectNative>
-          <DebouncedInput value={clubFilter} onChange={onClubFilterChange} placeholder="Filter by club" className="h-10" />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onTop5Change(!top5Only)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-            style={{
-              background: top5Only ? "rgba(88, 166, 255, 0.15)" : "var(--bg-elevated)",
-              color: top5Only ? "var(--accent-blue)" : "var(--text-muted)",
-              border: top5Only ? "1px solid rgba(88, 166, 255, 0.3)" : "1px solid var(--border-subtle)",
-            }}
-          >
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            vs Top 5 leagues
-          </button>
-        </div>
+        <SelectNative value={leagueFilter} onChange={(e) => onLeagueFilterChange(e.target.value)} className="h-8 w-auto text-xs">
+          <option value="all">All leagues</option>
+          {leagueOptions.map((league) => (<option key={league} value={league}>{league}</option>))}
+        </SelectNative>
+        <DebouncedInput value={clubFilter} onChange={onClubFilterChange} placeholder="Club…" className="h-8 w-28 text-xs" />
+        <FilterButton active={top5Only} onClick={() => onTop5Change(!top5Only)}>
+          Top 5 only
+        </FilterButton>
       </div>
       {isLoading && <CardSkeletonList />}
       {error && (
-        <div className="rounded-xl p-5 animate-fade-in" style={{ background: "rgba(255, 71, 87, 0.1)", border: "1px solid rgba(255, 71, 87, 0.3)" }}>
-          <p className="font-medium" style={{ color: "#ff6b7a" }}>Error loading data. Please refresh.</p>
+        <div className="rounded-xl p-5 animate-fade-in" style={{ background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${accentColor} 30%, transparent)` }}>
+          <p className="font-medium" style={{ color: accentColor }}>Error loading data. Please refresh.</p>
         </div>
       )}
       {!isLoading && !error && filteredCandidates.length === 0 && (
         <div className="rounded-xl p-8 text-center animate-fade-in" style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}>
-          <p className="font-semibold" style={{ color: "var(--text-primary)" }}>No underdelivering players found</p>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Everyone is producing as expected for their price tag</p>
+          <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{isOverpriced ? "No overpriced players found" : "No bargain players found"}</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{isOverpriced ? "Everyone is producing as expected for their price tag" : "No cheap players are outperforming their price tag right now"}</p>
         </div>
       )}
       {filteredCandidates.length > 0 && (
         <div className="space-y-3">
-          {filteredCandidates.map((player, index) => (<UnderperformerListCard key={player.playerId} player={player} index={index} />))}
+          {filteredCandidates.map((player, index) => (
+            <DiscoveryListCard key={player.playerId} player={player} index={index} top5={top5Only} variant={variant} />
+          ))}
         </div>
       )}
     </section>
@@ -440,11 +497,11 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
       name={player.name}
       imageUrl={player.imageUrl}
       href={getLeistungsdatenUrl(player.profileUrl)}
-      subtitle={<><span className="font-medium">{player.position}</span>{player.nationality && <><span style={{ opacity: 0.4 }}>·</span><span>{player.nationality}</span></>}</>}
+      subtitle={<><span className="font-medium">{player.position}</span>{player.nationality && <><span className="opacity-40">·</span><span>{player.nationality}</span></>}</>}
       desktopStats={<><span className="tabular-nums">{player.totalMatches} games</span><span className="tabular-nums">{player.goals} goals</span><span className="tabular-nums">{player.assists} assists</span><span className="opacity-60">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.totalMatches} games</span><span className="tabular-nums">{player.goals}G {player.assists}A</span><span className="opacity-60">Age {player.age}</span></>}
-      desktopBigNumbers={<><BigNumber value={player.marketValueDisplay} label="Value" color="#ffd700" /><BigNumber value={`${player.minutes.toLocaleString()}'`} label="Minutes" color="var(--accent-blue)" /></>}
-      mobileBigNumbers={<div className="text-lg font-black tabular-nums" style={{ color: "#ffd700" }}>{player.marketValueDisplay}</div>}
+      desktopBigNumbers={<><BigNumber value={player.marketValueDisplay} label="Value" color="var(--accent-gold)" /><BigNumber value={`${player.minutes.toLocaleString()}'`} label="Minutes" color="var(--accent-blue)" /></>}
+      mobileBigNumbers={<div className="text-lg font-black tabular-nums" style={{ color: "var(--accent-gold)" }}>{player.marketValueDisplay}</div>}
     />
   );
 }
@@ -452,7 +509,7 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
 function MvPlayerCard({ player, target, index, variant = "less", onSelect, injuryMap }: {
   player: MinutesValuePlayer; target?: MinutesValuePlayer; index: number; variant?: CompareTab; onSelect?: (p: MinutesValuePlayer) => void; injuryMap?: InjuryMap;
 }) {
-  const theme = variant === "less" ? CARD_THEMES.discoveryRed : CARD_THEMES.minsMore;
+  const theme = variant === "less" ? CARD_THEMES.cold : CARD_THEMES.green;
   const valueDiff = target ? player.marketValue - target.marketValue : 0;
   const valueDiffDisplay = valueDiff > 0 ? `+${formatValue(valueDiff)}` : formatValue(valueDiff);
   const minsDiff = target ? player.minutes - target.minutes : 0;
@@ -478,14 +535,14 @@ function MvPlayerCard({ player, target, index, variant = "less", onSelect, injur
           const parts = [info.injury, dur && `since ${dur}`, ret?.label].filter(Boolean);
           return (
             <>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[rgba(255,71,87,0.12)] text-[#ff6b7a]">
+              <span className="opacity-40">·</span>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[var(--accent-cold-glow)] text-[var(--accent-cold-soft)]">
                 {parts.join(" · ")}
               </span>
             </>
           );
         })()}
-        <span className="hidden sm:inline" style={{ opacity: 0.4 }}>·</span>
+        <span className="hidden sm:inline opacity-40">·</span>
         <span className="hidden sm:inline">{player.age}y</span>
       </>}
       desktopStats={<>
@@ -523,10 +580,7 @@ function MvPlayerCard({ player, target, index, variant = "less", onSelect, injur
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.assists}A</span>
         <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.totalMatches} games</span>
         <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
-        <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-          {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
-          {player.league}
-        </span>
+        <LeagueLabel league={player.league} />
       </>}
     />
   );
@@ -568,30 +622,40 @@ function MvVirtualPlayerList({ items, target, variant = "less", onSelect, injury
 
 /* ── Main Component ── */
 
-interface UnderperformersUIProps {
+interface ValueAnalysisUIProps {
   initialAllPlayers: PlayerStats[];
   initialData: MinutesValuePlayer[];
   injuryMap?: InjuryMap;
 }
 
-export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }: UnderperformersUIProps) {
-  const { params, update, push } = useQueryParams("/underperformers");
+export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap }: ValueAnalysisUIProps) {
+  const { params, update, push } = useQueryParams("/value-analysis");
 
   // Mode
   const mode: Mode = params.get("mode") === "mins" ? "mins" : "ga";
+  const urlId = params.get("id") || "";
   const urlName = params.get("name") || "";
+  const hasPlayer = !!(urlId || urlName);
   const [query, setQuery] = useState(urlName);
   useEffect(() => { setQuery(urlName); }, [urlName]);
 
-  const handleSelect = useCallback((name: string) => { push({ name }); }, [push]);
-  const handleClear = useCallback(() => { push({ name: null, tab: null }); }, [push]);
+  const handleSelect = useCallback((id: string, name: string) => { push({ id, name }); }, [push]);
+  const handleClear = useCallback(() => { push({ id: null, name: null, tab: null }); }, [push]);
 
   // ── G+A state ──
   const underLeagueFilter = params.get("uLeague") || "all";
   const underClubFilter = params.get("uClub") || "";
-  const underSortBy: UnderperformerSortKey = params.get("uSort") === "value" ? "value" : "most-outperformed";
-  const underTop5Only = params.get("uTop5") === "1";
+  const underSortBy = parseDiscoverySort(params.get("uSort"));
+  const discoveryTop5Only = params.get("dTop5") === "1";
   const benchTop5Only = params.get("bTop5") === "1";
+
+  // ── Overperformer state ──
+  const overLeagueFilter = params.get("oLeague") || "all";
+  const overClubFilter = params.get("oClub") || "";
+  const overSortBy = parseDiscoverySort(params.get("oSort"));
+
+  // ── Discovery tab state ──
+  const discoveryTab: DiscoveryTab = params.get("dTab") === "bargains" ? "bargains" : "overpriced";
 
   // ── Shared tab state (both modes use `tab` param since they're mutually exclusive) ──
   const gaTab = params.get("tab") === "better-value" ? "better-value" : "underdelivering";
@@ -601,17 +665,24 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
   const minsHideInjured = params.get("noInj") === "1";
 
   // ── G+A queries ──
-  const discoveryQuery = useQuery({
+  const underperformersQuery = useQuery({
     queryKey: ["underperformers"],
     queryFn: ({ signal }) => fetchUnderperformers(signal),
     staleTime: 5 * 60 * 1000,
-    enabled: mode === "ga" && !urlName,
+    enabled: mode === "ga" && !hasPlayer,
+  });
+
+  const overperformersQuery = useQuery({
+    queryKey: ["overperformers"],
+    queryFn: ({ signal }) => fetchOverperformers(signal),
+    staleTime: 5 * 60 * 1000,
+    enabled: mode === "ga" && !hasPlayer,
   });
 
   const { data: gaData, isLoading: gaLoading, error: gaError } = useQuery({
-    queryKey: ["player-form", urlName],
-    queryFn: ({ signal }) => fetchPlayerForm(urlName, signal),
-    enabled: mode === "ga" && !!urlName,
+    queryKey: ["player-form", urlId, urlName],
+    queryFn: ({ signal }) => fetchPlayerForm(urlId, urlName, signal),
+    enabled: mode === "ga" && hasPlayer,
     staleTime: 2 * 60 * 1000,
   });
 
@@ -630,11 +701,30 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
     return gaData.outperformers;
   }, [gaData?.outperformers, benchTop5Only]);
 
+  // ── Discovery candidates (normalized to DiscoveryCandidate) ──
+  const underCandidates: DiscoveryCandidate[] = useMemo(
+    () => (underperformersQuery.data?.underperformers || []).map((p) => ({ ...p, comparisonCount: p.outperformedByCount })),
+    [underperformersQuery.data]
+  );
+  const overCandidates: DiscoveryCandidate[] = useMemo(
+    () => (overperformersQuery.data?.overperformers || []).map((p) => ({ ...p, comparisonCount: p.outperformsCount || 0 })),
+    [overperformersQuery.data]
+  );
+
+  // ── Discovery tab counts (adjusted for top-5 filter) ──
+  const underTabCount = underperformersQuery.data
+    ? (discoveryTop5Only ? underCandidates.filter((p) => TOP_5_LEAGUES.includes(p.league)).length : underCandidates.length)
+    : undefined;
+  const overTabCount = overperformersQuery.data
+    ? (discoveryTop5Only ? overCandidates.filter((p) => TOP_5_LEAGUES.includes(p.league)).length : overCandidates.length)
+    : undefined;
+
   // ── Minutes player selection ──
   const minsSelected = useMemo(() => {
-    if (!urlName) return null;
+    if (!hasPlayer) return null;
+    if (urlId) return initialData.find((p) => p.playerId === urlId) ?? null;
     return initialData.find((p) => p.name === urlName) ?? null;
-  }, [urlName, initialData]);
+  }, [hasPlayer, urlId, urlName, initialData]);
 
   const playingLess = useMemo(() => {
     if (!minsSelected) return [];
@@ -660,7 +750,7 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
 
   const handleMvSelect = useCallback((p: MinutesValuePlayer) => {
     setQuery(p.name);
-    handleSelect(p.name);
+    handleSelect(p.playerId, p.name);
   }, [handleSelect]);
 
   return (
@@ -669,11 +759,11 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
         {/* Title */}
         <div className="mb-4 sm:mb-6">
           <h2 className="text-lg sm:text-xl font-bold" style={{ color: "var(--text-primary)" }}>
-            <span style={{ color: "#ff6b7a" }}>Under</span>performers
+            Value <span style={{ color: "var(--accent-gold)" }}>Analysis</span>
           </h2>
           <p className="text-xs sm:text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
             {mode === "ga"
-              ? "Flags expensive players outperformed by 2+ cheaper peers who produced more G+A in equal or fewer minutes. When multiple players at the same position and value qualify, only the most extreme case is shown."
+              ? "Find overpriced players outperformed by cheaper peers and bargain players who punch above their price tag — based on G+A output."
               : "Expensive players ranked by fewest minutes played. Search any player to compare against others at the same or higher market value."}
           </p>
         </div>
@@ -704,11 +794,11 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
               }}
               onSelect={(player) => {
                 setQuery(player.name);
-                handleSelect(player.name);
+                handleSelect(player.playerId, player.name);
               }}
               placeholder="Search player (e.g. Kenan Yildiz)"
               renderTrailing={(player) => (
-                <div className="text-xs tabular-nums shrink-0" style={{ color: "#00ff87" }}>{player.points} pts</div>
+                <div className="text-xs tabular-nums shrink-0" style={{ color: "var(--accent-hot)" }}>{player.points} pts</div>
               )}
             />
           ) : (
@@ -721,7 +811,7 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
               }}
               onSelect={(player) => {
                 setQuery(player.name);
-                handleSelect(player.name);
+                handleSelect(player.playerId, player.name);
               }}
               placeholder="Search player (e.g. Kenan Yildiz)"
               renderTrailing={(player) => (
@@ -739,13 +829,13 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
 
             {/* Error */}
             {gaError && (
-              <div className="rounded-xl p-5 mb-6 animate-fade-in" style={{ background: "rgba(255, 71, 87, 0.1)", border: "1px solid rgba(255, 71, 87, 0.3)" }}>
-                <p className="font-medium" style={{ color: "#ff6b7a" }}>Error fetching data. Please try again.</p>
+              <div className="rounded-xl p-5 mb-6 animate-fade-in" style={{ background: "var(--accent-cold-faint)", border: "1px solid var(--accent-cold-glow)" }}>
+                <p className="font-medium" style={{ color: "var(--accent-cold-soft)" }}>Error fetching data. Please try again.</p>
               </div>
             )}
             {gaData?.error && (
-              <div className="rounded-xl p-5 mb-6 animate-fade-in" style={{ background: "rgba(255, 71, 87, 0.1)", border: "1px solid rgba(255, 71, 87, 0.3)" }}>
-                <p className="font-medium" style={{ color: "#ff6b7a" }}>{gaData.error}</p>
+              <div className="rounded-xl p-5 mb-6 animate-fade-in" style={{ background: "var(--accent-cold-faint)", border: "1px solid var(--accent-cold-glow)" }}>
+                <p className="font-medium" style={{ color: "var(--accent-cold-soft)" }}>{gaData.error}</p>
                 {gaData.searchedName && (
                   <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
                     Searched for &ldquo;{gaData.searchedName}&rdquo; across {gaData.totalPlayers} players
@@ -759,29 +849,18 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
               <div className="space-y-6">
                 <section>
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1 h-5 rounded-full" style={{ background: "#ffd700" }} />
-                    <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "#ffd700" }}>Benchmark Player</h2>
+                    <div className="w-1 h-5 rounded-full" style={{ background: "var(--accent-gold)" }} />
+                    <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--accent-gold)" }}>Benchmark Player</h2>
                   </div>
                   <TargetPlayerCard player={gaData!.targetPlayer} minutes={targetMinutes} />
                 </section>
 
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => update({ bTop5: benchTop5Only ? null : "1" })}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                    style={{
-                      background: benchTop5Only ? "rgba(88, 166, 255, 0.15)" : "var(--bg-elevated)",
-                      color: benchTop5Only ? "var(--accent-blue)" : "var(--text-muted)",
-                      border: benchTop5Only ? "1px solid rgba(88, 166, 255, 0.3)" : "1px solid var(--border-subtle)",
-                    }}
-                  >
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Top 5 leagues
-                  </button>
-                </div>
+                <FilterButton active={benchTop5Only} onClick={() => update({ bTop5: benchTop5Only ? null : "1" })}>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Top 5 leagues
+                </FilterButton>
 
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                   Comparing against players at similar or higher positions. &ldquo;Underdelivering&rdquo; = more expensive, same or worse G+A in same or more minutes. &ldquo;Better Value&rdquo; = cheaper, same or better G+A in same or fewer minutes.
@@ -791,24 +870,24 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                   <TabsList className="w-full">
                     <TabsTrigger value="underdelivering" className="flex-1 gap-2">
                       Underdelivering
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums" style={{ background: "rgba(255, 71, 87, 0.15)", color: "#ff6b7a" }}>{filteredUnderperformers.length}</span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums" style={{ background: "var(--accent-cold-glow)", color: "var(--accent-cold-soft)" }}>{filteredUnderperformers.length}</span>
                     </TabsTrigger>
                     <TabsTrigger value="better-value" className="flex-1 gap-2">
                       Better Value
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums" style={{ background: "rgba(0, 255, 135, 0.15)", color: "#00ff87" }}>{filteredOutperformers.length}</span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums" style={{ background: "var(--accent-hot-glow)", color: "var(--accent-hot)" }}>{filteredOutperformers.length}</span>
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="underdelivering">
                     {filteredUnderperformers.length === 0 ? (
-                      <div className="rounded-xl p-6 sm:p-8 animate-fade-in" style={{ background: "rgba(255, 71, 87, 0.06)", border: "1px solid rgba(255, 71, 87, 0.2)" }}>
+                      <div className="rounded-xl p-6 sm:p-8 animate-fade-in" style={{ background: "var(--accent-cold-faint)", border: "1px solid var(--accent-cold-border)" }}>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(255, 71, 87, 0.15)" }}>
-                            <svg className="w-5 h-5" style={{ color: "#ff6b7a" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--accent-cold-glow)" }}>
+                            <svg className="w-5 h-5" style={{ color: "var(--accent-cold-soft)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
                             </svg>
                           </div>
                           <div>
-                            <p className="font-semibold text-base" style={{ color: "#ff6b7a" }}>Nobody more expensive is doing worse</p>
+                            <p className="font-semibold text-base" style={{ color: "var(--accent-cold-soft)" }}>Nobody more expensive is doing worse</p>
                             <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
                               Every player worth {gaData!.targetPlayer.marketValueDisplay} or more has produced more G+A.
                               At {gaData!.targetPlayer.points} points for {gaData!.targetPlayer.marketValueDisplay}, {gaData!.targetPlayer.name} has the lowest output at this price range.
@@ -819,22 +898,22 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                     ) : (
                       <div className="space-y-3">
                         {filteredUnderperformers.map((player, index) => (
-                          <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="underperformer" index={index} />
+                          <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="underperformer" index={index} top5={benchTop5Only} />
                         ))}
                       </div>
                     )}
                   </TabsContent>
                   <TabsContent value="better-value">
                     {filteredOutperformers.length === 0 ? (
-                      <div className="rounded-xl p-6 sm:p-8 animate-fade-in" style={{ background: "rgba(0, 255, 135, 0.06)", border: "1px solid rgba(0, 255, 135, 0.2)" }}>
+                      <div className="rounded-xl p-6 sm:p-8 animate-fade-in" style={{ background: "var(--accent-hot-faint)", border: "1px solid var(--accent-hot-border)" }}>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(0, 255, 135, 0.15)" }}>
-                            <svg className="w-5 h-5" style={{ color: "#00ff87" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--accent-hot-glow)" }}>
+                            <svg className="w-5 h-5" style={{ color: "var(--accent-hot)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </div>
                           <div>
-                            <p className="font-semibold text-base" style={{ color: "#00ff87" }}>{gaData!.targetPlayer.name} is a top performer for their price</p>
+                            <p className="font-semibold text-base" style={{ color: "var(--accent-hot)" }}>{gaData!.targetPlayer.name} is a top performer for their price</p>
                             <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
                               No cheaper player has produced more goal contributions in the same or fewer minutes.
                               At {gaData!.targetPlayer.points} points for {gaData!.targetPlayer.marketValueDisplay}, {gaData!.targetPlayer.name} offers excellent value.
@@ -845,7 +924,7 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                     ) : (
                       <div className="space-y-3">
                         {filteredOutperformers.map((player, index) => (
-                          <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="outperformer" index={index} />
+                          <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="outperformer" index={index} top5={benchTop5Only} />
                         ))}
                       </div>
                     )}
@@ -860,20 +939,56 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
 
             {/* Discovery */}
             {!gaLoading && !gaData && (
-              <UnderperformersSection
-                candidates={discoveryQuery.data?.underperformers || []}
-                allPlayers={initialAllPlayers}
-                isLoading={discoveryQuery.isLoading}
-                error={(discoveryQuery.error as Error | null) ?? null}
-                sortBy={underSortBy}
-                onSortChange={(value) => update({ uSort: value === "most-outperformed" ? null : value })}
-                leagueFilter={underLeagueFilter}
-                clubFilter={underClubFilter}
-                onLeagueFilterChange={(value) => update({ uLeague: value === "all" ? null : value })}
-                onClubFilterChange={(value) => update({ uClub: value || null })}
-                top5Only={underTop5Only}
-                onTop5Change={(on) => update({ uTop5: on ? "1" : null })}
-              />
+              <Tabs value={discoveryTab} onValueChange={(v) => update({ dTab: v === "overpriced" ? null : v })}>
+                <TabsList className="w-full mb-6">
+                  <TabsTrigger value="overpriced" className="flex-1 gap-2">
+                    Overpriced
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums" style={{ background: "var(--accent-cold-glow)", color: "var(--accent-cold-soft)" }}>
+                      {underTabCount ?? "—"}
+                    </span>
+                  </TabsTrigger>
+                  <TabsTrigger value="bargains" className="flex-1 gap-2">
+                    Bargains
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums" style={{ background: "var(--accent-green-glow)", color: "var(--accent-green)" }}>
+                      {overTabCount ?? "—"}
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="overpriced">
+                  <DiscoverySection
+                    variant="overpriced"
+                    candidates={underCandidates}
+                    allPlayers={initialAllPlayers}
+                    isLoading={underperformersQuery.isLoading}
+                    error={(underperformersQuery.error as Error | null) ?? null}
+                    sortBy={underSortBy}
+                    onSortChange={(value) => update({ uSort: value === "count" ? null : value })}
+                    leagueFilter={underLeagueFilter}
+                    clubFilter={underClubFilter}
+                    onLeagueFilterChange={(value) => update({ uLeague: value === "all" ? null : value })}
+                    onClubFilterChange={(value) => update({ uClub: value || null })}
+                    top5Only={discoveryTop5Only}
+                    onTop5Change={(on) => update({ dTop5: on ? "1" : null })}
+                  />
+                </TabsContent>
+                <TabsContent value="bargains">
+                  <DiscoverySection
+                    variant="bargains"
+                    candidates={overCandidates}
+                    allPlayers={initialAllPlayers}
+                    isLoading={overperformersQuery.isLoading}
+                    error={(overperformersQuery.error as Error | null) ?? null}
+                    sortBy={overSortBy}
+                    onSortChange={(value) => update({ oSort: value === "count" ? null : value })}
+                    leagueFilter={overLeagueFilter}
+                    clubFilter={overClubFilter}
+                    onLeagueFilterChange={(value) => update({ oLeague: value === "all" ? null : value })}
+                    onClubFilterChange={(value) => update({ oClub: value || null })}
+                    top5Only={discoveryTop5Only}
+                    onTop5Change={(on) => update({ dTop5: on ? "1" : null })}
+                  />
+                </TabsContent>
+              </Tabs>
             )}
           </>
         )}
@@ -886,8 +1001,8 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
               <div className="space-y-8">
                 <section>
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1 h-5 rounded-full" style={{ background: "#ffd700" }} />
-                    <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "#ffd700" }}>Benchmark Player</h2>
+                    <div className="w-1 h-5 rounded-full" style={{ background: "var(--accent-gold)" }} />
+                    <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--accent-gold)" }}>Benchmark Player</h2>
                   </div>
                   <MvBenchmarkCard player={minsSelected} />
                 </section>
@@ -897,11 +1012,11 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
                     <TabsList className="w-full mb-4">
                       <TabsTrigger value="less" className="flex-1 gap-2">
                         Playing Less
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums" style={{ background: "rgba(255, 71, 87, 0.15)", color: "#ff6b7a" }}>{playingLess.length}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums" style={{ background: "var(--accent-cold-glow)", color: "var(--accent-cold-soft)" }}>{playingLess.length}</span>
                       </TabsTrigger>
                       <TabsTrigger value="more" className="flex-1 gap-2">
                         Playing More
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums" style={{ background: "rgba(34, 197, 94, 0.15)", color: "#22c55e" }}>{playingMore.length}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums" style={{ background: "var(--accent-green-glow)", color: "var(--accent-green)" }}>{playingMore.length}</span>
                       </TabsTrigger>
                     </TabsList>
                     <TabsContent value="less">
@@ -938,39 +1053,23 @@ export function UnderperformersUI({ initialAllPlayers, initialData, injuryMap }:
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-1 h-5 rounded-full" style={{ background: "#ff4757" }} />
-                    <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: "#ff6b7a" }}>Fewest Minutes</h2>
+                    <div className="w-1 h-5 rounded-full" style={{ background: "var(--accent-cold)" }} />
+                    <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: "var(--accent-cold-soft)" }}>Fewest Minutes</h2>
                   </div>
                   {minsDiscoveryList.length > 0 && (
-                    <span className="text-sm font-bold px-2.5 py-1 rounded-lg tabular-nums" style={{ background: "rgba(255, 71, 87, 0.15)", color: "#ff6b7a" }}>{minsDiscoveryList.length}</span>
+                    <span className="text-sm font-bold px-2.5 py-1 rounded-lg tabular-nums" style={{ background: "var(--accent-cold-glow)", color: "var(--accent-cold-soft)" }}>{minsDiscoveryList.length}</span>
                   )}
                 </div>
 
-                <div className="flex flex-col gap-3 mb-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <SelectNative value={minsLeagueFilter} onChange={(e) => update({ mLeague: e.target.value === "all" ? null : e.target.value })} className="h-10">
-                      <option value="all">All leagues</option>
-                      {minsLeagueOptions.map((league) => (<option key={league} value={league}>{league}</option>))}
-                    </SelectNative>
-                    <DebouncedInput value={minsClubFilter} onChange={(value) => update({ mClub: value || null })} placeholder="Filter by club" className="h-10" />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => update({ noInj: minsHideInjured ? null : "1" })}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                      style={{
-                        background: minsHideInjured ? "rgba(255, 71, 87, 0.15)" : "var(--bg-elevated)",
-                        color: minsHideInjured ? "#ff6b7a" : "var(--text-muted)",
-                        border: minsHideInjured ? "1px solid rgba(255, 71, 87, 0.3)" : "1px solid var(--border-subtle)",
-                      }}
-                    >
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                      </svg>
-                      Exclude injured
-                    </button>
-                  </div>
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <SelectNative value={minsLeagueFilter} onChange={(e) => update({ mLeague: e.target.value === "all" ? null : e.target.value })} className="h-8 w-auto text-xs">
+                    <option value="all">All leagues</option>
+                    {minsLeagueOptions.map((league) => (<option key={league} value={league}>{league}</option>))}
+                  </SelectNative>
+                  <DebouncedInput value={minsClubFilter} onChange={(value) => update({ mClub: value || null })} placeholder="Club…" className="h-8 w-28 text-xs" />
+                  <FilterButton active={minsHideInjured} onClick={() => update({ noInj: minsHideInjured ? null : "1" })}>
+                    Exclude injured
+                  </FilterButton>
                 </div>
 
                 <MvVirtualPlayerList items={minsDiscoveryList} variant="less" onSelect={handleMvSelect} injuryMap={injuryMap} />
