@@ -60,7 +60,6 @@ function SpinnerIcon({ className }: { className?: string }) {
 
 const navItems = [
   { href: "/", label: "Home" },
-  { href: "/discover", label: "Boards" },
   { href: "/form", label: "Recent Form" },
   { href: "/team-form", label: "Value vs Table" },
   { href: "/players", label: "Players" },
