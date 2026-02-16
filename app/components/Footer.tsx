@@ -1,11 +1,15 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+
+const BOARD_LINKS = [
+  { href: "/discover", label: "All boards" },
+  { href: "/players?signing=loan&sort=value", label: "Top valued loans" },
+  { href: "/players?signing=transfer&sort=ga", label: "Highest scoring signings" },
+  { href: "/value-analysis?dTab=bargains&mode=ga", label: "Best bargains" },
+  { href: "/injured?tab=teams", label: "Biggest injury losses" },
+  { href: "/team-form?league=Premier+League", label: "PL value vs table" },
+] as const;
 
 export function Footer() {
-  const pathname = usePathname();
-
   return (
     <footer
       className="mt-auto border-t"
@@ -40,15 +44,6 @@ export function Footer() {
           </p>
 
           <div className="flex items-center gap-4">
-            {pathname !== "/discover" && (
-              <Link
-                href="/discover"
-                className="text-sm transition-colors duration-150 hover:opacity-80"
-                style={{ color: "var(--accent-blue)" }}
-              >
-                Scouting Boards
-              </Link>
-            )}
             <Link
               href="https://github.com/mohamed3on"
               target="_blank"
@@ -77,6 +72,19 @@ export function Footer() {
               X
             </Link>
           </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[var(--border-subtle)] pt-3 text-xs">
+          <span className="font-medium text-[var(--text-secondary)]">Boards</span>
+          {BOARD_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-[var(--text-muted)] transition-colors duration-150 hover:text-[var(--text-primary)]"
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
       </div>
     </footer>

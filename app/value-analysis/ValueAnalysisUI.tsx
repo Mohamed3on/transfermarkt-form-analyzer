@@ -448,7 +448,7 @@ function DiscoverySection({ variant, candidates, allPlayers, isLoading, error, s
           }}
         >
           <ToggleGroupItem value="count" className="rounded-lg">
-            {isOverpriced ? "Most outperformed" : "Most outperforming"}
+            {isOverpriced ? "Most underperforming" : "Most outperforming"}
           </ToggleGroupItem>
           <ToggleGroupItem value="value" className="rounded-lg">
             Value {isValueActive && (sortBy === "value-asc" ? "\u2191" : "\u2193")}

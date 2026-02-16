@@ -35,7 +35,7 @@ async function revalidateCaches(pathname: string): Promise<"revalidated" | "disp
   const res = await fetch("/api/revalidate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(tags ? { tags } : {}),
+    body: JSON.stringify({ ...(tags ? { tags } : {}), path: pathname }),
   });
   if (!res.ok) throw new Error("Failed to revalidate");
   return "revalidated";
