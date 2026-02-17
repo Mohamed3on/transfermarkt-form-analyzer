@@ -1,82 +1,78 @@
 # FormTracker
 
-Football analytics app for scanning recent form, squad value efficiency, player output, injuries, and minutes patterns using Transfermarkt data.
+Football scouting dashboards built on Transfermarkt data.
 
-Live app: https://football-form.vercel.app
+- Live app: https://football-form.vercel.app
+- Public repo: https://github.com/Mohamed3on/formtracker
 
-## Pages
+## What It Covers
+
+- Recent club form across multiple match windows
+- Team value vs actual table position
+- Player explorer (market value, minutes, G+A, loans/new signings)
+- Value analysis (bargains vs underperforming value)
+- Injury impact by player, club, and injury type
+- Curated discovery boards at `/discover`
+
+## Main Routes
 
 | Route | Purpose |
-|---|---|
-| `/` | Landing page with tool overview and direct navigation |
-| `/discover` | Index of curated scouting-board shortcuts (direct links to live filtered views) |
-| `/form` | Recent form windows (20, 15, 10, 5 matches) with top/bottom signal clusters |
-| `/team-form` | Team value vs table performance (actual points vs expected points from value rank) |
-| `/players` | Player explorer (value, minutes, games, G+A with league/club/signing filters) |
-| `/value-analysis` | Player output vs market value (goal contributions and minutes context) |
-| `/injured` | Injury impact by player, team, and injury type |
+| --- | --- |
+| `/` | Home and navigation |
+| `/discover` | Curated board links (shareable filtered views) |
+| `/form` | 5/10/15/20-match form analysis |
+| `/team-form` | Squad value vs table over/underperformance |
+| `/players` | Player explorer with filters and sorting |
+| `/value-analysis` | Value efficiency, bargains, and minutes lens |
+| `/injured` | Injury impact dashboards |
 
-## Tech Stack
+## API Routes
 
-- Next.js 15 (App Router)
-- React 19
-- Tailwind CSS 4
-- shadcn/ui components
-- TanStack Query
-- Cheerio
-- Bun
+| Endpoint | Method | Notes |
+| --- | --- | --- |
+| `/api/analyze` | `GET` | Form analysis data |
+| `/api/team-form` | `GET` | Team value vs table data |
+| `/api/players` | `GET` | Player dataset for explorer tables |
+| `/api/minutes-value` | `GET` | Minutes/value dataset |
+| `/api/player-form?id=<id>` | `GET` | Target player comparisons |
+| `/api/player-form?name=<name>` | `GET` | Same as above via name search |
+| `/api/underperformers` | `GET` | Discovery candidates (value laggards) |
+| `/api/overperformers` | `GET` | Discovery candidates (value bargains) |
+| `/api/injured` | `GET` | Full injury dataset |
+| `/api/injured?league=<code>` | `GET` | League-specific injury data |
+| `/api/manager/[clubId]` | `GET` | Manager profile + context |
+| `/api/revalidate` | `POST` | Revalidate cached tags/paths |
+| `/api/refresh-data` | `POST` | Trigger GitHub workflow refresh |
 
-## Development
-
-Install dependencies:
+## Local Development
 
 ```bash
 bun install
-```
-
-Run local dev server:
-
-```bash
 bun run dev
 ```
 
-Type check:
+Checks:
 
 ```bash
 bunx tsc --noEmit
+bun run lint
 ```
 
-Refresh the prebuilt minutes-value dataset:
+Refresh local minutes/value snapshot:
 
 ```bash
 bun run refresh:minutes-value
 ```
 
-This script rewrites `data/minutes-value.json`.
+## Environment Variables
 
-## API Routes
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Recommended | Canonical base URL for sitemap/metadata |
+| `GITHUB_TOKEN` | Optional | Required only for `/api/refresh-data` |
 
-| Endpoint | Method | Notes |
-|---|---|---|
-| `/api/analyze` | `GET` | Recent form analysis across 20/15/10/5 windows (cached) |
-| `/api/team-form` | `GET` | Team value vs table dataset |
-| `/api/player-form` | `GET` | Target-player comparison and underperformers |
-| `/api/underperformers` | `GET` | Discovery candidates by position (cached) |
-| `/api/players` | `GET` | Player search dataset by position |
-| `/api/minutes-value` | `GET` | Minutes-value dataset from committed JSON |
-| `/api/injured` | `GET` | Injury dataset; supports `?league=<code>` |
-| `/api/manager/[clubId]` | `GET` | Manager profile and PPG context (cached) |
-| `/api/player-minutes/[playerId]` | `GET` | Player minutes/goals/assists (cached) |
-| `/api/player-minutes/batch` | `POST` | Batch fetch minutes stats |
-| `/api/revalidate` | `POST` | Revalidate all or selected cache tags |
+## Caching And Refresh
 
-## Data Notes
-
-- Source: Transfermarkt pages scraped server-side.
-- Cache strategy: `unstable_cache` is used for Transfermarkt-backed routes.
-- `POST /api/revalidate` is wired to invalidate all active cache tags used by the app.
-
-## Naming
-
-The product name is **FormTracker**.  
-Repository slug is `formtracker`.
+- Transfermarkt-backed fetches use `unstable_cache` tags.
+- `POST /api/revalidate` clears Next.js cache tags for live scraped pages.
+- `POST /api/refresh-data` dispatches `refresh-data.yml` on GitHub for static-data pages (`/players`, `/value-analysis`), so refresh is asynchronous by design.
