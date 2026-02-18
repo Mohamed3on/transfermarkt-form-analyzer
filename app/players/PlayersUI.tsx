@@ -125,7 +125,10 @@ function PlayerCard({ player, index, injuryMap, includePen = false }: { player: 
           <div className="flex items-center gap-1.5 text-xs mt-0.5 overflow-hidden sm:flex-wrap" style={{ color: "var(--text-secondary)" }}>
             <span>{player.position}</span>
             <span style={{ opacity: 0.4 }}>·</span>
-            <span className="truncate max-w-[8rem] sm:max-w-none">{player.club}</span>
+            <span className="truncate max-w-[8rem] sm:max-w-none inline-flex items-center gap-1">
+              {player.clubLogoUrl && <img src={player.clubLogoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}
+              {player.club}
+            </span>
             <span className="hidden sm:inline" style={{ opacity: 0.4 }}>·</span>
             <span className="hidden sm:inline">{player.age}y</span>
           </div>

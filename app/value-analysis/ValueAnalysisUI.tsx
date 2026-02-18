@@ -90,7 +90,7 @@ function TargetPlayerCard({ player, minutes }: { player: PlayerStats; minutes?: 
       name={player.name}
       imageUrl={player.imageUrl}
       href={getLeistungsdatenUrl(player.profileUrl)}
-      subtitle={<><span className="font-medium">{player.position}</span><span className="opacity-40">•</span><span className="truncate opacity-80">{player.club}</span></>}
+      subtitle={<><span className="font-medium">{player.position}</span><span className="opacity-40">•</span><span className="truncate opacity-80 inline-flex items-center gap-1">{player.clubLogoUrl && <img src={player.clubLogoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}{player.club}</span></>}
       desktopStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
       desktopBigNumbers={<><BigNumber value={player.marketValueDisplay} label="Value" color="var(--accent-gold)" /><BigNumber value={String(player.points)} label="Points" color="var(--accent-hot)" /></>}
@@ -199,7 +199,7 @@ function ComparisonCard({ player, targetPlayer, index = 0, variant, top5 }: {
           {player.name}
         </Link>
       }
-      subtitle={<PlayerSubtitle position={player.position} club={player.club} age={player.age} />}
+      subtitle={<PlayerSubtitle position={player.position} club={player.club} clubLogoUrl={player.clubLogoUrl} age={player.age} />}
       desktopStats={<>
         <div className="text-right">
           <div className="text-sm font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
@@ -261,12 +261,15 @@ function SearchSkeleton() {
   );
 }
 
-function PlayerSubtitle({ position, club, age }: { position: string; club: string; age: number }) {
+function PlayerSubtitle({ position, club, clubLogoUrl, age }: { position: string; club: string; clubLogoUrl?: string; age: number }) {
   return (
     <>
       <span>{position}</span>
       <span className="opacity-40">•</span>
-      <span className="truncate max-w-[100px] sm:max-w-none">{club}</span>
+      <span className="truncate max-w-[100px] sm:max-w-none inline-flex items-center gap-1">
+        {clubLogoUrl && <img src={clubLogoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}
+        {club}
+      </span>
       <span className="hidden sm:inline opacity-40">•</span>
       <span className="hidden sm:inline">{age}y</span>
     </>
@@ -303,7 +306,7 @@ function DiscoveryListCard({ player, index = 0, top5, variant, pointsLabel = "G+
           {player.name}
         </Link>
       }
-      subtitle={<PlayerSubtitle position={player.position} club={player.club} age={player.age} />}
+      subtitle={<PlayerSubtitle position={player.position} club={player.club} clubLogoUrl={player.clubLogoUrl} age={player.age} />}
       desktopStats={<>
         {player.comparisonCount > 0 && (
           <>

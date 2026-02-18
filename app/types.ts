@@ -118,6 +118,7 @@ export interface PlayerStats {
   position: string;
   age: number;
   club: string;
+  clubLogoUrl: string;
   league: string;
   matches: number;
   goals: number;
@@ -146,6 +147,7 @@ export interface MinutesValuePlayer {
   position: string;
   age: number;
   club: string;
+  clubLogoUrl: string;
   league: string;
   nationality: string;
   marketValue: number;
@@ -185,6 +187,7 @@ export interface PlayerStatsResult {
   intlAppearances: number;
   intlPenaltyGoals: number;
   club: string;
+  clubLogoUrl: string;
   league: string;
   isNewSigning: boolean;
   isOnLoan: boolean;

@@ -149,6 +149,7 @@ async function main() {
       p.intlAppearances = entry.intlAppearances;
       p.intlPenaltyGoals = entry.intlPenaltyGoals;
       if (entry.club) p.club = entry.club;
+      if (entry.clubLogoUrl) p.clubLogoUrl = entry.clubLogoUrl;
       if (entry.league) p.league = entry.league;
       if (entry.isNewSigning) {
         p.isNewSigning = true;

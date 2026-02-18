@@ -59,6 +59,7 @@ function parseTopScorerRow($: cheerio.CheerioAPI, row: any): MinutesValuePlayer 
     position,
     age,
     club,
+    clubLogoUrl: "",
     league,
     nationality,
     marketValue,

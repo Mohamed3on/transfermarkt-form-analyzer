@@ -16,6 +16,7 @@ const ZERO_STATS: PlayerStatsResult = {
   intlAppearances: 0,
   intlPenaltyGoals: 0,
   club: "",
+  clubLogoUrl: "",
   league: "",
   isNewSigning: false,
   isOnLoan: false,
@@ -117,17 +118,20 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const $ = cheerio.load(htmlContent);
   const clubInfo = $(".data-header__club-info");
   const club = clubInfo.find(".data-header__club a").text().trim();
+  const clubLogoImg = $(".data-header__box__club-link img").first();
+  const clubLogoSrcset = (clubLogoImg.attr("srcset") || "").trim();
+  const clubLogoUrl = clubLogoSrcset.split(/\s+/)[0] || clubLogoImg.attr("src") || "";
   const ribbonText = $(".data-header__ribbon span").text().trim().toLowerCase();
   const isOnLoan = ribbonText === "on loan";
   const isNewSigning = ribbonText === "new arrival" || isOnLoan;
 
   // Parse stats + league from ceapi
   if (!ceapiRes.ok) {
-    return { ...ZERO_STATS, club, isNewSigning, isOnLoan };
+    return { ...ZERO_STATS, club, clubLogoUrl, isNewSigning, isOnLoan };
   }
   const ceapi = await ceapiRes.json();
   const games: CeapiGame[] = ceapi?.data?.performance ?? [];
   const stats = aggregateSeasonStats(games);
 
-  return { ...stats, club, isNewSigning, isOnLoan };
+  return { ...stats, club, clubLogoUrl, isNewSigning, isOnLoan };
 }
