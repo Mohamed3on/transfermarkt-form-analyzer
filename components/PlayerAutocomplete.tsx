@@ -128,7 +128,7 @@ export function PlayerAutocomplete<T extends PlayerOption>({
               )}
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{player.name}</div>
-                <div className="text-[10px] truncate" style={{ color: "var(--text-muted)" }}>
+                <div className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
                   {player.position} · {player.club} · {player.marketValueDisplay}
                 </div>
               </div>

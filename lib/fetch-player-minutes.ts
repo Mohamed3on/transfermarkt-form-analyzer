@@ -8,6 +8,13 @@ const ZERO_STATS: PlayerStatsResult = {
   appearances: 0,
   goals: 0,
   assists: 0,
+  penaltyGoals: 0,
+  penaltyMisses: 0,
+  intlGoals: 0,
+  intlAssists: 0,
+  intlMinutes: 0,
+  intlAppearances: 0,
+  intlPenaltyGoals: 0,
   club: "",
   league: "",
   isNewSigning: false,
@@ -19,43 +26,85 @@ const CEAPI_HEADERS = {
   Accept: "application/json",
 };
 
+/** Domestic league competition ID → display name */
+const LEAGUE_NAMES: Record<string, string> = {
+  GB1: "Premier League",
+  ES1: "LaLiga",
+  L1: "Bundesliga",
+  IT1: "Serie A",
+  FR1: "Ligue 1",
+  PO1: "Liga Portugal",
+  NL1: "Eredivisie",
+  BE1: "Jupiler Pro League",
+  TR1: "Süper Lig",
+  SA1: "Saudi Pro League",
+  BRA1: "Série A",
+  RU1: "Premier Liga",
+  GR1: "Super League 1",
+  DK1: "Superliga",
+  GB2: "Championship",
+  ES2: "LaLiga2",
+};
+
 /** Current Transfermarkt season ID (e.g. 2025 = the 25/26 season). */
 function currentSeasonId(): number {
   const now = new Date();
   const year = now.getFullYear();
-  // Season flips around August
   return now.getMonth() >= 7 ? year : year - 1;
 }
 
 interface CeapiGame {
-  gameInformation: { seasonId: number; competitionTypeId: number };
+  gameInformation: { seasonId: number; competitionTypeId: number; competitionId: string };
   statistics: {
-    goalStatistics: { goalsScoredTotal?: number | null; assists?: number | null };
+    goalStatistics: { goalsScoredTotal?: number | null; assists?: number | null; penaltyShooterGoalsScored?: number | null; penaltyShooterMisses?: number | null };
     playingTimeStatistics: { playedMinutes?: number | null };
   };
 }
 
-function aggregateSeasonStats(games: CeapiGame[]): { goals: number; assists: number; minutes: number; appearances: number } {
+interface AggregatedStats {
+  goals: number; assists: number; minutes: number; appearances: number; penaltyGoals: number; penaltyMisses: number;
+  intlGoals: number; intlAssists: number; intlMinutes: number; intlAppearances: number; intlPenaltyGoals: number;
+  league: string;
+}
+
+function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
   const seasonId = currentSeasonId();
-  let goals = 0, assists = 0, minutes = 0, appearances = 0;
+  let goals = 0, assists = 0, minutes = 0, appearances = 0, penaltyGoals = 0, penaltyMisses = 0;
+  let intlGoals = 0, intlAssists = 0, intlMinutes = 0, intlAppearances = 0, intlPenaltyGoals = 0;
+  let league = "";
   for (const g of games) {
     if (g.gameInformation.seasonId !== seasonId) continue;
     const gs = g.statistics.goalStatistics;
     const pts = g.statistics.playingTimeStatistics;
-    goals += gs.goalsScoredTotal ?? 0;
-    assists += gs.assists ?? 0;
-    const mins = pts.playedMinutes ?? 0;
-    minutes += mins;
-    if (mins > 0) appearances++;
+    const isIntl = g.gameInformation.competitionTypeId === 11;
+    if (isIntl) {
+      intlGoals += gs.goalsScoredTotal ?? 0;
+      intlAssists += gs.assists ?? 0;
+      intlPenaltyGoals += gs.penaltyShooterGoalsScored ?? 0;
+      const mins = pts.playedMinutes ?? 0;
+      intlMinutes += mins;
+      if (mins > 0) intlAppearances++;
+    } else {
+      goals += gs.goalsScoredTotal ?? 0;
+      assists += gs.assists ?? 0;
+      penaltyGoals += gs.penaltyShooterGoalsScored ?? 0;
+      penaltyMisses += gs.penaltyShooterMisses ?? 0;
+      const mins = pts.playedMinutes ?? 0;
+      minutes += mins;
+      if (mins > 0) appearances++;
+      if (!league && g.gameInformation.competitionTypeId === 1) {
+        league = LEAGUE_NAMES[g.gameInformation.competitionId] ?? "";
+      }
+    }
   }
-  return { goals, assists, minutes, appearances };
+  return { goals, assists, minutes, appearances, penaltyGoals, penaltyMisses, intlGoals, intlAssists, intlMinutes, intlAppearances, intlPenaltyGoals, league };
 }
 
 /** Raw fetch — no caching. Used by the offline refresh script. */
 export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerStatsResult> {
   if (!playerId) return ZERO_STATS;
 
-  // Fetch HTML (for club/league/ribbon) and ceapi (for stats) in parallel
+  // Fetch HTML (for club/ribbon) and ceapi (for stats) in parallel
   const [htmlContent, ceapiRes] = await Promise.all([
     fetchPage(`${BASE_URL}/x/leistungsdaten/spieler/${playerId}`),
     fetch(`${BASE_URL}/ceapi/performance-game/${playerId}`, {
@@ -64,22 +113,21 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
     }),
   ]);
 
-  // Parse club/league/ribbon from HTML
+  // Parse club/ribbon from HTML
   const $ = cheerio.load(htmlContent);
   const clubInfo = $(".data-header__club-info");
   const club = clubInfo.find(".data-header__club a").text().trim();
-  const league = clubInfo.find(".data-header__league a").text().trim();
   const ribbonText = $(".data-header__ribbon span").text().trim().toLowerCase();
   const isOnLoan = ribbonText === "on loan";
   const isNewSigning = ribbonText === "new arrival" || isOnLoan;
 
-  // Parse stats from ceapi
+  // Parse stats + league from ceapi
   if (!ceapiRes.ok) {
-    return { ...ZERO_STATS, club, league, isNewSigning, isOnLoan };
+    return { ...ZERO_STATS, club, isNewSigning, isOnLoan };
   }
   const ceapi = await ceapiRes.json();
   const games: CeapiGame[] = ceapi?.data?.performance ?? [];
-  const { goals, assists, minutes, appearances } = aggregateSeasonStats(games);
+  const stats = aggregateSeasonStats(games);
 
-  return { minutes, appearances, goals, assists, club, league, isNewSigning, isOnLoan };
+  return { ...stats, club, isNewSigning, isOnLoan };
 }

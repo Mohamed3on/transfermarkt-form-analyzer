@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
+import { getMinutesValueData, toPlayerStats, applyStatsToggles } from "@/lib/fetch-minutes-value";
 import { getInjuredPlayers } from "@/lib/injured";
 import { findValueCandidates } from "@/lib/value-analysis";
 import { DataLastUpdated } from "@/app/components/DataLastUpdated";
@@ -21,7 +21,15 @@ export const metadata = createPageMetadata({
 
 const SPIELER_RE = /\/spieler\/(\d+)/;
 
-export default async function ValueAnalysisPage() {
+export default async function ValueAnalysisPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const includePen = params.pen === "1";
+  const includeIntl = params.intl === "1";
+
   const [mvPlayers, injuredData] = await Promise.all([
     getMinutesValueData(),
     getInjuredPlayers(),
@@ -33,7 +41,8 @@ export default async function ValueAnalysisPage() {
     if (m) injuryMap[m[1]] = { injury: p.injury, returnDate: p.returnDate, injurySince: p.injurySince };
   }
 
-  const allPlayerStats = mvPlayers.map(toPlayerStats);
+  const rawPlayerStats = mvPlayers.map(toPlayerStats);
+  const allPlayerStats = applyStatsToggles(rawPlayerStats, { includePen, includeIntl });
 
   const MIN_DISCOVERY_MINUTES = 260;
   const underperformers = findValueCandidates(allPlayerStats, { candidateOutperforms: false, minMinutes: MIN_DISCOVERY_MINUTES, sortAsc: false })
@@ -50,6 +59,8 @@ export default async function ValueAnalysisPage() {
           injuryMap={injuryMap}
           initialUnderperformers={underperformers}
           initialOverperformers={overperformers}
+          includePen={includePen}
+          includeIntl={includeIntl}
         />
       </Suspense>
       <DiscoveryLinkGrid

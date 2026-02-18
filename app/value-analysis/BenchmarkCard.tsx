@@ -111,7 +111,7 @@ export function BigNumber({ value, label, color }: { value: string; label: strin
   return (
     <div className="text-center">
       <div className="text-2xl font-black tabular-nums" style={{ color }}>{value}</div>
-      <div className="text-[10px] uppercase tracking-widest mt-0.5" style={{ color: "var(--text-muted)" }}>{label}</div>
+      <div className="text-xs uppercase tracking-widest mt-0.5" style={{ color: "var(--text-secondary)" }}>{label}</div>
     </div>
   );
 }

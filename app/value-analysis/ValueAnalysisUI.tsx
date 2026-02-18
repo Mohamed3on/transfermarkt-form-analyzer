@@ -9,10 +9,10 @@ import { DebouncedInput } from "@/components/DebouncedInput";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SelectNative } from "@/components/ui/select-native";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ToggleGroup, ToggleGroupItem, toggleVariants } from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ExternalLink } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { getLeagueLogoUrl } from "@/lib/leagues";
+import { FilterButton } from "@/components/FilterButton";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES } from "@/lib/filter-players";
 import { canBeOutperformerAgainst, canBeUnderperformerAgainst, strictlyOutperforms } from "@/lib/positions";
 import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
@@ -59,10 +59,12 @@ function getLeistungsdatenUrl(profileUrl: string): string {
   return `https://www.transfermarkt.com${profileUrl.replace(PROFIL_RE, "/leistungsdaten/")}/saison/${season}/plus/1`;
 }
 
-async function fetchPlayerForm(id: string, name: string, signal?: AbortSignal): Promise<PlayerFormResult> {
+async function fetchPlayerForm(id: string, name: string, opts?: { pen?: boolean; intl?: boolean }, signal?: AbortSignal): Promise<PlayerFormResult> {
   const params = new URLSearchParams();
   if (id) params.set("id", id);
   if (name) params.set("name", name);
+  if (opts?.pen) params.set("pen", "1");
+  if (opts?.intl) params.set("intl", "1");
   const res = await fetch(`/api/player-form?${params}`, { signal });
   return res.json();
 }
@@ -93,7 +95,7 @@ function TargetPlayerCard({ player, minutes }: { player: PlayerStats; minutes?: 
       mobileStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
       desktopBigNumbers={<><BigNumber value={player.marketValueDisplay} label="Value" color="var(--accent-gold)" /><BigNumber value={String(player.points)} label="Points" color="var(--accent-hot)" /></>}
       mobileBigNumbers={<><div className="text-lg font-black tabular-nums" style={{ color: "var(--accent-gold)" }}>{player.marketValueDisplay}</div><div className="text-lg font-black tabular-nums" style={{ color: "var(--accent-hot)" }}>{player.points}</div></>}
-      footer={<><span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Minutes Played</span><span className="text-base sm:text-lg font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>{minutes?.toLocaleString() || "—"}&apos;</span></>}
+      footer={<><span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-secondary)" }}>Minutes Played</span><span className="text-base sm:text-lg font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>{minutes?.toLocaleString() || "—"}&apos;</span></>}
     />
   );
 }
@@ -145,7 +147,7 @@ function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement,
               <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </a>
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mt-0.5 flex-wrap" style={{ color: "var(--text-muted)" }}>
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs mt-0.5 flex-wrap" style={{ color: "var(--text-secondary)" }}>
             {subtitle}
           </div>
         </div>
@@ -157,7 +159,7 @@ function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement,
         </div>
       </div>
       {footer && (
-        <div className="flex items-center gap-2 sm:gap-3 mt-2 sm:mt-3 pt-2 sm:pt-3 text-[10px] sm:text-xs" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+        <div className="flex items-center gap-2 sm:gap-3 mt-2 sm:mt-3 pt-2 sm:pt-3 text-xs" style={{ borderTop: "1px solid var(--border-subtle)" }}>
           {footer}
         </div>
       )}
@@ -201,25 +203,25 @@ function ComparisonCard({ player, targetPlayer, index = 0, variant, top5 }: {
       desktopStats={<>
         <div className="text-right">
           <div className="text-sm font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
-          <div className="text-[10px] font-medium tabular-nums" style={{ color: mutedColor }}>{valueDeltaLabel}</div>
+          <div className="text-xs font-medium tabular-nums" style={{ color: mutedColor }}>{valueDeltaLabel}</div>
         </div>
         <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
         <div className="text-right min-w-[3rem]">
           <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
-          <div className="text-[10px] font-medium tabular-nums" style={{ color: theme.rankColor }}>{pointsDeltaLabel}</div>
+          <div className="text-xs font-medium tabular-nums" style={{ color: theme.rankColor }}>{pointsDeltaLabel}</div>
         </div>
         <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
         <div className="min-w-[4.5rem]"><MinutesDisplay minutes={minutes} /></div>
       </>}
       mobileStats={<>
         <div className="text-xs font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
-        <div className="text-[10px] tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
+        <div className="text-xs tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
       </>}
       footer={<>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.goals}G</span>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.assists}A</span>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.matches} apps</span>
-        <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
+        <span className="tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.goals}G</span>
+        <span className="tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.assists}A</span>
+        <span className="tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.matches} apps</span>
+        <span className="sm:hidden tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.age}y</span>
         <div className="sm:hidden ml-auto"><MinutesDisplay minutes={minutes} /></div>
         <LeagueLabel league={player.league} />
       </>}
@@ -259,19 +261,6 @@ function SearchSkeleton() {
   );
 }
 
-function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      data-state={active ? "on" : "off"}
-      onClick={onClick}
-      className={cn(toggleVariants({ size: "sm", variant: "outline" }), "gap-1.5 rounded-lg")}
-    >
-      {children}
-    </button>
-  );
-}
-
 function PlayerSubtitle({ position, club, age }: { position: string; club: string; age: number }) {
   return (
     <>
@@ -286,15 +275,15 @@ function PlayerSubtitle({ position, club, age }: { position: string; club: strin
 
 function LeagueLabel({ league }: { league: string }) {
   return (
-    <span className="hidden sm:flex items-center gap-1 ml-auto text-[10px] uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+    <span className="hidden sm:flex items-center gap-1 ml-auto text-xs uppercase tracking-wide" style={{ color: "var(--text-secondary)" }}>
       {getLeagueLogoUrl(league) && <img src={getLeagueLogoUrl(league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
       {league}
     </span>
   );
 }
 
-function DiscoveryListCard({ player, index = 0, top5, variant }: {
-  player: DiscoveryCandidate; index?: number; top5?: boolean; variant: DiscoveryTab;
+function DiscoveryListCard({ player, index = 0, top5, variant, pointsLabel = "G+A" }: {
+  player: DiscoveryCandidate; index?: number; top5?: boolean; variant: DiscoveryTab; pointsLabel?: string;
 }) {
   const isOverpriced = variant === "overpriced";
   const theme = isOverpriced ? CARD_THEMES.cold : CARD_THEMES.green;
@@ -320,38 +309,38 @@ function DiscoveryListCard({ player, index = 0, top5, variant }: {
           <>
             <div className="text-right min-w-[4rem]">
               <div className="text-sm font-bold tabular-nums" style={{ color: countColor }}>{player.comparisonCount}</div>
-              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>{countLabel}</div>
+              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>{countLabel}</div>
             </div>
             <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
           </>
         )}
         <div className="text-right">
           <div className="text-sm font-bold tabular-nums" style={{ color: valueColor }}>{player.marketValueDisplay}</div>
-          <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>value</div>
+          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>value</div>
         </div>
         <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
         <div className="text-right min-w-[3rem]">
           <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
-          <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>G+A</div>
+          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>{pointsLabel}</div>
         </div>
         <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
         <div className="text-right min-w-[4rem]">
           <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes?.toLocaleString() || "—"}&apos;</div>
-          <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>mins</div>
+          <div className="text-xs" style={{ color: "var(--text-secondary)" }}>mins</div>
         </div>
       </>}
       mobileStats={<>
         {player.comparisonCount > 0 && (
-          <div className="text-[10px] font-bold tabular-nums mb-0.5" style={{ color: countColor }}>{player.comparisonCount} {countLabel}</div>
+          <div className="text-xs font-bold tabular-nums mb-0.5" style={{ color: countColor }}>{player.comparisonCount} {countLabel}</div>
         )}
         <div className="text-xs font-bold tabular-nums" style={{ color: valueColor }}>{player.marketValueDisplay}</div>
-        <div className="text-[10px] tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
+        <div className="text-xs tabular-nums" style={{ color: "var(--text-primary)" }}>{player.points} pts</div>
       </>}
       footer={<>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.goals}G</span>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.assists}A</span>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.matches} apps</span>
-        <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
+        <span className="tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.goals}G</span>
+        <span className="tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.assists}A</span>
+        <span className="tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.matches} apps</span>
+        <span className="sm:hidden tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.age}y</span>
         <span className="sm:hidden ml-auto tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes?.toLocaleString() || "—"}&apos;</span>
         <LeagueLabel league={player.league} />
       </>}
@@ -359,12 +348,13 @@ function DiscoveryListCard({ player, index = 0, top5, variant }: {
   );
 }
 
-function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChange, leagueFilter, clubFilter, onLeagueFilterChange, onClubFilterChange, top5Only, onTop5Change }: {
+function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChange, leagueFilter, clubFilter, onLeagueFilterChange, onClubFilterChange, top5Only, onTop5Change, pointsLabel = "G+A" }: {
   variant: DiscoveryTab;
   candidates: DiscoveryCandidate[]; allPlayers: PlayerStats[];
   sortBy: DiscoverySortKey; onSortChange: (value: DiscoverySortKey) => void;
   leagueFilter: string; clubFilter: string; onLeagueFilterChange: (value: string) => void; onClubFilterChange: (value: string) => void;
   top5Only: boolean; onTop5Change: (value: boolean) => void;
+  pointsLabel?: string;
 }) {
   const isOverpriced = variant === "overpriced";
   const accentColor = isOverpriced ? "var(--accent-cold-soft)" : "var(--accent-green)";
@@ -436,7 +426,7 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
             Value {isValueActive && (sortBy === "value-asc" ? "\u2191" : "\u2193")}
           </ToggleGroupItem>
           <ToggleGroupItem value="ga" className="rounded-lg">
-            G+A {isGaActive && (sortBy === "ga-desc" ? "\u2193" : "\u2191")}
+            {pointsLabel} {isGaActive && (sortBy === "ga-desc" ? "\u2193" : "\u2191")}
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
@@ -459,7 +449,7 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
       {filteredCandidates.length > 0 && (
         <div className="space-y-3">
           {filteredCandidates.map((player, index) => (
-            <DiscoveryListCard key={player.playerId} player={player} index={index} top5={top5Only} variant={variant} />
+            <DiscoveryListCard key={player.playerId} player={player} index={index} top5={top5Only} variant={variant} pointsLabel={pointsLabel} />
           ))}
         </div>
       )}
@@ -526,38 +516,38 @@ function MvPlayerCard({ player, target, index, variant = "less", onSelect, injur
       desktopStats={<>
         <div className="text-right">
           <div className="text-sm font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
-          {target && <div className="text-[10px] font-medium tabular-nums" style={{ color: theme.rankColor, opacity: 0.7 }}>{valueDiffDisplay}</div>}
+          {target && <div className="text-xs font-medium tabular-nums" style={{ color: theme.rankColor, opacity: 0.7 }}>{valueDiffDisplay}</div>}
         </div>
         <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
         <div className="text-right min-w-[4rem]">
           <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes.toLocaleString()}&apos;</div>
-          {target && <div className="text-[10px] font-medium tabular-nums" style={{ color: theme.rankColor }}>{variant === "more" ? "+" : "\u2212"}{Math.abs(minsDiff).toLocaleString()}&apos;</div>}
+          {target && <div className="text-xs font-medium tabular-nums" style={{ color: theme.rankColor }}>{variant === "more" ? "+" : "\u2212"}{Math.abs(minsDiff).toLocaleString()}&apos;</div>}
         </div>
         <div className="w-px h-8" style={{ background: "var(--border-subtle)" }} />
         <div className="flex items-center gap-2.5 text-right">
           <div>
             <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.totalMatches}</div>
-            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>games</div>
+            <div className="text-xs" style={{ color: "var(--text-secondary)" }}>games</div>
           </div>
           <div>
             <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.goals}</div>
-            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>goals</div>
+            <div className="text-xs" style={{ color: "var(--text-secondary)" }}>goals</div>
           </div>
           <div>
             <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.assists}</div>
-            <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>assists</div>
+            <div className="text-xs" style={{ color: "var(--text-secondary)" }}>assists</div>
           </div>
         </div>
       </>}
       mobileStats={<>
         <div className="text-xs font-bold tabular-nums" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
-        <div className="text-[10px] tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes.toLocaleString()}&apos;</div>
+        <div className="text-xs tabular-nums" style={{ color: "var(--accent-blue)" }}>{player.minutes.toLocaleString()}&apos;</div>
       </>}
       footer={<>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.goals}G</span>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.assists}A</span>
-        <span className="tabular-nums" style={{ color: "var(--text-muted)" }}>{player.totalMatches} games</span>
-        <span className="sm:hidden tabular-nums" style={{ color: "var(--text-muted)" }}>{player.age}y</span>
+        <span className="tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.goals}G</span>
+        <span className="tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.assists}A</span>
+        <span className="tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.totalMatches} games</span>
+        <span className="sm:hidden tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.age}y</span>
         <LeagueLabel league={player.league} />
       </>}
     />
@@ -606,10 +596,14 @@ interface ValueAnalysisUIProps {
   injuryMap?: InjuryMap;
   initialUnderperformers: (PlayerStats & { outperformedByCount: number })[];
   initialOverperformers: (PlayerStats & { outperformsCount?: number })[];
+  includePen: boolean;
+  includeIntl: boolean;
 }
 
-export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, initialUnderperformers, initialOverperformers }: ValueAnalysisUIProps) {
+export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, initialUnderperformers, initialOverperformers, includePen, includeIntl }: ValueAnalysisUIProps) {
   const { params, update, push } = useQueryParams("/value-analysis");
+
+  const pointsLabel = includePen ? "G+A" : "npG+A";
 
   // Mode
   const mode: Mode = params.get("mode") === "mins" ? "mins" : "ga";
@@ -646,8 +640,8 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
 
   // ── G+A queries ──
   const { data: gaData, isLoading: gaLoading, error: gaError } = useQuery({
-    queryKey: ["player-form", urlId, urlName],
-    queryFn: ({ signal }) => fetchPlayerForm(urlId, urlName, signal),
+    queryKey: ["player-form", urlId, urlName, includePen, includeIntl],
+    queryFn: ({ signal }) => fetchPlayerForm(urlId, urlName, { pen: includePen, intl: includeIntl }, signal),
     enabled: mode === "ga" && hasPlayer,
     staleTime: 2 * 60 * 1000,
   });
@@ -724,24 +718,32 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
           </h1>
           <p className="text-sm sm:text-base text-[var(--text-muted)]">
             {mode === "ga"
-              ? "Find overpriced players outperformed by cheaper peers and bargain players who punch above their price tag — based on G+A output."
+              ? `Find overpriced players outperformed by cheaper peers and bargain players who punch above their price tag — based on ${pointsLabel} output.`
               : "Expensive players ranked by fewest minutes played. Search any player to compare against others at the same or higher market value."}
           </p>
         </div>
 
-        {/* Mode toggle */}
-        <ToggleGroup
-          type="single"
-          value={mode}
-          onValueChange={(v) => {
-            if (!v) return;
-            push({ mode: v === "ga" ? null : v, tab: null, bTop5: null });
-          }}
-          className="mb-4"
-        >
-          <ToggleGroupItem value="ga" className="px-4">G+A</ToggleGroupItem>
-          <ToggleGroupItem value="mins" className="px-4">Minutes</ToggleGroupItem>
-        </ToggleGroup>
+        {/* Mode toggle + stat toggles */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <ToggleGroup
+            type="single"
+            value={mode}
+            onValueChange={(v) => {
+              if (!v) return;
+              push({ mode: v === "ga" ? null : v, tab: null, bTop5: null });
+            }}
+          >
+            <ToggleGroupItem value="ga" className="px-4">G+A</ToggleGroupItem>
+            <ToggleGroupItem value="mins" className="px-4">Minutes</ToggleGroupItem>
+          </ToggleGroup>
+          <div className="w-px h-6" style={{ background: "var(--border-subtle)" }} />
+          <FilterButton active={includePen} onClick={() => update({ pen: includePen ? null : "1" })}>
+            Pens in G+A
+          </FilterButton>
+          <FilterButton active={includeIntl} onClick={() => update({ intl: includeIntl ? null : "1" })}>
+            + Intl stats
+          </FilterButton>
+        </div>
 
         {/* Search */}
         <div className="mb-6 sm:mb-8">
@@ -928,6 +930,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                     onClubFilterChange={(value) => update({ uClub: value || null })}
                     top5Only={discoveryTop5Only}
                     onTop5Change={(on) => update({ dTop5: on ? "1" : null })}
+                    pointsLabel={pointsLabel}
                   />
                 </TabsContent>
                 <TabsContent value="bargains">
@@ -943,6 +946,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                     onClubFilterChange={(value) => update({ oClub: value || null })}
                     top5Only={discoveryTop5Only}
                     onTop5Change={(on) => update({ dTop5: on ? "1" : null })}
+                    pointsLabel={pointsLabel}
                   />
                 </TabsContent>
               </Tabs>

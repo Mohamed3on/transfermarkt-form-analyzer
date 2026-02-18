@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { PlayerStats } from "@/app/types";
-import { getPlayerStatsData } from "@/lib/fetch-minutes-value";
+import { getPlayerStatsData, applyStatsToggles } from "@/lib/fetch-minutes-value";
 import { canBeOutperformerAgainst, canBeUnderperformerAgainst, strictlyOutperforms } from "@/lib/positions";
 
 function normalizeForSearch(str: string): string {
@@ -41,13 +41,16 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const playerId = searchParams.get("id");
   const playerName = searchParams.get("name");
+  const includePen = searchParams.get("pen") === "1";
+  const includeIntl = searchParams.get("intl") === "1";
 
   if (!playerId && !playerName) {
     return NextResponse.json({ error: "Player id or name is required" }, { status: 400 });
   }
 
   try {
-    const allPlayers = await getPlayerStatsData();
+    const rawPlayers = await getPlayerStatsData();
+    const allPlayers = applyStatsToggles(rawPlayers, { includePen, includeIntl });
 
     const targetPlayer = (playerId && allPlayers.find((p) => p.playerId === playerId))
       || (playerName && findPlayerByName(allPlayers, playerName))

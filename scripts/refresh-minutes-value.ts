@@ -141,6 +141,13 @@ async function main() {
       p.totalMatches = entry.appearances || p.totalMatches;
       p.goals = entry.goals;
       p.assists = entry.assists;
+      p.penaltyGoals = entry.penaltyGoals;
+      p.penaltyMisses = entry.penaltyMisses;
+      p.intlGoals = entry.intlGoals;
+      p.intlAssists = entry.intlAssists;
+      p.intlMinutes = entry.intlMinutes;
+      p.intlAppearances = entry.intlAppearances;
+      p.intlPenaltyGoals = entry.intlPenaltyGoals;
       if (entry.club) p.club = entry.club;
       if (entry.league) p.league = entry.league;
       if (entry.isNewSigning) {
