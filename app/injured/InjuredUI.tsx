@@ -229,8 +229,8 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
           </div>
         </div>
 
-        {/* Player Pills */}
-        <div className="mt-3 flex flex-wrap gap-1.5 sm:gap-2">
+        {/* Player list — mobile */}
+        <div className="mt-3 flex flex-col divide-y divide-[var(--border-subtle)] sm:hidden">
           {team.players.map((player) => {
             const ri = formatReturnInfo(player.returnDate);
             const dur = formatInjuryDuration(player.injurySince);
@@ -240,18 +240,60 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                 href={player.profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] sm:text-xs hover:bg-[var(--bg-card-hover)] transition-colors duration-150 bg-[var(--bg-elevated)] border border-[var(--border-subtle)]"
+                className="flex items-center gap-2.5 py-2 first:pt-0 last:pb-0"
               >
-                {player.imageUrl && !player.imageUrl.includes("data:image") && (
-                  <img src={player.imageUrl} alt={player.name} className="w-4 h-4 sm:w-5 sm:h-5 rounded-full object-cover" />
+                {player.imageUrl && !player.imageUrl.includes("data:image") ? (
+                  <img src={player.imageUrl} alt={player.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[var(--bg-elevated)] shrink-0 flex items-center justify-center text-[10px] text-[var(--text-muted)]">?</div>
                 )}
-                <span className="text-[var(--text-primary)]">{player.name}</span>
-                {player.injury && (
-                  <span className="text-[var(--text-secondary)]">{player.injury}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{player.name}</span>
+                    <span className="text-xs font-bold text-[var(--accent-hot)] font-value shrink-0">{player.marketValue}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] mt-0.5">
+                    <span className="text-[var(--text-secondary)]">{player.injury}</span>
+                    {dur && <><span className="opacity-40">·</span><span>since {dur}</span></>}
+                    {ri && <><span className="opacity-40">·</span><span className={ri.imminent ? "text-emerald-500 font-medium" : ""}>{ri.label}</span></>}
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+
+        {/* Player rows — desktop */}
+        <div className="mt-3 hidden sm:block rounded-lg border border-[var(--border-subtle)] overflow-hidden divide-y divide-[var(--border-subtle)]">
+          {team.players.map((player) => {
+            const ri = formatReturnInfo(player.returnDate);
+            const dur = formatInjuryDuration(player.injurySince);
+            return (
+              <a
+                key={player.profileUrl || player.name}
+                href={player.profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-2 hover:bg-[var(--bg-card-hover)] transition-colors duration-150 odd:bg-[var(--bg-elevated)]/40"
+              >
+                {player.imageUrl && !player.imageUrl.includes("data:image") ? (
+                  <img src={player.imageUrl} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] shrink-0 flex items-center justify-center text-[10px] text-[var(--text-muted)]">?</div>
                 )}
-                <span className="text-[var(--accent-hot)] font-medium font-value">{player.marketValue}</span>
-                {dur && <span className="text-[var(--text-muted)]">since {dur}</span>}
-                {ri && <span className={cn("font-medium", ri.imminent ? "text-emerald-500" : "text-[var(--text-muted)]")}>{ri.label}</span>}
+                <span className="text-sm font-medium text-[var(--text-primary)] w-36 lg:w-44 truncate shrink-0">{player.name}</span>
+                <span className="text-xs text-[var(--text-secondary)] flex-1 truncate">
+                  {player.injury}{dur && <span className="text-[var(--text-muted)]"> · {dur}</span>}
+                </span>
+                {ri && (
+                  <span className={cn(
+                    "text-xs shrink-0",
+                    ri.imminent ? "text-emerald-500 font-medium" : "text-[var(--text-muted)]"
+                  )}>
+                    {ri.label}
+                  </span>
+                )}
+                <span className="text-sm font-bold text-[var(--accent-hot)] font-value shrink-0 w-16 text-right">{player.marketValue}</span>
               </a>
             );
           })}
