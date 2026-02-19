@@ -17,28 +17,11 @@ import {
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
 
-const PAGE_TAGS: Record<string, string[]> = {
-  "/form": ["form-analysis", "manager"],
-  "/team-form": ["team-form"],
-  "/injured": ["injured"],
-};
-
-const STATIC_DATA_PAGES = new Set(["/players", "/value-analysis"]);
-
-async function revalidateCaches(pathname: string): Promise<"revalidated" | "dispatched"> {
-  if (STATIC_DATA_PAGES.has(pathname)) {
-    const res = await fetch("/api/refresh-data", { method: "POST" });
-    if (!res.ok) throw new Error("Failed to trigger data refresh");
-    return "dispatched";
-  }
-  const tags = PAGE_TAGS[pathname];
-  const res = await fetch("/api/revalidate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...(tags ? { tags } : {}), path: pathname }),
-  });
-  if (!res.ok) throw new Error("Failed to revalidate");
-  return "revalidated";
+async function revalidateAll() {
+  await Promise.all([
+    fetch("/api/revalidate", { method: "POST" }),
+    fetch("/api/refresh-data", { method: "POST" }),
+  ]);
 }
 
 function RefreshIcon({ className }: { className?: string }) {
@@ -75,15 +58,12 @@ export function Header() {
   const handleBustCache = async () => {
     setIsRevalidating(true);
     try {
-      const result = await revalidateCaches(pathname);
-      if (result === "dispatched") {
-        toast.info("Data refresh started — check back in a few minutes");
-        setIsRevalidating(false);
-      } else {
-        queryClient.clear();
-        window.location.reload();
-      }
+      await revalidateAll();
+      toast.success("Data refreshed");
+      queryClient.clear();
+      window.location.reload();
     } catch {
+      toast.error("Failed to refresh data");
       setIsRevalidating(false);
     }
   };
