@@ -412,37 +412,42 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
           <span className="text-sm font-bold px-2.5 py-1 rounded-lg tabular-nums" style={{ background: `color-mix(in srgb, ${accentColor} 15%, transparent)`, color: accentColor }}>{filteredCandidates.length}</span>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        <ToggleGroup
-          type="single"
-          size="sm"
-          variant="outline"
-          value={sortGroup}
-          onValueChange={(v) => {
-            if (v === "count") onSortChange("count");
-            else if (v === "value") onSortChange(isOverpriced ? "value-desc" : "value-asc");
-            else if (v === "ga") onSortChange("ga-desc");
-            else if (isValueActive) onSortChange(sortBy === "value-asc" ? "value-desc" : "value-asc");
-            else if (isGaActive) onSortChange(sortBy === "ga-desc" ? "ga-asc" : "ga-desc");
-          }}
-        >
-          <ToggleGroupItem value="count" className="rounded-lg">
-            {isOverpriced ? "Most underperforming" : "Most outperforming"}
-          </ToggleGroupItem>
-          <ToggleGroupItem value="value" className="rounded-lg">
-            Value {isValueActive && (sortBy === "value-asc" ? "\u2191" : "\u2193")}
-          </ToggleGroupItem>
-          <ToggleGroupItem value="ga" className="rounded-lg">
-            {pointsLabel} {isGaActive && (sortBy === "ga-desc" ? "\u2193" : "\u2191")}
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <Combobox value={leagueFilter} onChange={(v) => onLeagueFilterChange(v || "all")} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
-        <Combobox value={clubFilter || "all"} onChange={(v) => onClubFilterChange(v === "all" ? "" : v)} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
-        <FilterButton active={top5Only} onClick={() => onTop5Change(!top5Only)}>
-          Top 5 only
-        </FilterButton>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Sort</span>
+          <ToggleGroup
+            type="single"
+            size="sm"
+            variant="outline"
+            value={sortGroup}
+            onValueChange={(v) => {
+              if (v === "count") onSortChange("count");
+              else if (v === "value") onSortChange(isOverpriced ? "value-desc" : "value-asc");
+              else if (v === "ga") onSortChange("ga-desc");
+              else if (isValueActive) onSortChange(sortBy === "value-asc" ? "value-desc" : "value-asc");
+              else if (isGaActive) onSortChange(sortBy === "ga-desc" ? "ga-asc" : "ga-desc");
+            }}
+          >
+            <ToggleGroupItem value="count" className="rounded-lg">
+              {isOverpriced ? "Most underperforming" : "Most outperforming"}
+            </ToggleGroupItem>
+            <ToggleGroupItem value="value" className="rounded-lg">
+              Value {isValueActive && (sortBy === "value-asc" ? "\u2191" : "\u2193")}
+            </ToggleGroupItem>
+            <ToggleGroupItem value="ga" className="rounded-lg">
+              {pointsLabel} {isGaActive && (sortBy === "ga-desc" ? "\u2193" : "\u2191")}
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <div className="hidden sm:block w-px h-6 bg-[var(--border-subtle)]" />
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Filter</span>
+          <Combobox value={leagueFilter} onChange={(v) => onLeagueFilterChange(v || "all")} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
+          <Combobox value={clubFilter || "all"} onChange={(v) => onClubFilterChange(v === "all" ? "" : v)} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
+          <FilterButton active={top5Only} onClick={() => onTop5Change(!top5Only)}>
+            Top 5 only
+          </FilterButton>
+        </div>
       </div>
       {filteredCandidates.length === 0 && (
         <div className="rounded-xl p-8 text-center animate-fade-in" style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}>
@@ -1031,7 +1036,8 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 mb-4">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4">
+                  <span className="hidden sm:inline text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Filter</span>
                   <Combobox value={minsLeagueFilter} onChange={(v) => update({ mLeague: v === "all" ? null : v || null })} options={minsLeagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
                   <Combobox value={minsClubFilter || "all"} onChange={(v) => update({ mClub: v === "all" ? null : v || null })} options={minsClubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
                   <FilterButton active={minsHideInjured} onClick={() => update({ noInj: minsHideInjured ? null : "1" })}>

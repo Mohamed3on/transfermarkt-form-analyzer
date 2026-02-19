@@ -10,7 +10,9 @@ Don't run `bun run build` during development - the dev server is already running
 
 Use [shadcn/ui](https://ui.shadcn.com) for all UI components. Install new components with `npx shadcn@latest add <component>`. Never build custom UI primitives when a shadcn component exists.
 
-**No inline styles:** Use Tailwind classes (including `data-[state=on]:`, `hover:`, `active:` variants) instead of `style={{}}`. Inline styles override Tailwind's interactive states.
+**No inline styles:** Use Tailwind classes (including `data-[state=on]:`, `hover:`, `active:` variants) instead of `style={{}}`. Inline styles override Tailwind's interactive states. For CSS variables, use Tailwind's arbitrary value syntax: `text-[var(--text-muted)]`, `bg-[var(--bg-card)]`, `border-[var(--border-subtle)]`.
+
+**Mobile-first responsive design:** All layouts must work on mobile and desktop. Always test both breakpoints mentally when writing markup. Use `flex-col sm:flex-row`, `hidden sm:block`, and responsive variants (`sm:`, `md:`) to adapt layouts. Never ship desktop-only designs.
 
 **Reusable components:** Always think in reusable components. Before creating a new component, look for existing components with similar structure and extract a shared base. Actively look for opportunities to consolidate duplicated UI patterns and logic across the codebase.
 
