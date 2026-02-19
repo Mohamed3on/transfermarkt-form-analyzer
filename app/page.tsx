@@ -71,6 +71,7 @@ interface SnapshotItem {
   imageUrl?: string;
   secondaryImageUrl?: string;
   imageContain?: boolean;
+  profileUrl?: string;
   manager?: ManagerInfo;
 }
 
@@ -158,10 +159,10 @@ function SnapshotItemRow({
   const Tag = isHero ? "div" : "article";
   return (
     <Tag
-      className={`rounded-lg border border-[var(--border-subtle)] px-3 py-2 ${
+      className={`rounded-lg border px-3 py-2 ${
         isHero
-          ? "bg-[var(--bg-card)]"
-          : "bg-[var(--bg-elevated)] transition-colors hover:bg-[var(--bg-card-hover)]"
+          ? "border-[var(--border-subtle)] bg-[var(--bg-card)]"
+          : "border-[var(--border-subtle)] bg-[var(--bg-elevated)] transition-all duration-200 hover:-translate-y-px hover:bg-[var(--bg-card-hover)] hover:border-[var(--border-medium)]"
       }`}
     >
       <div className="flex items-center gap-3">
@@ -185,9 +186,15 @@ function SnapshotItemRow({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)]">{item.label}</p>
-          <p className={`truncate font-semibold leading-tight text-[var(--text-primary)] ${!isHero ? "mt-0.5 text-sm" : ""}`}>
-            {item.value}
-          </p>
+          {item.profileUrl ? (
+            <a href={item.profileUrl.startsWith("http") ? item.profileUrl : `https://www.transfermarkt.com${item.profileUrl}`} target="_blank" rel="noopener noreferrer" className={`truncate font-semibold leading-tight text-[var(--text-primary)] hover:underline ${!isHero ? "mt-0.5 text-sm" : ""} block`}>
+              {item.value}
+            </a>
+          ) : (
+            <p className={`truncate font-semibold leading-tight text-[var(--text-primary)] ${!isHero ? "mt-0.5 text-sm" : ""}`}>
+              {item.value}
+            </p>
+          )}
           <p className={`text-xs leading-tight text-[var(--text-secondary)] ${!isHero ? "mt-0.5" : ""}`}>
             {item.detail}
           </p>
@@ -761,6 +768,7 @@ export default async function Home() {
       href: "/value-analysis?mode=ga",
       imageUrl: player.imageUrl,
       secondaryImageUrl: player.clubLogoUrl,
+      profileUrl: player.profileUrl,
     });
   });
   mostBargainPlayers.forEach((player) => {
@@ -772,6 +780,7 @@ export default async function Home() {
       href: "/value-analysis?mode=ga&dTab=bargains",
       imageUrl: player.imageUrl,
       secondaryImageUrl: player.clubLogoUrl,
+      profileUrl: player.profileUrl,
     });
   });
 
@@ -786,6 +795,7 @@ export default async function Home() {
       href: "/players?sort=ga",
       imageUrl: player.imageUrl,
       secondaryImageUrl: player.clubLogoUrl,
+      profileUrl: player.profileUrl,
     });
   });
   if (npgaItems.length) playerCategories.push(npgaItems);
@@ -800,6 +810,7 @@ export default async function Home() {
       href: "/players?signing=transfer&sort=ga",
       imageUrl: player.imageUrl,
       secondaryImageUrl: player.clubLogoUrl,
+      profileUrl: player.profileUrl,
     });
   });
   if (signingItems.length) playerCategories.push(signingItems);
@@ -814,34 +825,39 @@ export default async function Home() {
       href: "/players?signing=loan&sort=value",
       imageUrl: player.imageUrl,
       secondaryImageUrl: player.clubLogoUrl,
+      profileUrl: player.profileUrl,
     });
   });
   if (loanItems.length) playerCategories.push(loanItems);
 
   const uncappedValueItems: SnapshotItem[] = [];
   mostValuableZeroCapsPlayers.forEach((player) => {
+    const nat = player.nationality ? ` · ${player.nationality}` : "";
     uncappedValueItems.push({
       label: "Most valuable uncapped",
       value: player.name,
-      detail: `${player.club} · ${player.marketValueDisplay}`,
+      detail: `${player.club}${nat} · ${player.marketValueDisplay}`,
       metrics: [`npG+A ${getNpga(player)}`, `${formatMinutes(player.minutes)} mins`],
       href: "/players?sort=value&maxcaps=0",
       imageUrl: player.imageUrl,
       secondaryImageUrl: player.clubLogoUrl,
+      profileUrl: player.profileUrl,
     });
   });
   if (uncappedValueItems.length) playerCategories.push(uncappedValueItems);
 
   const uncappedScorerItems: SnapshotItem[] = [];
   mostNpgaZeroCapsPlayers.forEach((player) => {
+    const nat = player.nationality ? ` · ${player.nationality}` : "";
     uncappedScorerItems.push({
       label: "Top scoring uncapped",
       value: player.name,
-      detail: `${player.club} · ${getNpga(player)} npG+A`,
+      detail: `${player.club}${nat} · ${getNpga(player)} npG+A`,
       metrics: [`${formatMinutes(player.minutes)} mins`, player.marketValueDisplay],
       href: "/players?sort=ga&maxcaps=0",
       imageUrl: player.imageUrl,
       secondaryImageUrl: player.clubLogoUrl,
+      profileUrl: player.profileUrl,
     });
   });
   if (uncappedScorerItems.length) playerCategories.push(uncappedScorerItems);
@@ -858,6 +874,7 @@ export default async function Home() {
       href: "/injured?tab=players",
       imageUrl: player.imageUrl,
       secondaryImageUrl: player.clubLogoUrl,
+      profileUrl: player.profileUrl,
     });
   });
   mostAffectedInjuryTeams.forEach((team) => {
@@ -875,7 +892,7 @@ export default async function Home() {
   if (recentFormItems.length) {
     snapshotGroups.push({
       title: "Recent Form",
-      description: "Best and worst teams from the current form window.",
+      description: `Best and worst teams from the last ${recentPeriod} games across all competitions.`,
       href: "/form",
       items: recentFormItems,
     });
@@ -949,7 +966,7 @@ export default async function Home() {
               </div>
             </div>
 
-            <Card className="border-[var(--border-medium)] bg-[rgba(13,17,23,0.86)] backdrop-blur-sm">
+            <Card className="border-[var(--border-medium)] bg-[rgba(13,17,23,0.86)] backdrop-blur-sm transition-colors duration-200 hover:border-[var(--accent-blue)]/30">
               <CardHeader>
                 <Badge variant="outline" className="w-fit border-[var(--accent-blue)]/40 bg-[rgba(88,166,255,0.1)] text-[var(--accent-blue)]">
                   Live snapshots
@@ -982,8 +999,8 @@ export default async function Home() {
 
           <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {snapshotTiles.map((item) => (
-              <Card key={item.label} className="border-[var(--border-subtle)] bg-[rgba(13,17,23,0.85)] backdrop-blur-sm">
-                <CardHeader className="pb-2">
+              <Card key={item.label} className="border-[var(--border-subtle)] bg-[rgba(13,17,23,0.85)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--border-medium)]">
+                <CardHeader className="pb-0 sm:pb-0">
                   <CardDescription className="text-xs uppercase tracking-[0.15em] text-[var(--text-muted)]">
                     {item.label}
                   </CardDescription>
@@ -998,21 +1015,6 @@ export default async function Home() {
 
       <section className="pt-12 sm:pt-16">
         <SectionHeading
-          eyebrow="Explore"
-          title="Everything you can explore"
-          description="Every feature with plain-language explanations and direct links."
-          action={{ href: "/value-analysis", label: "Open value analysis" }}
-        />
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {features.map((feature) => (
-            <FeatureCard key={feature.href} feature={feature} />
-          ))}
-        </div>
-      </section>
-
-      <section className="pt-12 sm:pt-16">
-        <SectionHeading
           eyebrow="Live data"
           title="Current leaders"
           description="Standouts from each section — scan the headlines, then dive deeper."
@@ -1021,8 +1023,8 @@ export default async function Home() {
         {snapshotGroups.length > 0 ? (
           <div className="columns-1 gap-4 lg:columns-2">
             {snapshotGroups.map((group) => (
-              <Card key={group.title} className="mb-4 break-inside-avoid border-[var(--border-subtle)] bg-[var(--bg-card)]">
-                <CardHeader className="pb-3">
+              <Card key={group.title} className="mb-4 break-inside-avoid border-[var(--border-subtle)] bg-[var(--bg-card)] transition-colors duration-200 hover:border-[var(--border-medium)]">
+                <CardHeader className="pb-0 sm:pb-0">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <CardTitle className="text-lg text-[var(--text-primary)]">{group.title}</CardTitle>
@@ -1059,6 +1061,21 @@ export default async function Home() {
       </section>
 
       <section className="pt-12 sm:pt-16">
+        <SectionHeading
+          eyebrow="Explore"
+          title="Everything you can explore"
+          description="Every feature with plain-language explanations and direct links."
+          action={{ href: "/value-analysis", label: "Open value analysis" }}
+        />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {features.map((feature) => (
+            <FeatureCard key={feature.href} feature={feature} />
+          ))}
+        </div>
+      </section>
+
+      <section className="pt-12 sm:pt-16">
         <div className="rounded-2xl border border-[var(--border-medium)] bg-[var(--bg-card)] p-5 sm:p-6">
           <h2 className="text-xl font-black text-[var(--text-primary)] sm:text-2xl">Jump to a page</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">Pick where you want to start.</p>
@@ -1068,7 +1085,7 @@ export default async function Home() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="group flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
+                className="group flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-all duration-200 hover:-translate-y-px hover:border-[var(--border-medium)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
               >
                 <span>{item.label}</span>
                 <ArrowRight className="h-3.5 w-3.5 text-[var(--text-muted)] transition-transform group-hover:translate-x-0.5" />

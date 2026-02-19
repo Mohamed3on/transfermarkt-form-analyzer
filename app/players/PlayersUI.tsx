@@ -198,8 +198,11 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
           <div className="text-xs font-medium font-value" style={{ color: "var(--accent-blue)" }}>{player.marketValueDisplay}</div>
           <div className="text-xs tabular-nums">
             <span style={{ color: "var(--text-primary)" }}>{gaTotal} {pointsLabel}</span>
-            {showCaps && (
-              <span style={{ color: "var(--text-secondary)" }}> · {player.intlCareerCaps ?? 0} caps</span>
+            {showCaps && (player.intlCareerCaps ?? 0) === 0 && player.nationality && (
+              <span style={{ color: "var(--text-secondary)" }}> · {player.nationality}</span>
+            )}
+            {showCaps && (player.intlCareerCaps ?? 0) > 0 && (
+              <span style={{ color: "var(--text-secondary)" }}> · {player.intlCareerCaps} caps</span>
             )}
             {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
               <span style={{ color: "var(--text-secondary)" }}> · {penGoals}/{penAttempts} pens</span>
