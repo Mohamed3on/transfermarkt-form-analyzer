@@ -11,8 +11,7 @@ import { getLeagueLogoUrl } from "@/lib/leagues";
 import { formatReturnInfo, formatInjuryDuration } from "@/lib/format";
 import { useProgressiveFetch } from "@/lib/use-progressive-fetch";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
-import { SelectNative } from "@/components/ui/select-native";
-import { DebouncedInput } from "@/components/DebouncedInput";
+import { Combobox } from "@/components/Combobox";
 import { filterPlayersByLeagueAndClub } from "@/lib/filter-players";
 
 interface TeamInjuryGroup {
@@ -416,7 +415,7 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
 
   const tab = params.get("tab") || "players";
   const leagueFilter = params.get("league") || "all";
-  const clubFilter = params.get("club") || "";
+  const clubFilter = params.get("club") || "all";
   const teamSort: GroupSort = params.get("tSort") === "count" ? "count" : "value";
   const injurySort: GroupSort = params.get("iSort") === "count" ? "count" : "value";
 
@@ -425,7 +424,8 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
     return [...initialData.players, ...extraResults.flat()].sort((a, b) => b.marketValueNum - a.marketValueNum);
   }, [initialData.players, extraResults]);
 
-  const leagueOptions = useMemo(() => Array.from(new Set(allPlayers.map((p) => p.league).filter(Boolean))).sort(), [allPlayers]);
+  const leagueOptions = useMemo(() => [{ value: "all", label: "All leagues" }, ...Array.from(new Set(allPlayers.map((p) => p.league).filter(Boolean))).sort().map((l) => ({ value: l, label: l }))], [allPlayers]);
+  const clubOptions = useMemo(() => [{ value: "all", label: "All clubs" }, ...Array.from(new Set(allPlayers.map((p) => p.club).filter(Boolean))).sort().map((c) => ({ value: c, label: c }))], [allPlayers]);
 
   const players = useMemo(
     () => filterPlayersByLeagueAndClub(allPlayers, leagueFilter, clubFilter),
@@ -494,12 +494,9 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
       )}
 
       {/* Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4 sm:mb-6">
-        <SelectNative value={leagueFilter} onChange={(e) => update({ league: e.target.value === "all" ? null : e.target.value })} className="h-10">
-          <option value="all">All leagues</option>
-          {leagueOptions.map((league) => (<option key={league} value={league}>{league}</option>))}
-        </SelectNative>
-        <DebouncedInput value={clubFilter} onChange={(value) => update({ club: value || null })} placeholder="Filter by club" className="h-10" />
+      <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
+        <Combobox value={leagueFilter} onChange={(v) => update({ league: v === "all" ? null : v || null })} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
+        <Combobox value={clubFilter} onChange={(v) => update({ club: v === "all" ? null : v || null })} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
       </div>
 
       {/* Stats Highlights */}

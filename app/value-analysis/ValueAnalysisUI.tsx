@@ -5,9 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import Link from "next/link";
 import { PlayerAutocomplete } from "@/components/PlayerAutocomplete";
-import { DebouncedInput } from "@/components/DebouncedInput";
+import { Combobox } from "@/components/Combobox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SelectNative } from "@/components/ui/select-native";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ExternalLink } from "lucide-react";
@@ -363,7 +362,12 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
   const accentColor = isOverpriced ? "var(--accent-cold-soft)" : "var(--accent-green)";
 
   const leagueOptions = useMemo(() =>
-    Array.from(new Set(candidates.map((p) => p.league).filter(Boolean))).sort(),
+    [{ value: "all", label: "All leagues" }, ...Array.from(new Set(candidates.map((p) => p.league).filter(Boolean))).sort().map((l) => ({ value: l, label: l }))],
+    [candidates]
+  );
+
+  const clubOptions = useMemo(() =>
+    [{ value: "all", label: "All clubs" }, ...Array.from(new Set(candidates.map((p) => p.club).filter(Boolean))).sort().map((c) => ({ value: c, label: c }))],
     [candidates]
   );
 
@@ -434,11 +438,8 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
         </ToggleGroup>
       </div>
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <SelectNative value={leagueFilter} onChange={(e) => onLeagueFilterChange(e.target.value)} className="h-9 w-auto text-sm">
-          <option value="all">All leagues</option>
-          {leagueOptions.map((league) => (<option key={league} value={league}>{league}</option>))}
-        </SelectNative>
-        <DebouncedInput value={clubFilter} onChange={onClubFilterChange} placeholder="Filter by club…" className="h-9 w-40 text-sm" />
+        <Combobox value={leagueFilter} onChange={(v) => onLeagueFilterChange(v || "all")} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
+        <Combobox value={clubFilter || "all"} onChange={(v) => onClubFilterChange(v === "all" ? "" : v)} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
         <FilterButton active={top5Only} onClick={() => onTop5Change(!top5Only)}>
           Top 5 only
         </FilterButton>
@@ -697,7 +698,12 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
 
   // ── Minutes discovery list ──
   const minsLeagueOptions = useMemo(
-    () => Array.from(new Set(initialData.map((p) => p.league).filter(Boolean))).sort(),
+    () => [{ value: "all", label: "All leagues" }, ...Array.from(new Set(initialData.map((p) => p.league).filter(Boolean))).sort().map((l) => ({ value: l, label: l }))],
+    [initialData]
+  );
+
+  const minsClubOptions = useMemo(
+    () => [{ value: "all", label: "All clubs" }, ...Array.from(new Set(initialData.map((p) => p.club).filter(Boolean))).sort().map((c) => ({ value: c, label: c }))],
     [initialData]
   );
 
@@ -1026,11 +1032,8 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <SelectNative value={minsLeagueFilter} onChange={(e) => update({ mLeague: e.target.value === "all" ? null : e.target.value })} className="h-8 w-auto text-xs">
-                    <option value="all">All leagues</option>
-                    {minsLeagueOptions.map((league) => (<option key={league} value={league}>{league}</option>))}
-                  </SelectNative>
-                  <DebouncedInput value={minsClubFilter} onChange={(value) => update({ mClub: value || null })} placeholder="Club…" className="h-8 w-28 text-xs" />
+                  <Combobox value={minsLeagueFilter} onChange={(v) => update({ mLeague: v === "all" ? null : v || null })} options={minsLeagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
+                  <Combobox value={minsClubFilter || "all"} onChange={(v) => update({ mClub: v === "all" ? null : v || null })} options={minsClubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
                   <FilterButton active={minsHideInjured} onClick={() => update({ noInj: minsHideInjured ? null : "1" })}>
                     Exclude injured
                   </FilterButton>

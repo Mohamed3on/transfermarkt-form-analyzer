@@ -5,10 +5,9 @@ export function filterPlayersByLeagueAndClub<T extends { league: string; club: s
   leagueFilter: string,
   clubFilter: string
 ): T[] {
-  const normalizedClub = clubFilter.trim().toLowerCase();
   return players.filter((player) => {
     if (leagueFilter !== "all" && player.league !== leagueFilter) return false;
-    if (normalizedClub && !player.club.toLowerCase().includes(normalizedClub)) return false;
+    if (clubFilter !== "all" && clubFilter && player.club !== clubFilter) return false;
     return true;
   });
 }

@@ -265,6 +265,10 @@ body::before {
   outline-offset: 2px;
 }
 
+[cmdk-input]:focus-visible {
+  outline: none;
+}
+
 /* Selection */
 ::selection {
   background: var(--accent-blue);

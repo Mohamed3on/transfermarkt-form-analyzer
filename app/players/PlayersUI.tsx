@@ -2,8 +2,7 @@
 
 import { useMemo, useRef, type ReactNode } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { DebouncedInput } from "@/components/DebouncedInput";
-import { SelectNative } from "@/components/ui/select-native";
+import { Combobox } from "@/components/Combobox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { FilterButton } from "@/components/FilterButton";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
@@ -164,7 +163,7 @@ function PlayerCard({ player, index, injuryMap, includePen = false }: { player: 
               <div className="text-xs" style={{ color: "var(--text-secondary)" }}>games</div>
             </div>
             <div>
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--accent-green)" }}>{gaTotal}</div>
+              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{gaTotal}</div>
               <div className="text-xs tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.goals - penAdj}{penAdj > 0 ? "npG" : "G"} {player.assists}A</div>
             </div>
           </div>
@@ -172,7 +171,7 @@ function PlayerCard({ player, index, injuryMap, includePen = false }: { player: 
             <>
               <div className="w-px h-7" style={{ background: "var(--border-subtle)" }} />
               <div className="text-right min-w-[3rem]">
-                <div className="text-sm font-bold tabular-nums" style={{ color: penMisses > 0 ? "var(--text-primary)" : "var(--accent-green)" }}>{penGoals}/{penAttempts}</div>
+                <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{penGoals}/{penAttempts}</div>
                 <div className="text-xs" style={{ color: "var(--text-secondary)" }}>pens · {Math.round(penGoals / penAttempts * 100)}%</div>
               </div>
             </>
@@ -185,7 +184,7 @@ function PlayerCard({ player, index, injuryMap, includePen = false }: { player: 
           <div className="text-xs tabular-nums">
             <span style={{ color: "var(--text-primary)" }}>{gaTotal} {pointsLabel}</span>
             {penAttempts > 0 && (
-              <span style={{ color: penMisses > 0 ? "var(--text-secondary)" : "var(--accent-green)" }}> · {penGoals}/{penAttempts} pens</span>
+              <span style={{ color: "var(--text-secondary)" }}> · {penGoals}/{penAttempts} pens</span>
             )}
           </div>
         </div>
@@ -242,7 +241,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
   const sortBy = parseSortKey(params.get("sort"));
   const sortAsc = params.get("dir") === "asc";
   const leagueFilter = params.get("league") || "all";
-  const clubFilter = params.get("club") || "";
+  const clubFilter = params.get("club") || "all";
   const nationalityFilter = params.get("nat") || "all";
   const top5Only = params.get("top5") === "1";
   const signingFilter = parseSigningFilter(params.get("signing"));
@@ -262,12 +261,17 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
   }, [rawPlayers, includeIntl]);
 
   const leagueOptions = useMemo(
-    () => Array.from(new Set(players.map((p) => p.league).filter(Boolean))).sort(),
+    () => [{ value: "all", label: "All leagues" }, ...Array.from(new Set(players.map((p) => p.league).filter(Boolean))).sort().map((l) => ({ value: l, label: l }))],
     [players]
   );
 
   const nationalityOptions = useMemo(
-    () => Array.from(new Set(players.map((p) => p.nationality).filter(Boolean))).sort(),
+    () => [{ value: "all", label: "All nationalities" }, ...Array.from(new Set(players.map((p) => p.nationality).filter(Boolean))).sort().map((n) => ({ value: n, label: n }))],
+    [players]
+  );
+
+  const clubOptions = useMemo(
+    () => [{ value: "all", label: "All clubs" }, ...Array.from(new Set(players.map((p) => p.club).filter(Boolean))).sort().map((c) => ({ value: c, label: c }))],
     [players]
   );
 
@@ -356,34 +360,10 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
 
           {/* Filters */}
           <div className="flex flex-col gap-3 mb-4">
-            <DebouncedInput
-              value={clubFilter}
-              onChange={(value) => update({ club: value || null })}
-              placeholder="Search by club..."
-              className="h-10"
-            />
-
             <div className="flex flex-wrap gap-2">
-              <SelectNative
-                value={leagueFilter}
-                onChange={(e) => update({ league: e.target.value === "all" ? null : e.target.value })}
-                className="h-8 text-xs w-auto pr-7"
-              >
-                <option value="all">All leagues</option>
-                {leagueOptions.map((league) => (
-                  <option key={league} value={league}>{league}</option>
-                ))}
-              </SelectNative>
-              <SelectNative
-                value={nationalityFilter}
-                onChange={(e) => update({ nat: e.target.value === "all" ? null : e.target.value })}
-                className="h-8 text-xs w-auto pr-7"
-              >
-                <option value="all">All nationalities</option>
-                {nationalityOptions.map((nat) => (
-                  <option key={nat} value={nat}>{nat}</option>
-                ))}
-              </SelectNative>
+              <Combobox value={leagueFilter} onChange={(v) => update({ league: v === "all" ? null : v || null })} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
+              <Combobox value={nationalityFilter} onChange={(v) => update({ nat: v === "all" ? null : v || null })} options={nationalityOptions} placeholder="All nationalities" searchPlaceholder="Search nationalities..." />
+              <Combobox value={clubFilter} onChange={(v) => update({ club: v === "all" ? null : v || null })} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
               <FilterButton active={top5Only} onClick={() => update({ top5: top5Only ? null : "1" })}>
                 Top 5
               </FilterButton>
