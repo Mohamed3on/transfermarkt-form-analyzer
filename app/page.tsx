@@ -868,7 +868,7 @@ export default async function Home() {
     valueAnalysisItems.length && { title: "Value Analysis", description: "Most overpriced players and best bargains by peer comparison.", href: "/value-analysis", items: valueAnalysisItems },
     playerItems.length && { title: "Player Explorer", description: "Top performers, signings, loans, and uncapped players.", href: "/players", items: playerItems },
     injuryItems.length && { title: "Injury Impact", description: "The most valuable sidelined players and hardest-hit clubs.", href: "/injured", items: injuryItems },
-    biggestMoversItems.length && { title: "Biggest Movers", description: "Players whose value keeps rising or falling across transfer windows.", href: "/biggest-movers", items: biggestMoversItems },
+    biggestMoversItems.length && { title: "Biggest Movers", description: "Players whose career trajectory tanked or exploded across multiple windows.", href: "/biggest-movers", items: biggestMoversItems },
   ].filter(Boolean) as SnapshotGroup[];
 
   return (
