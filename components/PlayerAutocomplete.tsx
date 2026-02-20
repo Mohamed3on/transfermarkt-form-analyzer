@@ -101,18 +101,13 @@ export function PlayerAutocomplete<T extends PlayerOption>({
       {showDropdown && suggestions.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 left-0 right-0 mt-1 rounded-xl overflow-hidden shadow-xl"
-          style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}
+          className="absolute z-50 left-0 right-0 mt-1 rounded-xl overflow-hidden shadow-xl bg-elevated border border-border-subtle divide-y divide-border-subtle"
         >
           {suggestions.map((player, i) => (
             <button
               key={player.playerId}
               type="button"
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors"
-              style={{
-                background: i === highlightIndex ? "rgba(255, 215, 0, 0.1)" : "transparent",
-                borderBottom: i < suggestions.length - 1 ? "1px solid var(--border-subtle)" : "none",
-              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${i === highlightIndex ? "bg-accent-gold/10" : ""}`}
               onMouseEnter={() => setHighlightIndex(i)}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -120,15 +115,15 @@ export function PlayerAutocomplete<T extends PlayerOption>({
               }}
             >
               {player.imageUrl ? (
-                <img src={player.imageUrl} alt="" className="w-8 h-8 rounded-md object-cover shrink-0" style={{ background: "var(--bg-card)" }} />
+                <img src={player.imageUrl} alt="" className="w-8 h-8 rounded-md object-cover shrink-0 bg-card" />
               ) : (
-                <div className="w-8 h-8 rounded-md flex items-center justify-center text-sm font-bold shrink-0" style={{ background: "var(--bg-card)", color: "var(--text-muted)" }}>
+                <div className="w-8 h-8 rounded-md flex items-center justify-center text-sm font-bold shrink-0 bg-card text-text-muted">
                   {player.name.charAt(0)}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{player.name}</div>
-                <div className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
+                <div className="text-sm font-medium truncate text-text-primary">{player.name}</div>
+                <div className="text-xs truncate text-text-secondary">
                   {player.position} · {player.club} · {player.marketValueDisplay}
                 </div>
               </div>

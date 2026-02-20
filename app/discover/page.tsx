@@ -24,8 +24,8 @@ export default function DiscoverPage() {
   return (
     <div className="py-4 sm:py-8">
       <header className="mb-8">
-        <h1 className="text-2xl font-black text-[var(--text-primary)] sm:text-3xl">Quick Views</h1>
-        <p className="mt-2 max-w-3xl text-sm text-[var(--text-muted)]">
+        <h1 className="text-2xl font-black text-text-primary sm:text-3xl">Quick Views</h1>
+        <p className="mt-2 max-w-3xl text-sm text-text-muted">
           A quick view is a saved filter setup. Open one link and jump straight to the exact stats lens.
         </p>
       </header>
@@ -37,21 +37,21 @@ export default function DiscoverPage() {
 
           return (
             <section key={section}>
-              <h2 className="mb-3 text-base font-semibold text-[var(--text-primary)] sm:text-lg">
+              <h2 className="mb-3 text-base font-semibold text-text-primary sm:text-lg">
                 {DISCOVERY_SECTION_LABELS[section]}
               </h2>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                 {presets.map((preset) => (
                   <article
                     key={preset.slug}
-                    className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3"
+                    className="rounded-lg border border-border-subtle bg-card p-3"
                   >
-                    <h3 className="text-sm font-medium text-[var(--text-primary)]">{preset.title}</h3>
-                    <p className="mt-1 text-xs text-[var(--text-muted)]">{preset.description}</p>
+                    <h3 className="text-sm font-medium text-text-primary">{preset.title}</h3>
+                    <p className="mt-1 text-xs text-text-muted">{preset.description}</p>
                     <div className="mt-2 text-xs">
                       <Link
                         href={getPresetTargetHref(preset)}
-                        className="text-[var(--accent-blue)] hover:underline"
+                        className="text-accent-blue hover:underline"
                       >
                         Open quick view
                       </Link>

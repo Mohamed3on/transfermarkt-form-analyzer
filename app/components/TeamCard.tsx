@@ -29,7 +29,7 @@ function formatOrdinal(value: number): string {
 export function TeamCardSkeleton({ compact }: { compact?: boolean }) {
   if (compact) {
     return (
-      <Card className="p-3 bg-[var(--bg-elevated)]">
+      <Card className="p-3 bg-elevated">
         <div className="flex items-center gap-3">
           <Skeleton className="w-8 h-8 rounded-lg" />
           <div className="flex-1 space-y-2">
@@ -42,7 +42,7 @@ export function TeamCardSkeleton({ compact }: { compact?: boolean }) {
   }
 
   return (
-    <Card className="p-4 bg-[var(--bg-elevated)]">
+    <Card className="p-4 bg-elevated">
       <div className="flex items-center gap-4">
         <Skeleton className="w-12 h-12 rounded-xl" />
         <div className="flex-1 space-y-2">
@@ -72,7 +72,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
 
   if (compact) {
     return (
-      <Card className="p-3 bg-[var(--bg-elevated)] hover-lift">
+      <Card className="p-3 bg-elevated hover-lift">
         <div className="flex items-center gap-3">
           {team.logoUrl && (
             <Image
@@ -114,7 +114,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
 
   return (
     <Card
-      className={`p-3 sm:p-4 bg-[var(--bg-elevated)] hover-lift ${isTop ? "border-accent-hot shadow-[0_0_20px_var(--accent-hot-glow)]" : "border-accent-cold shadow-[0_0_20px_var(--accent-cold-glow)]"}`}
+      className={`p-3 sm:p-4 bg-elevated hover-lift ${isTop ? "border-accent-hot shadow-[0_0_20px_var(--accent-hot-glow)]" : "border-accent-cold shadow-[0_0_20px_var(--accent-cold-glow)]"}`}
     >
       {/* Team header with logo */}
       <div className="flex items-center gap-3 sm:gap-4">

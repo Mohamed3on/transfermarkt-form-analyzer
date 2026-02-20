@@ -24,18 +24,17 @@ function contractExpiryYear(expiry?: string): number | null {
 const BASE_SORT_LABELS: Record<SortKey, string> = { value: "Value", mins: "Mins", games: "Games", ga: "G+A", pen: "Pen", miss: "Miss" };
 
 
-function AvatarBadge({ bg, icon, tooltip, position = "bottom-right" }: { bg: string; icon: ReactNode; tooltip: string; position?: "bottom-right" | "top-right" }) {
+function AvatarBadge({ bgClass, icon, tooltip, position = "bottom-right" }: { bgClass: string; icon: ReactNode; tooltip: string; position?: "bottom-right" | "top-right" }) {
   const pos = position === "top-right" ? "-top-1 -right-1" : "-bottom-1 -right-1";
   return (
     <div
-      className={`absolute ${pos} w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-full flex items-center justify-center group/badge before:content-[''] before:absolute before:-inset-2`}
-      style={{ background: bg }}
+      className={`absolute ${pos} w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-full flex items-center justify-center group/badge before:content-[''] before:absolute before:-inset-2 ${bgClass}`}
       aria-label={tooltip}
       role="img"
       tabIndex={0}
     >
       {icon}
-      <span className="pointer-events-none invisible group-hover/badge:visible group-focus/badge:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap z-[100] bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-[0_0_0_2px_var(--bg-card),0_4px_12px_rgba(0,0,0,0.4)]">
+      <span className="pointer-events-none invisible group-hover/badge:visible group-focus/badge:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap z-[100] bg-elevated text-text-primary border border-border-subtle shadow-[0_0_0_2px_var(--bg-card),0_4px_12px_rgba(0,0,0,0.4)]">
         {tooltip}
       </span>
     </div>
@@ -59,14 +58,14 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
   const statusBadge = player.isOnLoan ? (
     <AvatarBadge
       position={injuryInfo ? "top-right" : "bottom-right"}
-      bg="rgba(255, 215, 0, 0.9)"
+      bgClass="bg-accent-gold/90"
       tooltip="On loan"
       icon={<svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>}
     />
   ) : player.isNewSigning ? (
     <AvatarBadge
       position={injuryInfo ? "top-right" : "bottom-right"}
-      bg="rgba(0, 255, 135, 0.85)"
+      bgClass="bg-accent-hot/85"
       tooltip="New signing"
       icon={<svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 19.5v-15m0 0l-6.75 6.75M12 4.5l6.75 6.75" /></svg>}
     />
@@ -80,7 +79,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
     injuryBadge = (
       <AvatarBadge
         position="bottom-right"
-        bg="rgba(255, 71, 87, 0.9)"
+        bgClass="bg-rose-500/90"
         tooltip={tip}
         icon={<svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m-8-8h16" /></svg>}
       />
@@ -94,8 +93,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
     >
       <div className="flex items-center gap-2.5 sm:gap-3">
         <div
-          className="w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-[10px] sm:text-xs font-bold shrink-0 text-accent-blue"
-          style={{ background: "rgba(100, 180, 255, 0.15)" }}
+          className="w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-[10px] sm:text-xs font-bold shrink-0 text-accent-blue bg-accent-blue/15"
         >
           {index + 1}
         </div>
@@ -162,8 +160,8 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
           )}
           {showContract && expiryYear && (
             <div className="text-right">
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{expiryYear}</div>
-              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>contract</div>
+              <div className="text-sm font-bold tabular-nums text-text-primary">{expiryYear}</div>
+              <div className="text-xs text-text-secondary">contract</div>
             </div>
           )}
           {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
@@ -203,7 +201,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
               <span className="text-text-secondary"> · {player.intlCareerCaps} caps</span>
             )}
             {showContract && expiryYear && (
-              <span style={{ color: "var(--text-secondary)" }}> · {expiryYear}</span>
+              <span className="text-text-secondary"> · {expiryYear}</span>
             )}
             {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
               <span className="text-text-secondary"> · {penGoals}/{penAttempts} pens</span>
@@ -302,6 +300,11 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
     [players]
   );
 
+  const contractYearOptions = useMemo(() => {
+    const years = Array.from(new Set(players.map((p) => contractExpiryYear(p.contractExpiry)).filter((y): y is number => y !== null))).sort((a, b) => a - b);
+    return [{ value: "all", label: "Contract expiry" }, ...years.map((y) => ({ value: String(y), label: `\u2264 ${y}` }))];
+  }, [players]);
+
   const pointsLabel = includePen ? "G+A" : "npG+A";
 
   const signingCounts = useMemo(() => {
@@ -325,6 +328,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
     if (minAge !== null) list = list.filter((p) => p.age >= minAge);
     if (maxAge !== null) list = list.filter((p) => p.age <= maxAge);
     if (contractYear !== null) list = list.filter((p) => {
+      if (p.isOnLoan) return false;
       const y = contractExpiryYear(p.contractExpiry);
       return y !== null && y <= contractYear;
     });
@@ -346,10 +350,10 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
   return (
     <>
       <div className="mb-4 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black mb-1 sm:mb-2 text-[var(--text-primary)]">
-            Player <span className="text-[var(--accent-blue)]">Explorer</span>
+          <h1 className="text-2xl sm:text-3xl font-black mb-1 sm:mb-2 text-text-primary">
+            Player <span className="text-accent-blue">Explorer</span>
           </h1>
-          <p className="text-sm sm:text-base text-[var(--text-muted)]">
+          <p className="text-sm sm:text-base text-text-muted">
             The top 500 most valuable players in world football plus top scorers in Europe&apos;s top 5 leagues.          </p>
         </div>
 
@@ -360,8 +364,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
               All Players
             </h2>
             <span
-              className="text-xs font-bold px-2 py-0.5 rounded-md tabular-nums text-accent-blue"
-              style={{ background: "rgba(100, 180, 255, 0.15)" }}
+              className="text-xs font-bold px-2 py-0.5 rounded-md tabular-nums text-accent-blue bg-accent-blue/15"
             >
               {sortedPlayers.length}
             </span>
@@ -380,7 +383,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                 <ToggleGroupItem
                   key={key}
                   value={key}
-                  className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-[var(--text-muted)] data-[state=on]:bg-[var(--bg-elevated)] data-[state=on]:text-[var(--text-primary)]"
+                  className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
                 >
                   {key === "ga" ? pointsLabel : BASE_SORT_LABELS[key]}
                   {sortBy === key && (
@@ -402,13 +405,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
               <Combobox
                 value={contractYear !== null ? String(contractYear) : "all"}
                 onChange={(v) => update({ contract: v === "all" ? null : v || null })}
-                options={[
-                  { value: "all", label: "Contract expiry" },
-                  { value: "2025", label: "\u2264 2025" },
-                  { value: "2026", label: "\u2264 2026" },
-                  { value: "2027", label: "\u2264 2027" },
-                  { value: "2028", label: "\u2264 2028" },
-                ]}
+                options={contractYearOptions}
                 placeholder="Contract expiry"
               />
               <FilterButton active={top5Only} onClick={() => update({ top5: top5Only ? null : "1" })}>
@@ -422,7 +419,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                 Loans
                 <span className="tabular-nums opacity-60">{signingCounts.loans}</span>
               </FilterButton>
-              <div className="w-px h-6 self-center bg-[var(--border-subtle)]" />
+              <div className="w-px h-6 self-center bg-border-subtle" />
               <FilterButton active={includePen} onClick={() => update({ pen: includePen ? null : "1" })}>
                 Pens in G+A
               </FilterButton>
