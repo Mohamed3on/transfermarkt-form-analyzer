@@ -12,22 +12,18 @@ const QUICK_VIEW_LINKS = [
 export function Footer() {
   return (
     <footer
-      className="mt-auto border-t"
-      style={{
-        borderColor: "var(--border-subtle)",
-        background: "rgba(8, 10, 12, 0.9)",
-      }}
+      className="mt-auto border-t border-border-subtle"
+      style={{ background: "rgba(8, 10, 12, 0.9)" }}
     >
       <div className="page-container py-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+          <p className="text-sm text-text-muted">
             Data from{" "}
             <Link
               href="https://www.transfermarkt.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium transition-colors duration-150 hover:opacity-80"
-              style={{ color: "var(--accent-blue)" }}
+              className="font-medium transition-colors duration-150 hover:opacity-80 text-accent-blue"
             >
               Transfermarkt
             </Link>
@@ -36,8 +32,7 @@ export function Footer() {
               href="https://mohamed3on.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium transition-colors duration-150 hover:opacity-80"
-              style={{ color: "var(--accent-hot)" }}
+              className="font-medium transition-colors duration-150 hover:opacity-80 text-accent-hot"
             >
               Mohamed Oun
             </Link>
@@ -48,8 +43,7 @@ export function Footer() {
               href="https://github.com/mohamed3on"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm transition-colors duration-150 hover:opacity-80"
-              style={{ color: "var(--text-muted)" }}
+              className="text-sm transition-colors duration-150 hover:opacity-80 text-text-muted"
             >
               GitHub
             </Link>
@@ -57,8 +51,7 @@ export function Footer() {
               href="https://techcitiesindex.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm transition-colors duration-150 hover:opacity-80"
-              style={{ color: "var(--text-muted)" }}
+              className="text-sm transition-colors duration-150 hover:opacity-80 text-text-muted"
             >
               Tech Cities Index
             </Link>
@@ -66,8 +59,7 @@ export function Footer() {
               href="https://x.com/mohamed3on"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm transition-colors duration-150 hover:opacity-80"
-              style={{ color: "var(--text-muted)" }}
+              className="text-sm transition-colors duration-150 hover:opacity-80 text-text-muted"
             >
               X
             </Link>

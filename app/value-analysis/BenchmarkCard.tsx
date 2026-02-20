@@ -47,7 +47,7 @@ export function BenchmarkCard({
             {imageUrl ? (
               <img src={imageUrl} alt={name} className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover" style={{ border: "2px solid rgba(255, 215, 0, 0.5)" }} />
             ) : (
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center text-xl sm:text-2xl font-bold" style={{ background: "var(--bg-elevated)", color: "#ffd700", border: "2px solid rgba(255, 215, 0, 0.5)" }}>
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center text-xl sm:text-2xl font-bold bg-elevated text-accent-gold" style={{ border: "2px solid rgba(255, 215, 0, 0.5)" }}>
                 {name.charAt(0)}
               </div>
             )}
@@ -60,10 +60,10 @@ export function BenchmarkCard({
           </div>
           {/* Mobile name + subtitle */}
           <div className="flex-1 min-w-0 sm:hidden">
-            <a href={href} target="_blank" rel="noopener noreferrer" className="font-bold text-lg hover:underline block truncate" style={{ color: "#ffd700" }}>
+            <a href={href} target="_blank" rel="noopener noreferrer" className="font-bold text-lg hover:underline block truncate text-accent-gold">
               {name}
             </a>
-            <div className="flex items-center gap-2 mt-0.5 text-xs" style={{ color: "var(--text-secondary)" }}>
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-text-secondary">
               {subtitle}
             </div>
           </div>
@@ -71,13 +71,13 @@ export function BenchmarkCard({
 
         {/* Desktop name + subtitle + stats */}
         <div className="hidden sm:block flex-1 min-w-0">
-          <a href={href} target="_blank" rel="noopener noreferrer" className="font-bold text-xl hover:underline block truncate" style={{ color: "#ffd700" }}>
+          <a href={href} target="_blank" rel="noopener noreferrer" className="font-bold text-xl hover:underline block truncate text-accent-gold">
             {name}
           </a>
-          <div className="flex items-center gap-2 mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
+          <div className="flex items-center gap-2 mt-1 text-sm text-text-secondary">
             {subtitle}
           </div>
-          <div className="flex items-center gap-4 mt-4 text-sm" style={{ color: "var(--text-secondary)" }}>
+          <div className="flex items-center gap-4 mt-4 text-sm text-text-secondary">
             {desktopStats}
           </div>
         </div>
@@ -89,7 +89,7 @@ export function BenchmarkCard({
 
         {/* Mobile bottom */}
         <div className="sm:hidden flex items-center justify-between gap-3 pt-3" style={{ borderTop: "1px solid rgba(255, 215, 0, 0.15)" }}>
-          <div className="flex items-center gap-3 text-xs" style={{ color: "var(--text-secondary)" }}>
+          <div className="flex items-center gap-3 text-xs text-text-secondary">
             {mobileStats}
           </div>
           <div className="flex gap-4 shrink-0">
@@ -111,7 +111,7 @@ export function BigNumber({ value, label, color }: { value: string; label: strin
   return (
     <div className="text-center">
       <div className="text-2xl font-medium font-value" style={{ color }}>{value}</div>
-      <div className="text-xs uppercase tracking-widest mt-0.5" style={{ color: "var(--text-secondary)" }}>{label}</div>
+      <div className="text-xs uppercase tracking-widest mt-0.5 text-text-secondary">{label}</div>
     </div>
   );
 }

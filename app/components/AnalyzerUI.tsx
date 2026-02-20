@@ -79,30 +79,19 @@ function MatchedTeamsSection({ teams, type }: { teams: QualifiedTeam[]; type: "t
 function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }) {
   return (
     <Card
-      className="rounded-2xl p-4 sm:p-6 hover-lift animate-slide-up"
-      style={{
-        boxShadow: period.hasMatch ? "var(--shadow-glow-hot)" : "none",
-        animationDelay: `${Math.min(index * 30, 300)}ms`,
-      }}
+      className={`rounded-2xl p-4 sm:p-6 hover-lift animate-slide-up ${period.hasMatch ? "shadow-[0_0_40px_rgba(0,255,135,0.1)]" : ""}`}
+      style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
     >
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <div className="flex items-center gap-2 sm:gap-3">
-          <span
-            className="text-2xl sm:text-3xl font-black"
-            style={{ color: "var(--text-primary)" }}
-          >
+          <span className="text-2xl sm:text-3xl font-black text-text-primary">
             {period.period}
           </span>
-          <span className="text-sm sm:text-base" style={{ color: "var(--text-secondary)" }}>matches</span>
+          <span className="text-sm sm:text-base text-text-secondary">matches</span>
         </div>
         <Badge
           variant={period.hasMatch ? "default" : "secondary"}
-          className="px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider"
-          style={period.hasMatch ? {
-            background: "var(--accent-hot-glow)",
-            color: "var(--accent-hot)",
-            borderColor: "var(--accent-hot)",
-          } : undefined}
+          className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${period.hasMatch ? "bg-accent-hot-glow text-accent-hot border-accent-hot" : ""}`}
         >
           {period.hasMatch ? "✓ Clear Standouts" : "No Clear Standouts"}
         </Badge>
@@ -118,10 +107,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {period.topTeams.length > 0 ? (
           <div>
-            <h4
-              className="text-sm font-semibold mb-3 flex items-center gap-2"
-              style={{ color: "var(--accent-hot)" }}
-            >
+            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2 text-accent-hot">
               <span>↑</span> Leading 2+ Categories ({period.topTeams.length})
             </h4>
             <div className="space-y-2">
@@ -132,7 +118,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
           </div>
         ) : (
           <Card className="h-full p-4 text-center bg-[var(--bg-elevated)] flex items-center justify-center">
-            <p style={{ color: "var(--text-muted)" }} className="text-sm">
+            <p className="text-sm text-text-muted">
               No team leads 2+ categories in this window
             </p>
           </Card>
@@ -140,10 +126,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
 
         {period.bottomTeams.length > 0 ? (
           <div>
-            <h4
-              className="text-sm font-semibold mb-3 flex items-center gap-2"
-              style={{ color: "var(--accent-cold)" }}
-            >
+            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2 text-accent-cold">
               <span>↓</span> Trailing 2+ Categories ({period.bottomTeams.length})
             </h4>
             <div className="space-y-2">
@@ -154,7 +137,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
           </div>
         ) : (
           <Card className="h-full p-4 text-center bg-[var(--bg-elevated)] flex items-center justify-center">
-            <p style={{ color: "var(--text-muted)" }} className="text-sm">
+            <p className="text-sm text-text-muted">
               No team trails 2+ categories in this window
             </p>
           </Card>
@@ -205,11 +188,10 @@ function LeaderCard({
         {rows.map((row) => (
           <div
             key={row.label}
-            className="text-xs sm:text-sm py-0.5 sm:py-1"
-            style={{ borderBottom: "1px solid var(--border-subtle)" }}
+            className="text-xs sm:text-sm py-0.5 sm:py-1 border-b border-b-border-subtle"
           >
             <div className="flex justify-between items-start gap-2">
-              <span style={{ color: "var(--text-muted)" }} className="shrink-0">{row.label}</span>
+              <span className="shrink-0 text-text-muted">{row.label}</span>
               <span
                 className="font-bold shrink-0"
                 style={{ color: accentColor }}
@@ -217,10 +199,7 @@ function LeaderCard({
                 {row.value}
               </span>
             </div>
-            <div
-              className="text-[10px] sm:text-xs mt-0.5 leading-relaxed"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <div className="text-[10px] sm:text-xs mt-0.5 leading-relaxed text-text-secondary">
               {row.teams.join(", ")}
             </div>
           </div>
@@ -238,40 +217,27 @@ export function AnalyzerUI({ initialData }: { initialData: AnalysisResult }) {
       {/* Hero Section - Match Result */}
       {data.success && data.analysis.find((p) => p.hasMatch) ? (
         <div
-          className="rounded-2xl p-4 sm:p-6 animate-scale-in relative overflow-hidden"
+          className="rounded-2xl p-4 sm:p-6 animate-scale-in relative overflow-hidden border border-accent-hot"
           style={{
             background: "linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%)",
-            border: "1px solid var(--accent-hot)",
             boxShadow: "var(--shadow-glow-hot)",
           }}
         >
           {/* Decorative gradient orb */}
-          <div
-            className="absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl opacity-20"
-            style={{ background: "var(--accent-hot)" }}
-          />
+          <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl opacity-20 bg-accent-hot" />
 
           <div className="relative">
             <div className="flex items-center gap-3 mb-4 sm:mb-6">
-              <span
-                className="text-2xl sm:text-3xl font-black"
-                style={{ color: "var(--accent-hot)" }}
-              >
+              <span className="text-2xl sm:text-3xl font-black text-accent-hot">
                 ✓
               </span>
               <div>
-                <h2
-                  className="text-xl sm:text-2xl font-bold"
-                  style={{ color: "var(--text-primary)" }}
-                >
+                <h2 className="text-xl sm:text-2xl font-bold text-text-primary">
                   Clear Pattern Found
                 </h2>
-                <p className="text-sm sm:text-base" style={{ color: "var(--text-secondary)" }}>
+                <p className="text-sm sm:text-base text-text-secondary">
                   Over the last{" "}
-                  <span
-                    className="font-bold"
-                    style={{ color: "var(--accent-hot)" }}
-                  >
+                  <span className="font-bold text-accent-hot">
                     {data.analysis.find((p) => p.hasMatch)?.period}
                   </span>{" "}
                   matches, there are clear standouts at the top and bottom.
@@ -293,17 +259,13 @@ export function AnalyzerUI({ initialData }: { initialData: AnalysisResult }) {
         </div>
       ) : (
         <Card
-          className="rounded-2xl p-4 sm:p-6 text-center animate-scale-in"
-          style={{ borderColor: "var(--accent-cold)" }}
+          className="rounded-2xl p-4 sm:p-6 text-center animate-scale-in border-accent-cold"
         >
           <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">📊</div>
-          <h2
-            className="text-lg sm:text-xl font-bold mb-2"
-            style={{ color: "var(--accent-cold)" }}
-          >
+          <h2 className="text-lg sm:text-xl font-bold mb-2 text-accent-cold">
             No Clear Pattern
           </h2>
-          <p className="text-sm sm:text-base" style={{ color: "var(--text-secondary)" }}>
+          <p className="text-sm sm:text-base text-text-secondary">
             No match window has clear standouts at both the top and bottom right now.
           </p>
         </Card>
@@ -311,17 +273,11 @@ export function AnalyzerUI({ initialData }: { initialData: AnalysisResult }) {
 
       {/* Period Analysis Section */}
       <div>
-        <h2
-          className="text-lg font-bold mb-6 flex items-center gap-3"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          <span
-            className="w-1 h-6 rounded-full"
-            style={{ background: "var(--accent-blue)" }}
-          />
+        <h2 className="text-lg font-bold mb-6 flex items-center gap-3 text-text-secondary">
+          <span className="w-1 h-6 rounded-full bg-accent-blue" />
           By Match Window
         </h2>
-        <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+        <p className="text-sm mb-4 text-text-muted">
           Each window is independent. Only teams leading or trailing 2+ categories are shown.
         </p>
         <div className="space-y-4">

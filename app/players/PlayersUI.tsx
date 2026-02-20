@@ -4,8 +4,9 @@ import { useMemo, useRef, type ReactNode } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { Combobox } from "@/components/Combobox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { RangeFilter } from "@/components/RangeFilter";
 import { FilterButton } from "@/components/FilterButton";
-import { Input } from "@/components/ui/input";
+import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { filterPlayersByLeagueAndClub, filterTop5 } from "@/lib/filter-players";
 import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
@@ -16,12 +17,6 @@ type SigningFilter = "transfer" | "loan" | null;
 
 const BASE_SORT_LABELS: Record<SortKey, string> = { value: "Value", mins: "Mins", games: "Games", ga: "G+A", pen: "Pen", miss: "Miss" };
 
-const POS_ABBREV: Record<string, string> = {
-  "Centre-Forward": "CF", "Centre-Back": "CB", "Central Midfield": "CM",
-  "Right Winger": "RW", "Left Winger": "LW", "Right-Back": "RB", "Left-Back": "LB",
-  "Attacking Midfield": "AM", "Defensive Midfield": "DM", "Second Striker": "SS",
-  "Left Midfield": "LM", "Right Midfield": "RM", "Goalkeeper": "GK",
-};
 
 function AvatarBadge({ bg, icon, tooltip, position = "bottom-right" }: { bg: string; icon: ReactNode; tooltip: string; position?: "bottom-right" | "top-right" }) {
   const pos = position === "top-right" ? "-top-1 -right-1" : "-bottom-1 -right-1";
@@ -87,17 +82,13 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
 
   return (
     <div
-      className="group relative z-0 hover:z-10 rounded-xl p-2.5 sm:p-3 animate-slide-up hover-lift"
-      style={{
-        background: "var(--bg-card)",
-        border: "1px solid var(--border-subtle)",
-        animationDelay: `${Math.min(index * 0.03, 0.3)}s`,
-      }}
+      className="group relative z-0 hover:z-10 rounded-xl p-2.5 sm:p-3 animate-slide-up hover-lift bg-card border border-border-subtle"
+      style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
     >
       <div className="flex items-center gap-2.5 sm:gap-3">
         <div
-          className="w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-[10px] sm:text-xs font-bold shrink-0"
-          style={{ background: "rgba(100, 180, 255, 0.15)", color: "var(--accent-blue)" }}
+          className="w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center text-[10px] sm:text-xs font-bold shrink-0 text-accent-blue"
+          style={{ background: "rgba(100, 180, 255, 0.15)" }}
         >
           {index + 1}
         </div>
@@ -107,14 +98,10 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
             <img
               src={player.imageUrl}
               alt={player.name}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover"
-              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover bg-elevated border border-border-subtle"
             />
           ) : (
-            <div
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-sm sm:text-base font-bold"
-              style={{ background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}
-            >
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-sm sm:text-base font-bold bg-elevated text-text-muted border border-border-subtle">
               {player.name.charAt(0)}
             </div>
           )}
@@ -127,24 +114,22 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
             href={`https://www.transfermarkt.com${player.profileUrl.replace(PROFIL_RE, "/leistungsdaten/")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-sm hover:underline block truncate transition-colors text-left"
-            style={{ color: "var(--text-primary)" }}
+            className="font-semibold text-sm hover:underline block truncate transition-colors text-left text-text-primary"
           >
             {player.name}
           </a>
-          <div className="flex items-center gap-1.5 text-xs mt-0.5 overflow-hidden" style={{ color: "var(--text-secondary)" }}>
-            <span className="sm:hidden shrink-0">{POS_ABBREV[player.position] || player.position}</span>
-            <span className="hidden sm:inline shrink-0">{player.position}</span>
-            <span style={{ opacity: 0.4 }}>·</span>
+          <div className="flex items-center gap-1.5 text-xs mt-0.5 overflow-hidden text-text-secondary">
+            <PositionDisplay position={player.position} playedPosition={player.playedPosition} />
+            <span className="opacity-40">·</span>
             <span className="truncate inline-flex items-center gap-1">
               {player.clubLogoUrl && <img src={player.clubLogoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}
               {player.club}
             </span>
             {player.nationality && <>
-              <span className="hidden sm:inline" style={{ opacity: 0.4 }}>·</span>
+              <span className="hidden sm:inline opacity-40">·</span>
               <span className="hidden sm:inline shrink-0">{player.nationality}</span>
             </>}
-            <span className="hidden sm:inline" style={{ opacity: 0.4 }}>·</span>
+            <span className="hidden sm:inline opacity-40">·</span>
             <span className="hidden sm:inline">{player.age}y</span>
           </div>
         </div>
@@ -152,60 +137,60 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
         {/* Desktop metrics — context-aware based on active sort/filters */}
         <div className="hidden sm:flex items-center gap-3 shrink-0">
           <div className="text-right">
-            <div className="text-sm font-medium font-value" style={{ color: "var(--accent-blue)" }}>{player.marketValueDisplay}</div>
+            <div className="text-sm font-medium font-value text-accent-blue">{player.marketValueDisplay}</div>
           </div>
-          <div className="w-px h-7" style={{ background: "var(--border-subtle)" }} />
+          <div className="w-px h-7 bg-border-subtle" />
           {(sortBy === "mins" || sortBy === "value" || sortBy === "ga" || sortBy === "games") && (
             <div className="text-right min-w-[4rem]">
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
+              <div className="text-sm font-bold tabular-nums text-text-primary">
                 {player.minutes.toLocaleString()}&apos;
               </div>
             </div>
           )}
           {showCaps && (
             <div className="text-right">
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.intlCareerCaps ?? 0}</div>
-              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>caps</div>
+              <div className="text-sm font-bold tabular-nums text-text-primary">{player.intlCareerCaps ?? 0}</div>
+              <div className="text-xs text-text-secondary">caps</div>
             </div>
           )}
           {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
             <div className="text-right min-w-[3rem]">
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{penGoals}/{penAttempts}</div>
-              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>pens · {Math.round(penGoals / penAttempts * 100)}%</div>
+              <div className="text-sm font-bold tabular-nums text-text-primary">{penGoals}/{penAttempts}</div>
+              <div className="text-xs text-text-secondary">pens · {Math.round(penGoals / penAttempts * 100)}%</div>
             </div>
           )}
           {sortBy === "miss" && (
             <div className="text-right">
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{penMisses}</div>
-              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>missed</div>
+              <div className="text-sm font-bold tabular-nums text-text-primary">{penMisses}</div>
+              <div className="text-xs text-text-secondary">missed</div>
             </div>
           )}
-          <div className="w-px h-7" style={{ background: "var(--border-subtle)" }} />
+          <div className="w-px h-7 bg-border-subtle" />
           <div className="flex items-center gap-2.5 text-right">
             <div>
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{player.totalMatches}</div>
-              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>games</div>
+              <div className="text-sm font-bold tabular-nums text-text-primary">{player.totalMatches}</div>
+              <div className="text-xs text-text-secondary">games</div>
             </div>
             <div>
-              <div className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>{gaTotal}</div>
-              <div className="text-xs tabular-nums" style={{ color: "var(--text-secondary)" }}>{player.goals - penAdj}{penAdj > 0 ? "npG" : "G"} {player.assists}A</div>
+              <div className="text-sm font-bold tabular-nums text-text-primary">{gaTotal}</div>
+              <div className="text-xs tabular-nums text-text-secondary">{player.goals - penAdj}{penAdj > 0 ? "npG" : "G"} {player.assists}A</div>
             </div>
           </div>
         </div>
 
         {/* Mobile metrics — context-aware */}
         <div className="sm:hidden text-right shrink-0">
-          <div className="text-xs font-medium font-value" style={{ color: "var(--accent-blue)" }}>{player.marketValueDisplay}</div>
+          <div className="text-xs font-medium font-value text-accent-blue">{player.marketValueDisplay}</div>
           <div className="text-xs tabular-nums">
-            <span style={{ color: "var(--text-primary)" }}>{gaTotal} {pointsLabel}</span>
+            <span className="text-text-primary">{gaTotal} {pointsLabel}</span>
             {showCaps && (player.intlCareerCaps ?? 0) === 0 && player.nationality && (
-              <span style={{ color: "var(--text-secondary)" }}> · {player.nationality}</span>
+              <span className="text-text-secondary"> · {player.nationality}</span>
             )}
             {showCaps && (player.intlCareerCaps ?? 0) > 0 && (
-              <span style={{ color: "var(--text-secondary)" }}> · {player.intlCareerCaps} caps</span>
+              <span className="text-text-secondary"> · {player.intlCareerCaps} caps</span>
             )}
             {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
-              <span style={{ color: "var(--text-secondary)" }}> · {penGoals}/{penAttempts} pens</span>
+              <span className="text-text-secondary"> · {penGoals}/{penAttempts} pens</span>
             )}
           </div>
         </div>
@@ -268,7 +253,10 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
   const signingFilter = parseSigningFilter(params.get("signing"));
   const includePen = params.get("pen") === "1";
   const includeIntl = params.get("intl") === "1";
+  const minCaps = params.get("mincaps") ? parseInt(params.get("mincaps")!) : null;
   const maxCaps = params.get("maxcaps") ? parseInt(params.get("maxcaps")!) : null;
+  const minAge = params.get("minage") ? parseInt(params.get("minage")!) : null;
+  const maxAge = params.get("maxage") ? parseInt(params.get("maxage")!) : null;
 
   // Apply intl toggle client-side — adds intl stats when active
   const players = useMemo(() => {
@@ -315,7 +303,10 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
     if (nationalityFilter !== "all") list = list.filter((p) => p.nationality === nationalityFilter);
     if (signingFilter === "transfer") list = list.filter((p) => p.isNewSigning);
     if (signingFilter === "loan") list = list.filter((p) => p.isOnLoan);
+    if (minCaps !== null) list = list.filter((p) => (p.intlCareerCaps ?? 0) >= minCaps);
     if (maxCaps !== null) list = list.filter((p) => (p.intlCareerCaps ?? 0) <= maxCaps);
+    if (minAge !== null) list = list.filter((p) => p.age >= minAge);
+    if (maxAge !== null) list = list.filter((p) => p.age <= maxAge);
     const penAdj = includePen ? 0 : 1;
     return [...list].sort((a, b) => {
       let diff: number;
@@ -329,7 +320,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
       }
       return sortAsc ? -diff : diff;
     });
-  }, [players, sortBy, sortAsc, leagueFilter, clubFilter, nationalityFilter, top5Only, signingFilter, includePen, maxCaps]);
+  }, [players, sortBy, sortAsc, leagueFilter, clubFilter, nationalityFilter, top5Only, signingFilter, includePen, minCaps, maxCaps, minAge, maxAge]);
 
   return (
     <>
@@ -343,13 +334,13 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
 
         <section>
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-1 h-5 rounded-full shrink-0" style={{ background: "var(--accent-blue)" }} />
-            <h2 className="text-xs font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--text-secondary)" }}>
+            <div className="w-1 h-5 rounded-full shrink-0 bg-accent-blue" />
+            <h2 className="text-xs font-bold uppercase tracking-widest shrink-0 text-text-secondary">
               All Players
             </h2>
             <span
-              className="text-xs font-bold px-2 py-0.5 rounded-md tabular-nums"
-              style={{ background: "rgba(100, 180, 255, 0.15)", color: "var(--accent-blue)" }}
+              className="text-xs font-bold px-2 py-0.5 rounded-md tabular-nums text-accent-blue"
+              style={{ background: "rgba(100, 180, 255, 0.15)" }}
             >
               {sortedPlayers.length}
             </span>
@@ -362,8 +353,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                 if (!value) { update({ dir: sortAsc ? null : "asc" }); return; }
                 update({ sort: value === "ga" ? null : value, dir: null });
               }}
-              className="rounded-lg overflow-hidden w-max"
-              style={{ border: "1px solid var(--border-subtle)" }}
+              className="rounded-lg overflow-hidden w-max border border-border-subtle"
             >
               {(["value", "mins", "games", "ga", "pen", "miss"] as const).map((key) => (
                 <ToggleGroupItem
@@ -386,14 +376,8 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
               <Combobox value={leagueFilter} onChange={(v) => update({ league: v === "all" ? null : v || null })} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
               <Combobox value={nationalityFilter} onChange={(v) => update({ nat: v === "all" ? null : v || null })} options={nationalityOptions} placeholder="All nationalities" searchPlaceholder="Search nationalities..." />
               <Combobox value={clubFilter} onChange={(v) => update({ club: v === "all" ? null : v || null })} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
-              <Input
-                type="number"
-                min={0}
-                placeholder="Max caps"
-                value={maxCaps ?? ""}
-                onChange={(e) => update({ maxcaps: e.target.value || null })}
-                className="h-8 w-28 text-xs tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
+              <RangeFilter label="Age" min={minAge} max={maxAge} onMinChange={(v) => update({ minage: v })} onMaxChange={(v) => update({ maxage: v })} />
+              <RangeFilter label="Caps" min={minCaps} max={maxCaps} onMinChange={(v) => update({ mincaps: v })} onMaxChange={(v) => update({ maxcaps: v })} />
               <FilterButton active={top5Only} onClick={() => update({ top5: top5Only ? null : "1" })}>
                 Top 5
               </FilterButton>
@@ -415,7 +399,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
             </div>
           </div>
 
-          <VirtualPlayerList items={sortedPlayers} injuryMap={injuryMap} ctx={{ sortBy, showCaps: maxCaps !== null, includePen }} />
+          <VirtualPlayerList items={sortedPlayers} injuryMap={injuryMap} ctx={{ sortBy, showCaps: minCaps !== null || maxCaps !== null, includePen }} />
         </section>
     </>
   );

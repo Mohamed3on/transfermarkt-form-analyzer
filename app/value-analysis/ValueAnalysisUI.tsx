@@ -12,6 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ExternalLink } from "lucide-react";
 import { getLeagueLogoUrl } from "@/lib/leagues";
 import { FilterButton } from "@/components/FilterButton";
+import { PositionDisplay } from "@/components/PositionDisplay";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES } from "@/lib/filter-players";
 import { canBeOutperformerAgainst, canBeUnderperformerAgainst, strictlyOutperforms } from "@/lib/positions";
 import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
@@ -89,7 +90,7 @@ function TargetPlayerCard({ player, minutes }: { player: PlayerStats; minutes?: 
       name={player.name}
       imageUrl={player.imageUrl}
       href={getLeistungsdatenUrl(player.profileUrl)}
-      subtitle={<><span className="font-medium">{player.position}</span><span className="opacity-40">•</span><span className="truncate opacity-80 inline-flex items-center gap-1">{player.clubLogoUrl && <img src={player.clubLogoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}{player.club}</span></>}
+      subtitle={<><span className="font-medium"><PositionDisplay position={player.position} playedPosition={player.playedPosition} abbreviated /></span><span className="opacity-40">•</span><span className="truncate opacity-80 inline-flex items-center gap-1">{player.clubLogoUrl && <img src={player.clubLogoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}{player.club}</span></>}
       desktopStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} apps</span><span className="opacity-60">Age {player.age}</span></>}
       desktopBigNumbers={<><BigNumber value={player.marketValueDisplay} label="Value" color="var(--accent-gold)" /><BigNumber value={String(player.points)} label="Points" color="var(--accent-hot)" /></>}
@@ -132,7 +133,7 @@ function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement,
         </div>
         <div className="relative shrink-0">
           {imageUrl ? (
-            <img src={imageUrl} alt={name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover" style={{ background: "var(--bg-elevated)", border: `1px solid ${theme.imageBorder}` }} />
+            <img src={imageUrl} alt={name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover bg-elevated" style={{ border: `1px solid ${theme.imageBorder}` }} />
           ) : (
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-base sm:text-lg font-bold bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
               {name.charAt(0)}
@@ -198,7 +199,7 @@ function ComparisonCard({ player, targetPlayer, index = 0, variant, top5 }: {
           {player.name}
         </Link>
       }
-      subtitle={<PlayerSubtitle position={player.position} club={player.club} clubLogoUrl={player.clubLogoUrl} age={player.age} />}
+      subtitle={<PlayerSubtitle position={player.position} playedPosition={player.playedPosition} club={player.club} clubLogoUrl={player.clubLogoUrl} age={player.age} />}
       desktopStats={<>
         <div className="text-right">
           <div className="text-sm font-medium font-value" style={{ color: theme.rankColor }}>{player.marketValueDisplay}</div>
@@ -232,7 +233,7 @@ function CardSkeletonList({ count = 5, fadeStep = 0.1 }: { count?: number; fadeS
   return (
     <div className="space-y-3 animate-fade-in">
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", opacity: 1 - (i + 1) * fadeStep }}>
+        <div key={i} className="rounded-xl p-4 bg-card border border-border-subtle" style={{ opacity: 1 - (i + 1) * fadeStep }}>
           <div className="flex items-center gap-4">
             <Skeleton className="w-8 h-8 rounded-lg" />
             <Skeleton className="w-12 h-12 rounded-lg" />
@@ -260,10 +261,10 @@ function SearchSkeleton() {
   );
 }
 
-function PlayerSubtitle({ position, club, clubLogoUrl, age }: { position: string; club: string; clubLogoUrl?: string; age: number }) {
+function PlayerSubtitle({ position, playedPosition, club, clubLogoUrl, age }: { position: string; playedPosition?: string; club: string; clubLogoUrl?: string; age: number }) {
   return (
     <>
-      <span>{position}</span>
+      <PositionDisplay position={position} playedPosition={playedPosition} abbreviated />
       <span className="opacity-40">•</span>
       <span className="truncate max-w-[100px] sm:max-w-none inline-flex items-center gap-1">
         {clubLogoUrl && <img src={clubLogoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}
@@ -305,7 +306,7 @@ function DiscoveryListCard({ player, index = 0, top5, variant, pointsLabel = "G+
           {player.name}
         </Link>
       }
-      subtitle={<PlayerSubtitle position={player.position} club={player.club} clubLogoUrl={player.clubLogoUrl} age={player.age} />}
+      subtitle={<PlayerSubtitle position={player.position} playedPosition={player.playedPosition} club={player.club} clubLogoUrl={player.clubLogoUrl} age={player.age} />}
       desktopStats={<>
         {player.comparisonCount > 0 && (
           <>
@@ -382,8 +383,8 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
       filtered = filtered.filter((p) => TOP_5_LEAGUES.includes(p.league));
       filtered = filtered.map((player) => {
         const count = isOverpriced
-          ? top5Players.filter((p) => p.playerId !== player.playerId && p.marketValue <= player.marketValue && strictlyOutperforms(p, player) && canBeOutperformerAgainst(p.position, player.position)).length
-          : top5Players.filter((p) => p.playerId !== player.playerId && p.marketValue >= player.marketValue && strictlyOutperforms(player, p) && canBeUnderperformerAgainst(p.position, player.position)).length;
+          ? top5Players.filter((p) => p.playerId !== player.playerId && p.marketValue <= player.marketValue && strictlyOutperforms(p, player) && canBeOutperformerAgainst(p.playedPosition || p.position, player.playedPosition || player.position)).length
+          : top5Players.filter((p) => p.playerId !== player.playerId && p.marketValue >= player.marketValue && strictlyOutperforms(player, p) && canBeUnderperformerAgainst(p.playedPosition || p.position, player.playedPosition || player.position)).length;
         return { ...player, comparisonCount: count };
       });
     }
@@ -474,7 +475,7 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
       name={player.name}
       imageUrl={player.imageUrl}
       href={getLeistungsdatenUrl(player.profileUrl)}
-      subtitle={<><span className="font-medium">{player.position}</span>{player.nationality && <><span className="opacity-40">·</span><span>{player.nationality}</span></>}</>}
+      subtitle={<><span className="font-medium"><PositionDisplay position={player.position} playedPosition={player.playedPosition} abbreviated /></span>{player.nationality && <><span className="opacity-40">·</span><span>{player.nationality}</span></>}</>}
       desktopStats={<><span className="tabular-nums">{player.totalMatches} games</span><span className="tabular-nums">{player.goals} goals</span><span className="tabular-nums">{player.assists} assists</span><span className="opacity-60">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.totalMatches} games</span><span className="tabular-nums">{player.goals}G {player.assists}A</span><span className="opacity-60">Age {player.age}</span></>}
       desktopBigNumbers={<><BigNumber value={player.marketValueDisplay} label="Value" color="var(--accent-gold)" /><BigNumber value={`${player.minutes.toLocaleString()}'`} label="Minutes" color="var(--accent-blue)" /></>}
@@ -504,7 +505,7 @@ function MvPlayerCard({ player, target, index, variant = "less", onSelect, injur
         </button>
       }
       subtitle={<>
-        <span>{player.position}</span>
+        <PositionDisplay position={player.position} playedPosition={player.playedPosition} abbreviated />
         {variant === "less" && injuryMap?.[player.playerId] && (() => {
           const info = injuryMap[player.playerId];
           const dur = formatInjuryDuration(info.injurySince);

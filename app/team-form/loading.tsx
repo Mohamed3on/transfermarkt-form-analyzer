@@ -2,10 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function SkeletonCard() {
   return (
-    <div
-      className="p-3 sm:p-4 rounded-xl"
-      style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)" }}
-    >
+    <div className="p-3 sm:p-4 rounded-xl bg-card border border-border-subtle">
       <div className="flex items-center gap-3 sm:gap-4">
         <Skeleton className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg" />
         <Skeleton className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl" />
@@ -20,7 +17,7 @@ function SkeletonCard() {
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-4 w-24" />
       </div>
-      <div className="flex items-center gap-2 mt-3 pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-t-border-subtle">
         <Skeleton className="h-3.5 w-24" />
         <Skeleton className="h-3.5 w-16" />
         <Skeleton className="h-4 w-20 rounded" />

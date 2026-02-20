@@ -29,9 +29,7 @@ export async function DataLastUpdated() {
   });
 
   return (
-    <div className="flex items-center justify-center gap-2 py-6 text-xs tracking-wide uppercase"
-      style={{ color: "var(--text-muted)" }}
-    >
+    <div className="flex items-center justify-center gap-2 py-6 text-xs tracking-wide uppercase text-text-muted">
       <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
       <span>
         Updated {formatted}

@@ -55,7 +55,7 @@ export function TeamCardSkeleton({ compact }: { compact?: boolean }) {
         <Skeleton className="h-6 w-24 rounded-full" />
       </div>
       <Skeleton className="h-3 w-full mt-3" />
-      <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-t-border-subtle">
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-4 w-16" />
         <Skeleton className="h-5 w-20 rounded" />
@@ -86,10 +86,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
             />
           )}
           <div className="flex-1 min-w-0">
-            <div
-              className="font-semibold text-sm truncate"
-              style={{ color: "var(--text-primary)" }}
-            >
+            <div className="font-semibold text-sm truncate text-text-primary">
               {team.clubUrl ? (
                 <a
                   href={`https://www.transfermarkt.com${team.clubUrl}`}
@@ -105,7 +102,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
                 team.name
               )}
             </div>
-            <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+            <div className="text-xs text-text-muted">
               {formatOrdinal(team.leaguePosition)} place • {team.stats.points} points • Goal Diff: {team.stats.goalDiff > 0 ? "+" : ""}
               {team.stats.goalDiff}
             </div>
@@ -117,19 +114,12 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
 
   return (
     <Card
-      className="p-3 sm:p-4 bg-[var(--bg-elevated)] hover-lift"
-      style={{
-        borderColor: accentColor,
-        boxShadow: `0 0 20px ${glowColor}`,
-      }}
+      className={`p-3 sm:p-4 bg-[var(--bg-elevated)] hover-lift ${isTop ? "border-accent-hot shadow-[0_0_20px_var(--accent-hot-glow)]" : "border-accent-cold shadow-[0_0_20px_var(--accent-cold-glow)]"}`}
     >
       {/* Team header with logo */}
       <div className="flex items-center gap-3 sm:gap-4">
         {team.logoUrl && (
-          <div
-            className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "var(--bg-card)" }}
-          >
+          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 bg-card">
             <Image
               src={team.logoUrl}
               alt={team.name}
@@ -142,7 +132,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-base sm:text-lg truncate" style={{ color: "var(--text-primary)" }}>
+          <div className="font-bold text-base sm:text-lg truncate text-text-primary">
             {team.clubUrl ? (
               <a
                 href={`https://www.transfermarkt.com${team.clubUrl}`}
@@ -158,7 +148,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
               team.name
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm truncate" style={{ color: "var(--text-secondary)" }}>
+          <div className="flex items-center gap-1.5 text-xs sm:text-sm truncate text-text-secondary">
             {getLeagueLogoUrl(team.league) && <img src={getLeagueLogoUrl(team.league)} alt="" className="w-4 h-4 object-contain shrink-0 rounded-sm bg-white/90 p-px" />}
             {team.league} • {formatOrdinal(team.leaguePosition)} place
           </div>
@@ -171,12 +161,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
           <Badge
             key={c}
             variant="outline"
-            className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs"
-            style={{
-              background: glowColor,
-              color: accentColor,
-              borderColor: accentColor,
-            }}
+            className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs ${isTop ? "bg-accent-hot-glow text-accent-hot border-accent-hot" : "bg-accent-cold-glow text-accent-cold border-accent-cold"}`}
           >
             {c}
           </Badge>
@@ -184,10 +169,7 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
       </div>
 
       {/* Stats */}
-      <div
-        className="text-[10px] sm:text-xs mt-3 sm:mt-4 flex flex-wrap gap-2 sm:gap-4"
-        style={{ color: "var(--text-muted)" }}
-      >
+      <div className="text-[10px] sm:text-xs mt-3 sm:mt-4 flex flex-wrap gap-2 sm:gap-4 text-text-muted">
         <span style={team.criteria.includes("Most Points") || team.criteria.includes("Least Points") ? { color: accentColor, fontWeight: 700 } : undefined}>
           {team.stats.points} Points
         </span>
@@ -204,16 +186,13 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
 
       {/* Manager info */}
       {showManager && team.clubId && (
-        <div
-          className="mt-3 sm:mt-4 pt-2 sm:pt-3 text-xs sm:text-sm"
-          style={{ borderTop: "1px solid var(--border-subtle)" }}
-        >
+        <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 text-xs sm:text-sm border-t border-t-border-subtle">
           {managerLoading ? (
             <ManagerSkeleton />
           ) : manager ? (
             <ManagerSection manager={manager} />
           ) : (
-            <span style={{ color: "var(--text-muted)" }}>Manager data unavailable for this club</span>
+            <span className="text-text-muted">Manager data unavailable for this club</span>
           )}
         </div>
       )}
