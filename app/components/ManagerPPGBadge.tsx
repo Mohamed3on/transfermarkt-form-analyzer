@@ -30,7 +30,7 @@ export function ManagerSackedBadge({ manager }: ManagerPPGBadgeProps) {
 export function ManagerSkeleton() {
   return (
     <div className="flex items-center gap-2">
-      <span style={{ color: "var(--text-muted)" }}>Manager:</span>
+      <span className="text-text-muted">Manager:</span>
       <Skeleton className="h-4 w-24 rounded" />
       <Skeleton className="h-4 w-16 rounded" />
       <Skeleton className="h-5 w-20 rounded" />
@@ -59,14 +59,13 @@ export function ManagerSection({ manager }: ManagerPPGBadgeProps) {
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
       <div className="inline-flex min-w-0 items-center gap-1.5">
-        <span className="shrink-0" style={{ color: "var(--text-muted)" }}>Manager:</span>
+        <span className="shrink-0 text-text-muted">Manager:</span>
         <a
           href={manager.profileUrl}
           target="_blank"
           rel="noopener noreferrer"
           title="Open manager profile on Transfermarkt"
-          className="font-semibold hover:underline transition-colors truncate"
-          style={{ color: manager.isCurrentManager ? "var(--accent-blue)" : "var(--text-muted)" }}
+          className={`font-semibold hover:underline transition-colors truncate ${manager.isCurrentManager ? "text-accent-blue" : "text-text-muted"}`}
         >
           {manager.name}
         </a>
@@ -96,7 +95,7 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
 
   if (!hasRanking) {
     return (
-      <span className="inline-flex text-[10px] sm:text-xs" style={{ color: "var(--text-secondary)" }}>
+      <span className="inline-flex text-[10px] sm:text-xs text-text-secondary">
         ({manager.matches} {manager.matches === 1 ? "game" : "games"})
       </span>
     );
@@ -132,22 +131,19 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
 
   const tooltipContent = (
     <div className="space-y-2 text-xs sm:text-sm">
-      <div style={{ color: "var(--text-secondary)" }}>
+      <div className="text-text-secondary">
         {isOnly ? (
           <>Only manager with {manager.matches}+ games since 1995</>
         ) : (
           <>
             {isBest ? "Best" : isWorst ? "Worst" : `#${manager.ppgRank}`} PPG among{" "}
-            <span style={{ color: "var(--text-primary)" }}>{manager.totalComparableManagers}</span> managers
+            <span className="text-text-primary">{manager.totalComparableManagers}</span> managers
             with {manager.matches}+ games since 1995
           </>
         )}
       </div>
       {!isOnly && manager.bestManager && manager.worstManager && (
-        <div
-          className="pt-2 space-y-1.5"
-          style={{ borderTop: "1px solid var(--border-subtle)" }}
-        >
+        <div className="pt-2 space-y-1.5 border-t border-t-border-subtle">
           <div className="flex items-start gap-1.5">
             <span>🏆</span>
             <div>
@@ -155,12 +151,11 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
                 href={manager.bestManager.profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium hover:underline"
-                style={{ color: "#22c55e" }}
+                className="font-medium hover:underline text-accent-green"
               >
                 {manager.bestManager.name}
               </a>
-              <span className="ml-1" style={{ color: "var(--text-muted)" }}>
+              <span className="ml-1 text-text-muted">
                 {manager.bestManager.ppg.toFixed(2)} PPG · {manager.bestManager.years}
               </span>
             </div>
@@ -177,7 +172,7 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
               >
                 {manager.worstManager.name}
               </a>
-              <span className="ml-1" style={{ color: "var(--text-muted)" }}>
+              <span className="ml-1 text-text-muted">
                 {manager.worstManager.ppg.toFixed(2)} PPG · {manager.worstManager.years}
               </span>
             </div>
@@ -187,16 +182,11 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
     </div>
   );
 
-  const contentStyles = {
-    background: "var(--bg-card)",
-    color: "var(--text-primary)",
-    border: "1px solid var(--border-subtle)",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-  };
+  const contentClass = "max-w-[280px] sm:max-w-xs p-3 bg-card text-text-primary border border-border-subtle shadow-[0_8px_32px_rgba(0,0,0,0.4)]";
 
   return (
     <span className="inline-flex max-w-full flex-wrap items-center gap-1">
-      <span className="text-[10px] sm:text-xs" style={{ color: "var(--text-secondary)" }}>
+      <span className="text-[10px] sm:text-xs text-text-secondary">
         ({manager.matches} {manager.matches === 1 ? "game" : "games"})
       </span>
       {isTouchDevice ? (
@@ -208,8 +198,7 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
             sideOffset={8}
             avoidCollisions={true}
             collisionPadding={16}
-            className="max-w-[280px] sm:max-w-xs p-3"
-            style={contentStyles}
+            className={contentClass}
           >
             {tooltipContent}
           </PopoverContent>
@@ -223,8 +212,7 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
             sideOffset={8}
             avoidCollisions={true}
             collisionPadding={16}
-            className="max-w-[280px] sm:max-w-xs p-3"
-            style={contentStyles}
+            className={contentClass}
           >
             {tooltipContent}
           </TooltipContent>

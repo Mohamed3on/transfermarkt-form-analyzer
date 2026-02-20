@@ -12,8 +12,8 @@ export default function Loading() {
         {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="rounded-xl p-4"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", opacity: 1 - i * 0.1 }}
+            className="rounded-xl p-4 bg-card border border-border-subtle"
+            style={{ opacity: 1 - i * 0.1 }}
           >
             <div className="flex items-center gap-4">
               <Skeleton className="w-8 h-8 rounded-lg" />

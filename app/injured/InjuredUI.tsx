@@ -488,7 +488,7 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
   return (
     <>
       {pending.size > 0 && (
-        <p className="text-[11px] mb-4 animate-pulse" style={{ color: "var(--accent-blue)" }}>
+        <p className="text-[11px] mb-4 animate-pulse text-accent-blue">
           Retrying {pending.size} failed {pending.size === 1 ? "league" : "leagues"}...
         </p>
       )}

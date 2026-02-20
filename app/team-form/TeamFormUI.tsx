@@ -45,7 +45,7 @@ function ordinal(n: number): string {
 function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: string; onValueChange: (value: string) => void }) {
   return (
     <div className="mb-4 sm:mb-6">
-      <p className="text-sm font-medium mb-3" style={{ color: "var(--text-secondary)" }}>
+      <p className="text-sm font-medium mb-3 text-text-secondary">
         Filter by league:
       </p>
       <ToggleGroup
@@ -123,11 +123,11 @@ function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
             </div>
 
             {/* Club Logo */}
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1" style={{ background: "white", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1 bg-white" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
               {team.logoUrl ? (
                 <img src={team.logoUrl} alt={team.name} className="w-full h-full object-contain" />
               ) : (
-                <div className="text-xl" style={{ color: "var(--text-muted)" }}>?</div>
+                <div className="text-xl text-text-muted">?</div>
               )}
             </div>
 
@@ -137,8 +137,7 @@ function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
                 href={team.clubUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold text-sm sm:text-base hover:underline block truncate"
-                style={{ color: "var(--text-primary)" }}
+                className="font-bold text-sm sm:text-base hover:underline block truncate text-text-primary"
               >
                 {team.name}
               </a>
@@ -157,23 +156,23 @@ function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
           </div>
 
           {/* Stats Row */}
-          <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1 mt-2.5 text-xs sm:text-sm" style={{ color: "var(--text-muted)" }}>
+          <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1 mt-2.5 text-xs sm:text-sm text-text-muted">
             <span>
-              <span style={{ color: "var(--text-secondary)" }}>{ordinal(team.leaguePosition)}</span> · {team.points}pts
+              <span className="text-text-secondary">{ordinal(team.leaguePosition)}</span> · {team.points}pts
             </span>
-            <span style={{ color: "var(--border-medium)" }}>|</span>
+            <span className="text-border-medium">|</span>
             <span>
-              <span style={{ color: "var(--text-secondary)" }}>Exp:</span> {ordinal(team.marketValueRank)} → {team.expectedPoints}pts
+              <span className="text-text-secondary">Exp:</span> {ordinal(team.marketValueRank)} → {team.expectedPoints}pts
             </span>
-            <span style={{ color: "var(--border-medium)" }}>|</span>
+            <span className="text-border-medium">|</span>
             <span>
-              <span style={{ color: "var(--text-secondary)" }}>Avg:</span> {formatValue(team.marketValue)}
+              <span className="text-text-secondary">Avg:</span> {formatValue(team.marketValue)}
             </span>
           </div>
 
           {/* Manager info */}
           {manager && (
-            <div className="mt-2 text-[11px] sm:text-sm" style={{ color: "var(--text-muted)" }}>
+            <div className="mt-2 text-[11px] sm:text-sm text-text-muted">
               <ManagerSection manager={manager} />
             </div>
           )}

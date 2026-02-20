@@ -44,6 +44,12 @@
 @theme inline {
   --color-background: var(--bg-base);
   --color-foreground: var(--text-primary);
+  --color-primary: var(--bg-elevated);
+  --color-primary-foreground: var(--text-primary);
+  --color-secondary: var(--bg-card);
+  --color-secondary-foreground: var(--text-primary);
+  --color-destructive: var(--accent-cold);
+  --color-destructive-foreground: var(--text-primary);
   --color-popover: var(--bg-elevated);
   --color-popover-foreground: var(--text-primary);
   --color-card: var(--bg-card);
@@ -55,6 +61,39 @@
   --color-border: var(--border-subtle);
   --color-input: var(--border-subtle);
   --color-ring: var(--accent-blue);
+  --radius: 0.625rem;
+
+  /* Text hierarchy */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  /* Surfaces */
+  --color-elevated: var(--bg-elevated);
+  --color-card-hover: var(--bg-card-hover);
+
+  /* Accent palette */
+  --color-accent-hot: var(--accent-hot);
+  --color-accent-hot-glow: var(--accent-hot-glow);
+  --color-accent-hot-faint: var(--accent-hot-faint);
+  --color-accent-hot-border: var(--accent-hot-border);
+  --color-accent-hot-muted: var(--accent-hot-muted);
+  --color-accent-cold: var(--accent-cold);
+  --color-accent-cold-glow: var(--accent-cold-glow);
+  --color-accent-cold-faint: var(--accent-cold-faint);
+  --color-accent-cold-border: var(--accent-cold-border);
+  --color-accent-cold-soft: var(--accent-cold-soft);
+  --color-accent-cold-muted: var(--accent-cold-muted);
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-glow: var(--accent-green-glow);
+  --color-accent-green-faint: var(--accent-green-faint);
+  --color-accent-green-border: var(--accent-green-border);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-gold: var(--accent-gold);
+
+  /* Borders */
+  --color-border-subtle: var(--border-subtle);
+  --color-border-medium: var(--border-medium);
 }
 
 * {
