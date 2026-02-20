@@ -81,7 +81,7 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
 
   if (manager.matches === 0) {
     return (
-      <span className="inline-flex shrink-0 px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
+      <span className="inline-flex shrink-0 px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium bg-elevated text-text-muted border border-border-subtle">
         <span className="sm:hidden">New</span>
         <span className="hidden sm:inline">New manager</span>
       </span>
@@ -105,20 +105,17 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
   const isBest = manager.ppgRank === 1 && !isOnly;
   const isWorst = manager.ppgRank === manager.totalComparableManagers && !isBest && !isOnly;
 
+  const badgeColors = isBest
+    ? "bg-green-600/15 text-green-500 border-green-600/30"
+    : isWorst
+    ? "bg-red-600/15 text-red-500 border-red-600/30"
+    : isOnly
+    ? "bg-blue-500/15 text-blue-500 border-blue-500/30"
+    : "bg-elevated text-text-secondary border-border-subtle";
+
   const badge = (
     <span
-      className={`inline-flex max-w-full items-center gap-0.5 px-1 py-0.5 sm:px-1.5 rounded text-[9px] sm:text-xs cursor-help transition-opacity hover:opacity-80 ${isBest || isWorst || isOnly ? "font-semibold" : ""}`}
-      style={{
-        background: isBest
-          ? "rgba(22, 163, 74, 0.15)"
-          : isWorst
-          ? "rgba(220, 38, 38, 0.15)"
-          : isOnly
-          ? "rgba(59, 130, 246, 0.15)"
-          : "var(--bg-elevated)",
-        color: isBest ? "#22c55e" : isWorst ? "#ef4444" : isOnly ? "#3b82f6" : "var(--text-secondary)",
-        border: `1px solid ${isBest ? "rgba(22, 163, 74, 0.3)" : isWorst ? "rgba(220, 38, 38, 0.3)" : isOnly ? "rgba(59, 130, 246, 0.3)" : "var(--border-subtle)"}`,
-      }}
+      className={`inline-flex max-w-full items-center gap-0.5 px-1 py-0.5 sm:px-1.5 rounded text-[9px] sm:text-xs cursor-help transition-opacity hover:opacity-80 border ${badgeColors} ${isBest || isWorst || isOnly ? "font-semibold" : ""}`}
     >
       {isBest && <span className="hidden sm:inline">🏆</span>}
       {isWorst && <span className="hidden sm:inline">⚠️</span>}
@@ -167,8 +164,7 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
                 href={manager.worstManager.profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium hover:underline"
-                style={{ color: "#ef4444" }}
+                className="font-medium hover:underline text-red-500"
               >
                 {manager.worstManager.name}
               </a>

@@ -82,8 +82,8 @@ function RankBadge({ rank }: { rank: number }) {
       className={cn(
         "w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shrink-0",
         rank <= 3
-          ? "bg-[var(--accent-hot)] text-[var(--bg-base)]"
-          : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"
+          ? "bg-accent-hot text-background"
+          : "bg-elevated text-text-muted"
       )}
     >
       {rank}
@@ -105,11 +105,11 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
           <RankBadge rank={rank} />
 
           {/* Player Image */}
-          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-lg overflow-hidden shrink-0 bg-[var(--bg-elevated)]">
+          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-lg overflow-hidden shrink-0 bg-elevated">
             {player.imageUrl && !player.imageUrl.includes("data:image") ? (
               <img src={player.imageUrl} alt={player.name} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-xl sm:text-2xl text-[var(--text-muted)]">
+              <div className="w-full h-full flex items-center justify-center text-xl sm:text-2xl text-text-muted">
                 ?
               </div>
             )}
@@ -123,15 +123,15 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
                   href={player.profileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-bold text-sm sm:text-base hover:underline block text-[var(--text-primary)]"
+                  className="font-bold text-sm sm:text-base hover:underline block text-text-primary"
                 >
                   {player.name}
                 </a>
-                <p className="text-xs sm:text-sm text-[var(--text-muted)]">
+                <p className="text-xs sm:text-sm text-text-muted">
                   {player.position}
                 </p>
               </div>
-              <span className="text-sm sm:text-lg font-medium shrink-0 text-[var(--accent-hot)] font-value">
+              <span className="text-sm sm:text-lg font-medium shrink-0 text-accent-hot font-value">
                 {formatValue(player.marketValue)}
               </span>
             </div>
@@ -141,7 +141,7 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
               {player.clubLogoUrl && (
                 <img src={player.clubLogoUrl} alt={player.club} className="w-5 h-5 sm:w-6 sm:h-6 object-contain bg-white rounded p-0.5" />
               )}
-              <span className="text-xs sm:text-sm text-[var(--text-secondary)]">
+              <span className="text-xs sm:text-sm text-text-secondary">
                 {player.club}
               </span>
               <Badge className={cn("text-[10px] sm:text-xs flex items-center gap-1", leagueStyle.bg, leagueStyle.text)}>
@@ -200,7 +200,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
             {team.clubLogoUrl ? (
               <img src={team.clubLogoUrl} alt={team.club} className="w-full h-full object-contain" />
             ) : (
-              <div className="text-xl text-[var(--text-muted)]">?</div>
+              <div className="text-xl text-text-muted">?</div>
             )}
           </div>
 
@@ -208,7 +208,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
+                <h3 className="font-bold text-sm sm:text-base text-text-primary">
                   {team.club}
                 </h3>
                 <Badge className={cn("mt-0.5 text-[10px] sm:text-xs flex items-center gap-1", leagueStyle.bg, leagueStyle.text)}>
@@ -217,10 +217,10 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                 </Badge>
               </div>
               <div className="text-right shrink-0">
-                <div className="text-sm sm:text-lg font-medium text-[var(--accent-hot)] font-value">
+                <div className="text-sm sm:text-lg font-medium text-accent-hot font-value">
                   {formatValueNum(team.totalValue)}
                 </div>
-                <div className="text-[10px] sm:text-xs text-[var(--text-muted)]">
+                <div className="text-[10px] sm:text-xs text-text-muted">
                   {team.count} {team.count === 1 ? "player" : "players"}
                 </div>
               </div>
@@ -229,7 +229,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
         </div>
 
         {/* Player list — mobile */}
-        <div className="mt-3 flex flex-col divide-y divide-[var(--border-subtle)] sm:hidden">
+        <div className="mt-3 flex flex-col divide-y divide-border-subtle sm:hidden">
           {team.players.map((player) => {
             const ri = formatReturnInfo(player.returnDate);
             const dur = formatInjuryDuration(player.injurySince);
@@ -244,15 +244,15 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                 {player.imageUrl && !player.imageUrl.includes("data:image") ? (
                   <img src={player.imageUrl} alt={player.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-[var(--bg-elevated)] shrink-0 flex items-center justify-center text-[10px] text-[var(--text-muted)]">?</div>
+                  <div className="w-8 h-8 rounded-full bg-elevated shrink-0 flex items-center justify-center text-[10px] text-text-muted">?</div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{player.name}</span>
-                    <span className="text-xs font-medium text-[var(--accent-hot)] font-value shrink-0">{player.marketValue}</span>
+                    <span className="text-xs font-semibold text-text-primary truncate">{player.name}</span>
+                    <span className="text-xs font-medium text-accent-hot font-value shrink-0">{player.marketValue}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] mt-0.5">
-                    <span className="text-[var(--text-secondary)]">{player.injury}</span>
+                  <div className="flex items-center gap-1 text-[10px] text-text-muted mt-0.5">
+                    <span className="text-text-secondary">{player.injury}</span>
                     {dur && <><span className="opacity-40">·</span><span>out {dur}</span></>}
                     {ri && <><span className="opacity-40">·</span><span className={ri.imminent ? "text-emerald-500 font-medium" : ""}>{ri.label}</span></>}
                   </div>
@@ -263,7 +263,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
         </div>
 
         {/* Player rows — desktop */}
-        <div className="mt-3 hidden sm:block rounded-lg border border-[var(--border-subtle)] overflow-hidden divide-y divide-[var(--border-subtle)]">
+        <div className="mt-3 hidden sm:block rounded-lg border border-border-subtle overflow-hidden divide-y divide-border-subtle">
           {team.players.map((player) => {
             const ri = formatReturnInfo(player.returnDate);
             const dur = formatInjuryDuration(player.injurySince);
@@ -273,26 +273,26 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                 href={player.profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 px-3 py-2 hover:bg-[var(--bg-card-hover)] transition-colors duration-150 odd:bg-[var(--bg-elevated)]/40"
+                className="flex items-center gap-3 px-3 py-2 hover:bg-card-hover transition-colors duration-150 odd:bg-elevated/40"
               >
                 {player.imageUrl && !player.imageUrl.includes("data:image") ? (
                   <img src={player.imageUrl} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
                 ) : (
-                  <div className="w-7 h-7 rounded-full bg-[var(--bg-elevated)] shrink-0 flex items-center justify-center text-[10px] text-[var(--text-muted)]">?</div>
+                  <div className="w-7 h-7 rounded-full bg-elevated shrink-0 flex items-center justify-center text-[10px] text-text-muted">?</div>
                 )}
-                <span className="text-sm font-medium text-[var(--text-primary)] w-36 lg:w-44 truncate shrink-0">{player.name}</span>
-                <span className="text-xs text-[var(--text-secondary)] flex-1 truncate">
-                  {player.injury}{dur && <span className="text-[var(--text-muted)]"> · out {dur}</span>}
+                <span className="text-sm font-medium text-text-primary w-36 lg:w-44 truncate shrink-0">{player.name}</span>
+                <span className="text-xs text-text-secondary flex-1 truncate">
+                  {player.injury}{dur && <span className="text-text-muted"> · out {dur}</span>}
                 </span>
                 {ri && (
                   <span className={cn(
                     "text-xs shrink-0",
-                    ri.imminent ? "text-emerald-500 font-medium" : "text-[var(--text-muted)]"
+                    ri.imminent ? "text-emerald-500 font-medium" : "text-text-muted"
                   )}>
                     {ri.label}
                   </span>
                 )}
-                <span className="text-sm font-medium text-[var(--accent-hot)] font-value shrink-0 w-16 text-right">{player.marketValue}</span>
+                <span className="text-sm font-medium text-accent-hot font-value shrink-0 w-16 text-right">{player.marketValue}</span>
               </a>
             );
           })}
@@ -305,21 +305,21 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
 function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; rank: number; index?: number }) {
   return (
     <Collapsible
-      className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] animate-slide-up"
+      className="rounded-xl border border-border-subtle bg-card animate-slide-up"
       style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
     >
-      <CollapsibleTrigger className="flex items-center gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 w-full cursor-pointer hover:bg-[var(--bg-card-hover)] transition-colors rounded-xl">
+      <CollapsibleTrigger className="flex items-center gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 w-full cursor-pointer hover:bg-card-hover transition-colors rounded-xl">
         <RankBadge rank={rank} />
-        <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)] flex-1 text-left">{group.injury}</h3>
-        <span className="text-[10px] sm:text-xs text-[var(--text-muted)] font-value shrink-0">{group.count}</span>
-        <span className="text-xs sm:text-sm font-medium text-[var(--accent-hot)] font-value shrink-0">{formatValueNum(group.totalValue)}</span>
-        <svg className="w-4 h-4 text-[var(--text-muted)] shrink-0 transition-transform [[data-state=open]>&]:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <h3 className="font-bold text-sm sm:text-base text-text-primary flex-1 text-left">{group.injury}</h3>
+        <span className="text-[10px] sm:text-xs text-text-muted font-value shrink-0">{group.count}</span>
+        <span className="text-xs sm:text-sm font-medium text-accent-hot font-value shrink-0">{formatValueNum(group.totalValue)}</span>
+        <svg className="w-4 h-4 text-text-muted shrink-0 transition-transform [[data-state=open]>&]:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        <div className="px-3 py-2 sm:px-4 sm:py-2.5 border-t border-[var(--border-subtle)] flex flex-wrap gap-1.5">
+        <div className="px-3 py-2 sm:px-4 sm:py-2.5 border-t border-border-subtle flex flex-wrap gap-1.5">
           {group.players.map((player) => {
             const ri = formatReturnInfo(player.returnDate);
             const dur = formatInjuryDuration(player.injurySince);
@@ -329,16 +329,16 @@ function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; ra
                 href={player.profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] sm:text-xs hover:bg-[var(--bg-card-hover)] transition-colors duration-150 bg-[var(--bg-elevated)] border border-[var(--border-subtle)]"
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] sm:text-xs hover:bg-card-hover transition-colors duration-150 bg-elevated border border-border-subtle"
               >
                 {player.imageUrl && !player.imageUrl.includes("data:image") && (
                   <img src={player.imageUrl} alt={player.name} className="w-4 h-4 sm:w-5 sm:h-5 rounded-full object-cover" />
                 )}
-                <span className="text-[var(--text-primary)]">{player.name}</span>
-                <span className="text-[var(--text-secondary)]">{player.club}</span>
-                <span className="text-[var(--accent-hot)] font-medium font-value">{player.marketValue}</span>
-                {dur && <span className="text-[var(--text-muted)]">out {dur}</span>}
-                {ri && <span className={cn("font-medium", ri.imminent ? "text-emerald-500" : "text-[var(--text-muted)]")}>{ri.label}</span>}
+                <span className="text-text-primary">{player.name}</span>
+                <span className="text-text-secondary">{player.club}</span>
+                <span className="text-accent-hot font-medium font-value">{player.marketValue}</span>
+                {dur && <span className="text-text-muted">out {dur}</span>}
+                {ri && <span className={cn("font-medium", ri.imminent ? "text-emerald-500" : "text-text-muted")}>{ri.label}</span>}
               </a>
             );
           })}
@@ -351,14 +351,14 @@ function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; ra
 function StatCell({ label, value, sub, accent = false }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
     <div className="flex flex-col gap-0.5 min-w-0">
-      <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[var(--text-muted)]">{label}</div>
+      <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-text-muted">{label}</div>
       <div className={cn(
         "text-sm sm:text-base font-bold",
-        accent ? "text-[var(--accent-hot)] font-value" : "text-[var(--text-primary)]"
+        accent ? "text-accent-hot font-value" : "text-text-primary"
       )}>
         {value}
       </div>
-      {sub && <div className="text-[10px] sm:text-xs text-[var(--text-secondary)]">{sub}</div>}
+      {sub && <div className="text-[10px] sm:text-xs text-text-secondary">{sub}</div>}
     </div>
   );
 }
@@ -376,8 +376,8 @@ function StatsHighlights({
   const topInjury = injuryTypeGroups[0] ?? null;
 
   return (
-    <div className="mb-6 sm:mb-8 animate-scale-in rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] overflow-hidden">
-      <div className="grid grid-cols-2 divide-x divide-[var(--border-subtle)]">
+    <div className="mb-6 sm:mb-8 animate-scale-in rounded-xl border border-border-subtle bg-elevated overflow-hidden">
+      <div className="grid grid-cols-2 divide-x divide-border-subtle">
         {/* Hardest Hit Club */}
         {hardestHitClub && (
           <div className="p-3 sm:p-4 flex items-start gap-2.5">
@@ -553,8 +553,8 @@ function SortToggle({ value, onChange }: { value: GroupSort; onChange: (v: Group
         className={cn(
           "px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer",
           value === "value"
-            ? "bg-[var(--accent-hot)]/15 text-[var(--accent-hot)]"
-            : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            ? "bg-accent-hot/15 text-accent-hot"
+            : "text-text-muted hover:text-text-secondary"
         )}
       >
         Total value
@@ -565,8 +565,8 @@ function SortToggle({ value, onChange }: { value: GroupSort; onChange: (v: Group
         className={cn(
           "px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer",
           value === "count"
-            ? "bg-[var(--accent-hot)]/15 text-[var(--accent-hot)]"
-            : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            ? "bg-accent-hot/15 text-accent-hot"
+            : "text-text-muted hover:text-text-secondary"
         )}
       >
         Most players

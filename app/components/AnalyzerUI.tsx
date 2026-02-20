@@ -117,7 +117,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
             </div>
           </div>
         ) : (
-          <Card className="h-full p-4 text-center bg-[var(--bg-elevated)] flex items-center justify-center">
+          <Card className="h-full p-4 text-center bg-elevated flex items-center justify-center">
             <p className="text-sm text-text-muted">
               No team leads 2+ categories in this window
             </p>
@@ -136,7 +136,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
             </div>
           </div>
         ) : (
-          <Card className="h-full p-4 text-center bg-[var(--bg-elevated)] flex items-center justify-center">
+          <Card className="h-full p-4 text-center bg-elevated flex items-center justify-center">
             <p className="text-sm text-text-muted">
               No team trails 2+ categories in this window
             </p>
@@ -173,7 +173,7 @@ function LeaderCard({
       ];
 
   return (
-    <Card className="h-full p-3 sm:p-4 bg-[var(--bg-elevated)]">
+    <Card className="h-full p-3 sm:p-4 bg-elevated">
       <h4
         className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 flex items-center gap-2"
         style={{ color: accentColor }}

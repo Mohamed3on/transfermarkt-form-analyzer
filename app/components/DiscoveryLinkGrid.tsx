@@ -40,19 +40,19 @@ export function DiscoveryLinkGrid({
 
   return (
     <section className={cn("mt-8 sm:mt-10", className)}>
-      <h2 className="text-base font-semibold text-[var(--text-primary)] sm:text-lg">{title}</h2>
-      {description && <p className="mt-1 text-sm text-[var(--text-muted)]">{description}</p>}
+      <h2 className="text-base font-semibold text-text-primary sm:text-lg">{title}</h2>
+      {description && <p className="mt-1 text-sm text-text-muted">{description}</p>}
 
       <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
         {visiblePresets.map((preset) => (
           <article
             key={preset.slug}
-            className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3"
+            className="rounded-lg border border-border-subtle bg-card p-3"
           >
-            <h3 className="text-sm font-medium text-[var(--text-primary)]">{preset.title}</h3>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">{preset.description}</p>
+            <h3 className="text-sm font-medium text-text-primary">{preset.title}</h3>
+            <p className="mt-1 text-xs text-text-muted">{preset.description}</p>
             <div className="mt-2 flex items-center gap-3 text-xs">
-              <Link href={getPresetTargetHref(preset)} className="text-[var(--accent-blue)] hover:underline">
+              <Link href={getPresetTargetHref(preset)} className="text-accent-blue hover:underline">
                 Open quick view
               </Link>
             </div>
@@ -62,7 +62,7 @@ export function DiscoveryLinkGrid({
 
       {(section || maxItems) && (
         <div className="mt-3">
-          <Link href="/discover" className="text-sm text-[var(--accent-hot)] hover:underline">
+          <Link href="/discover" className="text-sm text-accent-hot hover:underline">
             View all quick views
           </Link>
         </div>

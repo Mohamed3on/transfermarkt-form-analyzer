@@ -56,7 +56,7 @@ function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: strin
       >
         <ToggleGroupItem
           value="all"
-          className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-card)]/50 active:scale-[0.97] data-[state=on]:bg-[var(--bg-card)] data-[state=on]:border-[var(--accent-blue)] data-[state=on]:text-[var(--accent-blue)] data-[state=on]:shadow-[0_0_12px_rgba(88,166,255,0.2)]"
+          className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 border border-border-subtle text-text-muted hover:text-text-secondary hover:bg-card/50 active:scale-[0.97] data-[state=on]:bg-card data-[state=on]:border-accent-blue data-[state=on]:text-accent-blue data-[state=on]:shadow-[0_0_12px_rgba(88,166,255,0.2)]"
         >
           All Leagues
         </ToggleGroupItem>
@@ -69,7 +69,7 @@ function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: strin
             <ToggleGroupItem
               key={league.code}
               value={league.name}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 flex items-center gap-2 border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] active:scale-[0.97]"
+              className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 flex items-center gap-2 border border-border-subtle text-text-secondary hover:text-text-primary hover:bg-card-hover active:scale-[0.97]"
               style={isSelected ? {
                 backgroundColor: color,
                 borderColor: color,
@@ -97,10 +97,6 @@ interface TeamCardProps {
 function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
   const isOver = type === "over";
   const manager = team.manager;
-  const accentColor = isOver ? "#16a34a" : "#dc2626";
-  const accentFaint = isOver ? "rgba(22,163,74,0.06)" : "rgba(220,38,38,0.06)";
-  const accentBorder = isOver ? "rgba(22,163,74,0.2)" : "rgba(220,38,38,0.2)";
-  const accentMuted = isOver ? "rgba(22,163,74,0.6)" : "rgba(220,38,38,0.6)";
 
   return (
     <Card
@@ -113,17 +109,13 @@ function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Rank */}
             <div
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shrink-0"
-              style={{
-                background: rank <= 3 ? accentColor : "var(--bg-elevated)",
-                color: rank <= 3 ? "#fff" : "var(--text-muted)",
-              }}
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 ${rank <= 3 ? (isOver ? "bg-green-600 text-white" : "bg-red-600 text-white") : "bg-elevated text-text-muted"}`}
             >
               {rank}
             </div>
 
             {/* Club Logo */}
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1 bg-white" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1 bg-white shadow-sm">
               {team.logoUrl ? (
                 <img src={team.logoUrl} alt={team.name} className="w-full h-full object-contain" />
               ) : (
@@ -180,21 +172,15 @@ function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
 
         {/* Delta strip */}
         <div
-          className="w-16 sm:w-20 flex flex-col items-center justify-center shrink-0"
-          style={{
-            borderLeft: `1px solid ${accentBorder}`,
-            background: accentFaint,
-          }}
+          className={`w-16 sm:w-20 flex flex-col items-center justify-center shrink-0 border-l ${isOver ? "border-l-green-600/20 bg-green-600/[0.06]" : "border-l-red-600/20 bg-red-600/[0.06]"}`}
         >
           <span
-            className="text-xl sm:text-2xl font-display"
-            style={{ color: accentColor }}
+            className={`text-xl sm:text-2xl font-display ${isOver ? "text-green-600" : "text-red-600"}`}
           >
             {team.deltaPts > 0 ? `+${team.deltaPts}` : team.deltaPts}
           </span>
           <span
-            className="text-[9px] uppercase tracking-wider mt-0.5"
-            style={{ color: accentMuted }}
+            className={`text-[9px] uppercase tracking-wider mt-0.5 ${isOver ? "text-green-600/60" : "text-red-600/60"}`}
           >
             pts
           </span>
@@ -230,28 +216,28 @@ function TeamListsGrid({
         {/* Headers */}
         <div className="grid grid-cols-2 gap-6 mb-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2 shrink-0" style={{ color: "#16a34a" }}>
+            <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2 shrink-0 text-green-600">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
               Overperformers
             </h2>
-            <span className="text-xs px-2 py-0.5 rounded-full shrink-0" style={{ background: "rgba(22,163,74,0.1)", color: "rgba(22,163,74,0.7)" }}>
+            <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-green-600/10 text-green-600/70">
               {overperformers.length}
             </span>
-            <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(22,163,74,0.3), transparent)" }} />
+            <div className="flex-1 h-px bg-gradient-to-r from-green-600/30" />
           </div>
           <div className="flex items-center gap-3">
-            <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2 shrink-0" style={{ color: "#dc2626" }}>
+            <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2 shrink-0 text-red-600">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
               Underperformers
             </h2>
-            <span className="text-xs px-2 py-0.5 rounded-full shrink-0" style={{ background: "rgba(220,38,38,0.1)", color: "rgba(220,38,38,0.7)" }}>
+            <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-red-600/10 text-red-600/70">
               {underperformers.length}
             </span>
-            <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(220,38,38,0.3), transparent)" }} />
+            <div className="flex-1 h-px bg-gradient-to-r from-red-600/30" />
           </div>
         </div>
 
@@ -280,16 +266,16 @@ function TeamListsGrid({
         {/* Overperformers */}
         <div>
           <div className="flex items-center gap-3 mb-3">
-            <h2 className="text-lg font-bold flex items-center gap-2 shrink-0" style={{ color: "#16a34a" }}>
+            <h2 className="text-lg font-bold flex items-center gap-2 shrink-0 text-green-600">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
               Overperformers
             </h2>
-            <span className="text-xs px-2 py-0.5 rounded-full shrink-0" style={{ background: "rgba(22,163,74,0.1)", color: "rgba(22,163,74,0.7)" }}>
+            <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-green-600/10 text-green-600/70">
               {overperformers.length}
             </span>
-            <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(22,163,74,0.3), transparent)" }} />
+            <div className="flex-1 h-px bg-gradient-to-r from-green-600/30" />
           </div>
           <div className="space-y-3">
             {overperformers.map((team, idx) => (
@@ -303,16 +289,16 @@ function TeamListsGrid({
         {/* Underperformers */}
         <div>
           <div className="flex items-center gap-3 mb-3">
-            <h2 className="text-lg font-bold flex items-center gap-2 shrink-0" style={{ color: "#dc2626" }}>
+            <h2 className="text-lg font-bold flex items-center gap-2 shrink-0 text-red-600">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
               Underperformers
             </h2>
-            <span className="text-xs px-2 py-0.5 rounded-full shrink-0" style={{ background: "rgba(220,38,38,0.1)", color: "rgba(220,38,38,0.7)" }}>
+            <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-red-600/10 text-red-600/70">
               {underperformers.length}
             </span>
-            <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, rgba(220,38,38,0.3), transparent)" }} />
+            <div className="flex-1 h-px bg-gradient-to-r from-red-600/30" />
           </div>
           <div className="space-y-3">
             {underperformers.map((team, idx) => (

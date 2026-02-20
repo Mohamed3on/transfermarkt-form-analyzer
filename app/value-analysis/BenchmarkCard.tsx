@@ -45,9 +45,9 @@ export function BenchmarkCard({
               style={{ background: "linear-gradient(135deg, #ffd700, #ff8c00)", filter: "blur(4px)" }}
             />
             {imageUrl ? (
-              <img src={imageUrl} alt={name} className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover" style={{ border: "2px solid rgba(255, 215, 0, 0.5)" }} />
+              <img src={imageUrl} alt={name} className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border-2 border-accent-gold/50" />
             ) : (
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center text-xl sm:text-2xl font-bold bg-elevated text-accent-gold" style={{ border: "2px solid rgba(255, 215, 0, 0.5)" }}>
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center text-xl sm:text-2xl font-bold bg-elevated text-accent-gold border-2 border-accent-gold/50">
                 {name.charAt(0)}
               </div>
             )}
@@ -88,7 +88,7 @@ export function BenchmarkCard({
         </div>
 
         {/* Mobile bottom */}
-        <div className="sm:hidden flex items-center justify-between gap-3 pt-3" style={{ borderTop: "1px solid rgba(255, 215, 0, 0.15)" }}>
+        <div className="sm:hidden flex items-center justify-between gap-3 pt-3 border-t border-t-accent-gold/15">
           <div className="flex items-center gap-3 text-xs text-text-secondary">
             {mobileStats}
           </div>
@@ -99,7 +99,7 @@ export function BenchmarkCard({
       </div>
 
       {footer && (
-        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255, 215, 0, 0.15)" }}>
+        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 flex items-center justify-between border-t border-t-accent-gold/15">
           {footer}
         </div>
       )}

@@ -12,8 +12,7 @@ const QUICK_VIEW_LINKS = [
 export function Footer() {
   return (
     <footer
-      className="mt-auto border-t border-border-subtle"
-      style={{ background: "rgba(8, 10, 12, 0.9)" }}
+      className="mt-auto border-t border-border-subtle bg-black/90"
     >
       <div className="page-container py-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -66,13 +65,13 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[var(--border-subtle)] pt-3 text-xs">
-          <span className="font-medium text-[var(--text-secondary)]">Quick Views</span>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-3 text-xs">
+          <span className="font-medium text-text-secondary">Quick Views</span>
           {QUICK_VIEW_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-[var(--text-muted)] transition-colors duration-150 hover:text-[var(--text-primary)]"
+              className="text-text-muted transition-colors duration-150 hover:text-text-primary"
             >
               {link.label}
             </Link>

@@ -70,7 +70,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--border-subtle)] bg-[rgba(8,10,12,0.9)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-border-subtle bg-black/90 backdrop-blur-xl">
       <div className="page-container flex items-center justify-between py-3 sm:py-4">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-2">
@@ -81,8 +81,8 @@ export function Header() {
             height={28}
             className="transition-opacity group-hover:opacity-80"
           />
-          <h1 className="text-lg font-black tracking-tight text-[var(--text-primary)] transition-opacity group-hover:opacity-80 sm:text-xl">
-            Form<span className="text-[var(--accent-hot)]">Tracker</span>
+          <h1 className="text-lg font-black tracking-tight text-text-primary transition-opacity group-hover:opacity-80 sm:text-xl">
+            Form<span className="text-accent-hot">Tracker</span>
           </h1>
         </Link>
 
@@ -96,7 +96,7 @@ export function Header() {
                   key={href}
                   variant="ghost"
                   size="sm"
-                  className="h-auto cursor-default px-3 py-1.5 text-sm bg-[var(--bg-elevated)] text-[var(--text-primary)]"
+                  className="h-auto cursor-default px-3 py-1.5 text-sm bg-elevated text-text-primary"
                   disabled
                   aria-current="page"
                 >
@@ -146,7 +146,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 text-[var(--text-primary)] sm:hidden"
+                className="h-9 w-9 p-0 text-text-primary sm:hidden"
                 aria-label="Open menu"
               >
                 <Menu className="h-5 w-5" />
@@ -154,7 +154,7 @@ export function Header() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-64 border-[var(--border-subtle)] bg-[var(--bg-base)]"
+              className="w-64 border-border-subtle bg-background"
             >
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <nav className="mt-8 flex flex-col gap-1">
@@ -165,7 +165,7 @@ export function Header() {
                       <span
                         key={href}
                         aria-current="page"
-                        className="rounded-md bg-[var(--bg-elevated)] px-3 py-2.5 text-base font-medium text-[var(--accent-hot)]"
+                        className="rounded-md bg-elevated px-3 py-2.5 text-base font-medium text-accent-hot"
                       >
                         {label}
                       </span>
@@ -175,7 +175,7 @@ export function Header() {
                           href={href}
                           className={cn(
                             "rounded-md px-3 py-2.5 text-base font-medium transition-colors",
-                            "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
+                            "text-text-secondary hover:bg-elevated hover:text-text-primary"
                           )}
                         >
                           {label}
