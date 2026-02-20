@@ -68,7 +68,6 @@ export function TeamCard({ team, type, manager, managerLoading, compact }: TeamC
   const showManager = manager !== undefined || managerLoading;
   const isTop = type === "top";
   const accentColor = isTop ? "var(--accent-hot)" : "var(--accent-cold)";
-  const glowColor = isTop ? "var(--accent-hot-glow)" : "var(--accent-cold-glow)";
 
   if (compact) {
     return (

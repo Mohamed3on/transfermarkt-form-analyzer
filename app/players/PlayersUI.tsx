@@ -6,7 +6,7 @@ import { Combobox } from "@/components/Combobox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { RangeFilter } from "@/components/RangeFilter";
 import { FilterButton } from "@/components/FilterButton";
-import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
+import { PositionDisplay } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { filterPlayersByLeagueAndClub, filterTop5 } from "@/lib/filter-players";
 import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
