@@ -41,28 +41,6 @@ export const metadata = createPageMetadata({
   ],
 });
 
-const snapshotTiles = [
-  {
-    value: "5",
-    label: "Top Leagues",
-    detail: "Premier League, La Liga, Bundesliga, Serie A, Ligue 1",
-  },
-  {
-    value: "500+",
-    label: "Players",
-    detail: "Player profiles with value, minutes, G+A, penalties, loans, and status context",
-  },
-  {
-    value: "2",
-    label: "Value Modes",
-    detail: "Output mode and minutes mode for spotting overpriced names and bargains",
-  },
-  {
-    value: "All Day",
-    label: "Refresh",
-    detail: "Transfermarkt-backed data refreshed multiple times per day, plus a manual refresh button in the header",
-  },
-] as const;
 
 const MIN_VALUE_ANALYSIS_MINUTES = 260;
 
@@ -742,6 +720,11 @@ export default async function Home() {
       `${mostOverperformingTeam.league} · ${formatSigned(mostOverperformingTeam.deltaPts)} pts vs expected`,
       { manager: getManagerForClub(mostOverperformingTeam.clubId), tone: "green" },
     ),
+    mostUnderperformingTeams[0] && teamItem(
+      mostUnderperformingTeams[0], "Biggest underperformer", "/team-form",
+      `${mostUnderperformingTeams[0].league} · ${formatSigned(mostUnderperformingTeams[0].deltaPts)} pts vs expected`,
+      { manager: getManagerForClub(mostUnderperformingTeams[0].clubId), tone: "red" },
+    ),
     mostOverpricedPlayer && playerItem(
       mostOverpricedPlayer, "Most overpriced player", "/value-analysis?mode=ga",
       `${mostOverpricedPlayer.marketValueDisplay} · outscored by ${mostOverpricedPlayer.count} cheaper peers`,
@@ -963,19 +946,6 @@ export default async function Home() {
             </Card>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {snapshotTiles.map((item) => (
-              <Card key={item.label} className="border-border-subtle bg-black/85 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-border-medium">
-                <CardHeader className="pb-0 sm:pb-0">
-                  <CardDescription className="text-xs uppercase tracking-[0.15em] text-text-muted">
-                    {item.label}
-                  </CardDescription>
-                  <CardTitle className="text-2xl font-black text-text-primary">{item.value}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0 text-xs text-text-secondary">{item.detail}</CardContent>
-              </Card>
-            ))}
-          </div>
         </div>
       </section>
 
