@@ -65,7 +65,7 @@ function fetchLeagueInjuredCached(league: (typeof LEAGUES)[number]): Promise<Inj
       return parseInjuredPlayers($, league.name);
     },
     [`injured-${league.code}`],
-    { revalidate: 7200, tags: ["injured"] }
+    { revalidate: 3600, tags: ["injured"] }
   )();
 }
 
