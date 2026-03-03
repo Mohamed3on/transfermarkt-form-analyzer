@@ -13,10 +13,10 @@ function timeAgo(date: Date): string {
   return "just now";
 }
 
-export async function DataLastUpdated() {
+export async function DataLastUpdated({ file = "updated-at.txt" }: { file?: string } = {}) {
   let updatedAt: Date;
   try {
-    const raw = await readFile(join(process.cwd(), "data", "updated-at.txt"), "utf-8");
+    const raw = await readFile(join(process.cwd(), "data", file), "utf-8");
     updatedAt = new Date(raw.trim());
   } catch {
     updatedAt = new Date();

@@ -240,6 +240,9 @@ async function writeResult(result: MarketValueMoversResult, cfg: DirectionConfig
 async function main() {
   await processDirection("losers");
   await processDirection("winners");
+  const tsPath = join(process.cwd(), "data", "biggest-movers-updated-at.txt");
+  await writeFile(tsPath, new Date().toISOString());
+  console.log(`[biggest-movers] Wrote timestamp to ${tsPath}`);
 }
 
 main().catch((err) => {

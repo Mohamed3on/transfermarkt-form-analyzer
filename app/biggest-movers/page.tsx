@@ -1,6 +1,7 @@
 import { findRepeatLosers } from "@/lib/biggest-losers";
 import { findRepeatWinners } from "@/lib/biggest-winners";
 import { BiggestMoversUI } from "./BiggestMoversUI";
+import { DataLastUpdated } from "@/app/components/DataLastUpdated";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata = createPageMetadata({
@@ -20,5 +21,10 @@ export default async function BiggestMoversPage() {
     findRepeatLosers(),
     findRepeatWinners(),
   ]);
-  return <BiggestMoversUI losers={losers} winners={winners} />;
+  return (
+    <>
+      <BiggestMoversUI losers={losers} winners={winners} />
+      <DataLastUpdated file="biggest-movers-updated-at.txt" />
+    </>
+  );
 }
