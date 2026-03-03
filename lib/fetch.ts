@@ -23,19 +23,19 @@ function releaseSlot() {
   queue.shift()?.();
 }
 
-export async function fetchPage(url: string, revalidate?: number): Promise<string> {
+export async function fetchPage(url: string, revalidate?: number, extraHeaders?: Record<string, string>): Promise<string> {
   await acquireSlot();
   try {
-    return await fetchPageInner(url, revalidate);
+    return await fetchPageInner(url, revalidate, extraHeaders);
   } finally {
     releaseSlot();
   }
 }
 
-async function fetchPageInner(url: string, revalidate?: number): Promise<string> {
+async function fetchPageInner(url: string, revalidate?: number, extraHeaders?: Record<string, string>): Promise<string> {
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const response = await fetch(url, {
-      headers: HEADERS,
+      headers: { ...HEADERS, ...extraHeaders },
       ...(revalidate !== undefined ? { next: { revalidate } } : { cache: "no-store" }),
     });
     const html = await response.text();

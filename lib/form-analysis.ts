@@ -53,17 +53,19 @@ function parseTeamRow($: cheerio.CheerioAPI, row: any): TeamStats | null {
   return { name, league, country, leaguePosition, wins, draws, losses, goalsScored: scored, goalsConceded: conceded, goalDiff, points, logoUrl, clubUrl, clubId };
 }
 
+const AJAX_HEADERS = { "X-Requested-With": "XMLHttpRequest" };
+
 async function fetchAllTeams(period: number): Promise<TeamStats[]> {
   const teams: TeamStats[] = [];
-  const baseUrl = `${BASE_URL}/verein-statistik/formtabelle/statistik/stat/ajax/yw1/sortierung/best/letzte/${period}/selectedOptionKey/6/plus/1/sort/punkte.desc`;
+  const baseUrl = `${BASE_URL}/verein-statistik/formtabelle/statistik/stat/ajax/yw1/sortierung/best/letzte/${period}/continentIds%5B0%5D/6/limit/5/leagueLevels%5B0%5D/1/typeIds%5B0%5D/1/typeIds%5B1%5D/2/typeIds%5B2%5D/3/plus/1/sort/punkte.desc?ajax=yw1`;
 
   const pageUrls = Array.from({ length: 4 }, (_, i) => {
     const page = i + 1;
-    return page === 1 ? baseUrl : `${baseUrl}/page/${page}`;
+    return page === 1 ? baseUrl : `${baseUrl.replace("?ajax=yw1", "")}/page/${page}?ajax=yw1`;
   });
 
   // fetchPage limits concurrency globally to avoid rate limiting
-  const pages = await Promise.all(pageUrls.map(fetchPage));
+  const pages = await Promise.all(pageUrls.map((url) => fetchPage(url, undefined, AJAX_HEADERS)));
 
   for (const html of pages) {
     const $ = cheerio.load(html);
