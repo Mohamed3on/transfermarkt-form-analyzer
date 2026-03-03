@@ -1,4 +1,5 @@
 import { getAnalysis } from "@/lib/form-analysis";
+import { getTeamFormData } from "@/lib/team-form";
 import { AnalyzerUI } from "@/app/components/AnalyzerUI";
 import { createPageMetadata } from "@/lib/metadata";
 import { DiscoveryLinkGrid } from "@/app/components/DiscoveryLinkGrid";
@@ -18,11 +19,18 @@ export const metadata = createPageMetadata({
 });
 
 export default async function FormPage() {
-  const data = await getAnalysis();
+  const [data, teamForm] = await Promise.all([getAnalysis(), getTeamFormData()]);
   if (data.analysis.length === 0) throw new Error("Empty form data");
+
+  // Build clubId → deltaPts map from expected-position data
+  const deltaMap: Record<string, number> = {};
+  for (const t of [...teamForm.overperformers, ...teamForm.underperformers]) {
+    deltaMap[t.clubId] = t.deltaPts;
+  }
+
   return (
     <>
-      <AnalyzerUI initialData={data} />
+      <AnalyzerUI initialData={data} deltaMap={deltaMap} />
       <DiscoveryLinkGrid
         title="Explore Supporting Boards"
         description="Move from form signals into player value and injury diagnostics."

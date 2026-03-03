@@ -19,6 +19,7 @@ export interface TeamFormResponse {
 
 interface TeamFormUIProps {
   initialData: TeamFormResponse;
+  formLeaders?: Record<string, { type: "top" | "bottom"; count: number }>;
 }
 
 function getLeagueColor(league: string): string {
@@ -92,9 +93,10 @@ interface TeamCardProps {
   rank: number;
   type: "over" | "under";
   index?: number;
+  formLeader?: { type: "top" | "bottom"; count: number };
 }
 
-function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
+function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
   const isOver = type === "over";
   const manager = team.manager;
 
@@ -133,19 +135,26 @@ function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
               >
                 {team.name}
               </a>
-              <a href={getLeagueUrl(team.league)} target="_blank" rel="noopener noreferrer">
-                <Badge
-                  className="mt-0.5 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs shrink-0 flex items-center gap-1 w-fit hover:opacity-80 transition-opacity"
-                  style={{
-                    background: getLeagueColor(team.league),
-                    color: team.league === "Ligue 1" ? "#000" : "#fff",
-                    border: "none",
-                  }}
-                >
-                  {getLeagueLogoUrl(team.league) && <img src={getLeagueLogoUrl(team.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
-                  {team.league}
-                </Badge>
-              </a>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <a href={getLeagueUrl(team.league)} target="_blank" rel="noopener noreferrer">
+                  <Badge
+                    className="px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs shrink-0 flex items-center gap-1 w-fit hover:opacity-80 transition-opacity"
+                    style={{
+                      background: getLeagueColor(team.league),
+                      color: team.league === "Ligue 1" ? "#000" : "#fff",
+                      border: "none",
+                    }}
+                  >
+                    {getLeagueLogoUrl(team.league) && <img src={getLeagueLogoUrl(team.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
+                    {team.league}
+                  </Badge>
+                </a>
+                {formLeader && (
+                  <a href="/form" className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-semibold hover:opacity-80 transition-opacity ${formLeader.type === "top" ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}>
+                    {formLeader.type === "top" ? "↑ Best" : "↓ Worst"} form
+                  </a>
+                )}
+              </div>
             </div>
           </div>
 
@@ -196,9 +205,11 @@ function TeamCard({ team, rank, type, index = 0 }: TeamCardProps) {
 function TeamListsGrid({
   overperformers,
   underperformers,
+  formLeaders,
 }: {
   overperformers: TeamFormEntry[];
   underperformers: TeamFormEntry[];
+  formLeaders?: Record<string, { type: "top" | "bottom"; count: number }>;
 }) {
   const maxLength = Math.max(overperformers.length, underperformers.length);
 
@@ -208,6 +219,7 @@ function TeamListsGrid({
       rank={rank}
       type={type}
       index={index}
+      formLeader={formLeaders?.[team.clubId]}
     />
   );
 
@@ -315,7 +327,7 @@ function TeamListsGrid({
   );
 }
 
-export function TeamFormUI({ initialData }: TeamFormUIProps) {
+export function TeamFormUI({ initialData, formLeaders }: TeamFormUIProps) {
   const data = initialData;
   const { params, update } = useQueryParams("/expected-position");
   const requestedLeague = params.get("league");
@@ -348,6 +360,7 @@ export function TeamFormUI({ initialData }: TeamFormUIProps) {
       <TeamListsGrid
         overperformers={filteredOverperformers}
         underperformers={filteredUnderperformers}
+        formLeaders={formLeaders}
       />
     </>
   );

@@ -52,6 +52,7 @@ function AggregatedTeamCard({
   managerLoading,
   index,
   isLeader,
+  deltaPts,
 }: {
   team: AggregatedTeam;
   type: "top" | "bottom";
@@ -59,6 +60,7 @@ function AggregatedTeamCard({
   managerLoading?: boolean;
   index: number;
   isLeader: boolean;
+  deltaPts?: number;
 }) {
   const isTop = type === "top";
   const grouped = groupEntries(team.entries);
@@ -115,6 +117,11 @@ function AggregatedTeamCard({
             ) : (
               team.league
             )}
+            {deltaPts != null && (
+              <a href="/expected-position" className={`font-value text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full hover:opacity-80 transition-opacity ${deltaPts > 0 ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}>
+                {deltaPts > 0 ? "+" : ""}{deltaPts} vs exp
+              </a>
+            )}
           </div>
         </div>
         <Badge
@@ -153,7 +160,7 @@ function AggregatedTeamCard({
   );
 }
 
-function AggregatedSection({ teams, type }: { teams: AggregatedTeam[]; type: "top" | "bottom" }) {
+function AggregatedSection({ teams, type, deltaMap }: { teams: AggregatedTeam[]; type: "top" | "bottom"; deltaMap?: Record<string, number> }) {
   const clubIds = useMemo(() => teams.map((t) => t.clubId).filter(Boolean), [teams]);
 
   const managerQueries = useQueries({
@@ -209,6 +216,7 @@ function AggregatedSection({ teams, type }: { teams: AggregatedTeam[]; type: "to
             managerLoading={loadingSet.has(team.clubId)}
             index={index}
             isLeader={team.count === maxCount}
+            deltaPts={deltaMap?.[team.clubId]}
           />
         ))}
       </div>
@@ -350,7 +358,7 @@ function LeaderCard({
   );
 }
 
-export function AnalyzerUI({ initialData }: { initialData: AnalysisResult }) {
+export function AnalyzerUI({ initialData, deltaMap }: { initialData: AnalysisResult; deltaMap?: Record<string, number> }) {
   const [periodsOpen, setPeriodsOpen] = useState(false);
   const hasAggregated = initialData.aggregatedTop.length > 0 || initialData.aggregatedBottom.length > 0;
 
@@ -380,10 +388,10 @@ export function AnalyzerUI({ initialData }: { initialData: AnalysisResult }) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
               {initialData.aggregatedTop.length > 0 && (
-                <AggregatedSection teams={initialData.aggregatedTop} type="top" />
+                <AggregatedSection teams={initialData.aggregatedTop} type="top" deltaMap={deltaMap} />
               )}
               {initialData.aggregatedBottom.length > 0 && (
-                <AggregatedSection teams={initialData.aggregatedBottom} type="bottom" />
+                <AggregatedSection teams={initialData.aggregatedBottom} type="bottom" deltaMap={deltaMap} />
               )}
             </div>
           </div>
