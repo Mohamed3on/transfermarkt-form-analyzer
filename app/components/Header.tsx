@@ -17,11 +17,34 @@ import {
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
 
-async function revalidateAll() {
-  const results = await Promise.all([
-    fetch("/api/revalidate", { method: "POST" }),
-    fetch("/api/refresh-data", { method: "POST" }),
-  ]);
+const PAGE_CACHE_MAP: Record<string, { tags?: string[]; workflow?: boolean }> = {
+  "/form": { tags: ["form-analysis"] },
+  "/expected-position": { tags: ["team-form"] },
+  "/injured": { tags: ["injured"] },
+  "/players": { workflow: true },
+  "/value-analysis": { workflow: true },
+  "/biggest-movers": { workflow: true },
+};
+
+async function refreshPage(pathname: string) {
+  const config = PAGE_CACHE_MAP[pathname];
+  const fetches: Promise<Response>[] = [];
+
+  if (!config || config.tags) {
+    fetches.push(
+      fetch("/api/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tags: config?.tags, path: pathname }),
+      })
+    );
+  }
+
+  if (!config || config.workflow) {
+    fetches.push(fetch("/api/refresh-data", { method: "POST" }));
+  }
+
+  const results = await Promise.all(fetches);
   const failures = results.filter((res) => !res.ok);
   if (failures.length > 0) {
     for (const res of failures) console.error(`[refresh] ${res.url} returned ${res.status}`);
@@ -65,7 +88,7 @@ export function Header() {
   const handleBustCache = async () => {
     setIsRevalidating(true);
     try {
-      await revalidateAll();
+      await refreshPage(pathname);
       toast.success("Data refreshed");
       queryClient.clear();
       router.refresh();
