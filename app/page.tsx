@@ -28,16 +28,17 @@ import type { AggregatedTeam, ManagerInfo, MarketValueMover, MinutesValuePlayer 
 export const revalidate = 7200; // 2 hours — matches form/team-form cache
 
 export const metadata = createPageMetadata({
-  title: "Home",
+  title: "Football Form, Value & Injury Analytics",
   description:
-    "Track form swings, value gaps, player output, and injury impact across Europe's top five leagues.",
+    "See what the table misses: form swings, value gaps, player output, and injury cost across the Premier League, La Liga, Bundesliga, Serie A, and Ligue 1.",
   path: "/",
   keywords: [
     "football analytics",
-    "football stats for fans",
+    "soccer statistics",
     "team form tracker",
     "player value analysis",
     "injury impact football",
+    "transfermarkt analytics",
   ],
 });
 

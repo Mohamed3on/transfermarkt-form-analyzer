@@ -8,12 +8,14 @@ export const dynamic = "force-dynamic";
 export const metadata = createPageMetadata({
   title: "Injury Impact Tracker",
   description:
-    "Track where injury absences carry the highest market value impact across Europe's top 5 leagues.",
+    "Track the costliest injury absences by player, club, and injury type across the Premier League, La Liga, Bundesliga, Serie A, and Ligue 1.",
   path: "/injured",
   keywords: [
-    "highest value injured players",
-    "injury value loss by club",
     "football injury tracker",
+    "soccer injuries today",
+    "highest value injured players",
+    "injury cost by club",
+    "premier league injuries",
   ],
 });
 

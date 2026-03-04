@@ -8,12 +8,14 @@ import { DiscoveryLinkGrid } from "@/app/components/DiscoveryLinkGrid";
 export const metadata = createPageMetadata({
   title: "Player Explorer",
   description:
-    "Browse and filter 500+ elite players by value, minutes, games, and G+A across Europe's top leagues.",
+    "Filter and rank 500+ elite players by market value, minutes, goals + assists, loans, and new signings across the Premier League, La Liga, Bundesliga, Serie A, and Ligue 1.",
   path: "/players",
   keywords: [
-    "top valued loan players",
+    "football player stats",
+    "soccer player rankings",
+    "top loan players europe",
     "highest scoring new signings",
-    "football player explorer",
+    "player minutes analysis",
   ],
 });
 

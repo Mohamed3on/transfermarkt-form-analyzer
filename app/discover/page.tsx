@@ -10,13 +10,14 @@ import { createPageMetadata } from "@/lib/metadata";
 export const metadata = createPageMetadata({
   title: "Quick Views",
   description:
-    "Curated quick views (saved filters) across players, value analysis, injuries, and team performance.",
+    "Curated preset filters across player rankings, value analysis, injury impact, and team form for the Premier League, La Liga, Bundesliga, Serie A, and Ligue 1.",
   path: "/discover",
   keywords: [
-    "football quick views",
-    "loan players ranking",
-    "new signings performance",
+    "football analytics shortcuts",
+    "loan players ranking europe",
+    "new signings performance tracker",
     "injury impact rankings",
+    "soccer quick stats",
   ],
 });
 

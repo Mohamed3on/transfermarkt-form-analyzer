@@ -25,7 +25,7 @@ export function createPageMetadata({ title, description, path, keywords = [] }: 
       url: absoluteUrl(path),
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: fullTitle,
       description,
     },

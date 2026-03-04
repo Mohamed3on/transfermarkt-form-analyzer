@@ -10,12 +10,14 @@ import { DiscoveryLinkGrid } from "@/app/components/DiscoveryLinkGrid";
 export const metadata = createPageMetadata({
   title: "Over/Under",
   description:
-    "Find overpriced players who underdeliver and bargain players who outperform their price tag. Two lenses - G+A output and minutes played.",
+    "Find overpriced players who underdeliver and bargain players outperforming their price tag across Europe's top 5 leagues. Analyze by G+A output and minutes played.",
   path: "/value-analysis",
   keywords: [
     "overpriced football players",
-    "bargain football players",
-    "minutes value analysis",
+    "bargain soccer players",
+    "player value efficiency",
+    "underperforming expensive players",
+    "minutes per goal analysis",
   ],
 });
 

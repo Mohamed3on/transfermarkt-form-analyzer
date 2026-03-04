@@ -10,6 +10,7 @@ const CORE_ROUTES = [
   "/players",
   "/value-analysis",
   "/injured",
+  "/biggest-movers",
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {

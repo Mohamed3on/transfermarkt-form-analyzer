@@ -9,12 +9,14 @@ export const dynamic = "force-dynamic";
 export const metadata = createPageMetadata({
   title: "Recent Form",
   description:
-    "Who's hot and who's not across Europe's top 5 leagues. Teams ranked by how many categories they lead across their last 5, 10, 15, and 20 matches.",
+    "Who's hot and who's not in the Premier League, La Liga, Bundesliga, Serie A, and Ligue 1. Teams ranked by points, goals, and defense across 5 to 20-match windows.",
   path: "/form",
   keywords: [
     "football recent form",
+    "soccer team form",
     "best form teams europe",
     "worst form teams europe",
+    "premier league form table",
   ],
 });
 

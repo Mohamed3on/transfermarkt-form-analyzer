@@ -9,13 +9,14 @@ export const dynamic = "force-dynamic";
 export const metadata = createPageMetadata({
   title: "Expected Position vs Actual",
   description:
-    "Compare each team's actual league position with expected position from squad market value rank. Spot clubs overperforming or underperforming their spending level.",
+    "Compare actual league standings with squad value rankings across Europe's top 5 leagues. Spot the biggest overperformers and underperformers relative to spending.",
   path: "/expected-position",
   keywords: [
     "expected position football",
     "overperforming football teams",
     "underperforming football teams",
-    "team value vs table",
+    "team value vs table position",
+    "soccer overachievers",
   ],
 });
 

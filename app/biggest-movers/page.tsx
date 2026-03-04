@@ -7,12 +7,14 @@ import { createPageMetadata } from "@/lib/metadata";
 export const metadata = createPageMetadata({
   title: "Biggest Movers",
   description:
-    "Which players' careers are skyrocketing and whose are in freefall? Track the players whose market value keeps consistently rising or falling.",
+    "Track players whose market value keeps rising or falling across Europe's top 5 leagues. Spot career surges and freefalls with Transfermarkt value history.",
   path: "/biggest-movers",
   keywords: [
-    "market value change",
+    "market value changes football",
     "biggest movers transfermarkt",
     "player value tracker",
+    "rising soccer players",
+    "falling market value players",
   ],
 });
 
