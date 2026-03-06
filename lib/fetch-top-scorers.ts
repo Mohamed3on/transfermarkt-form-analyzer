@@ -2,118 +2,76 @@ import * as cheerio from "cheerio";
 import type { MinutesValuePlayer } from "@/app/types";
 import { BASE_URL } from "./constants";
 import { fetchPage } from "./fetch";
-import { parseMarketValue } from "./parse-market-value";
 
-const SCORER_PAGES = 10;
+const EMPTY_PLAYER: Omit<MinutesValuePlayer, "name" | "position" | "imageUrl" | "profileUrl" | "playerId"> = {
+  age: 0, club: "", clubLogoUrl: "", league: "", nationality: "", nationalityFlagUrl: "",
+  marketValue: 0, marketValueDisplay: "-", minutes: 0, clubMatches: 0, intlMatches: 0,
+  totalMatches: 0, goals: 0, assists: 0, penaltyGoals: 0, penaltyMisses: 0,
+  intlGoals: 0, intlAssists: 0, intlMinutes: 0, intlAppearances: 0, intlPenaltyGoals: 0, intlCareerCaps: 0,
+};
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseTopScorerRow($: cheerio.CheerioAPI, row: any): MinutesValuePlayer | null {
-  const cells = $(row).find("> td");
-  if (cells.length < 8) return null;
+function fetchPlayerList(
+  urls: string[],
+  label: string,
+  extraHeaders?: Record<string, string>,
+): Promise<MinutesValuePlayer[]> {
+  return Promise.allSettled(urls.map((url) => fetchPage(url, undefined, extraHeaders))).then((results) => {
+    const players: MinutesValuePlayer[] = [];
+    const seen = new Set<string>();
 
-  // Cell 1: Player (inline-table with name, position, image, profileUrl)
-  const nameCell = $(cells[1]);
-  const inlineTable = nameCell.find(".inline-table");
-  const nameLink = inlineTable.find("td.hauptlink a");
-  const name = nameLink.attr("title") || nameLink.text().trim();
-  const profileUrl = nameLink.attr("href") || "";
-  const position = inlineTable.find("tr").eq(1).find("td").text().trim();
-  const imgEl = inlineTable.find("img").first();
-  const imageUrl = (imgEl.attr("data-src") || imgEl.attr("src") || "").replace("/medium/", "/header/");
+    for (const [index, result] of results.entries()) {
+      if (result.status !== "fulfilled") {
+        console.error(`[${label}] Failed to fetch ${urls[index]}:`, result.reason);
+        continue;
+      }
+      const $ = cheerio.load(result.value);
+      $("table.items > tbody > tr").each((_, row) => {
+        const cells = $(row).find("> td");
+        if (cells.length < 6) return;
 
-  const playerIdMatch = profileUrl.match(/\/spieler\/(\d+)/);
-  const playerId = playerIdMatch ? playerIdMatch[1] : "";
+        const inlineTable = $(cells[1]).find(".inline-table");
+        const nameLink = inlineTable.find("td.hauptlink a");
+        const name = nameLink.attr("title") || nameLink.text().trim();
+        const profileUrl = nameLink.attr("href") || "";
+        const playerIdMatch = profileUrl.match(/\/spieler\/(\d+)/);
+        const playerId = playerIdMatch ? playerIdMatch[1] : "";
 
-  // Cell 2: Age
-  const age = parseInt($(cells[2]).text().trim()) || 0;
+        if (!name || !playerId || seen.has(playerId)) return;
+        seen.add(playerId);
 
-  // Cell 3: Nationality
-  const natImg = $(cells[3]).find("img").first();
-  const nationality = natImg.attr("title") || "";
-  const nationalityFlagUrl = (natImg.attr("src") || "").replace(/\/(tiny|verysmall)\//, "/medium/") || "";
+        const position = inlineTable.find("tr").eq(1).find("td").text().trim();
+        const imgEl = inlineTable.find("img").first();
+        const imageUrl = (imgEl.attr("data-src") || imgEl.attr("src") || "").replace("/medium/", "/header/");
 
-  // Cell 4: Club / League (inline-table)
-  const clubCell = $(cells[4]);
-  const clubInline = clubCell.find(".inline-table");
-  const club = clubInline.find("td.hauptlink a").attr("title") || "";
-  const league = clubInline.find("tr").eq(1).find("a").attr("title") || "";
+        players.push({ ...EMPTY_PLAYER, name, position, imageUrl, profileUrl, playerId });
+      });
+    }
 
-  // Cell 5: Matches
-  const totalMatches = parseInt($(cells[5]).text().trim()) || 0;
-
-  // Cell 6: Goals
-  const goals = parseInt($(cells[6]).text().trim()) || 0;
-
-  // Cell 7: Assists
-  const assists = parseInt($(cells[7]).text().trim()) || 0;
-
-  // Last cell: Market Value (e.g. "€50.00m") — only present when cell contains "€"
-  const lastCell = $(cells[cells.length - 1]);
-  const lastText = lastCell.text().trim();
-  const hasMV = lastText.includes("€");
-  const marketValue = hasMV ? parseMarketValue(lastText) : 0;
-  const marketValueDisplay = hasMV ? lastText : "-";
-
-  if (!name || !playerId) return null;
-
-  return {
-    name,
-    position,
-    age,
-    club,
-    clubLogoUrl: "",
-    league,
-    nationality,
-    nationalityFlagUrl,
-    marketValue,
-    marketValueDisplay,
-    minutes: 0,
-    clubMatches: 0,
-    intlMatches: 0,
-    totalMatches,
-    goals,
-    assists,
-    penaltyGoals: 0,
-    penaltyMisses: 0,
-    intlGoals: 0,
-    intlAssists: 0,
-    intlMinutes: 0,
-    intlAppearances: 0,
-    intlPenaltyGoals: 0,
-    intlCareerCaps: 0,
-    imageUrl,
-    profileUrl,
-    playerId,
-  };
+    return players;
+  });
 }
 
-/** Fetches top scorers from Transfermarkt (5 pages, ~125 players). Each page has 25 players. */
-export async function fetchTopScorersRaw(): Promise<MinutesValuePlayer[]> {
-  const baseUrl = `${BASE_URL}/scorer/topscorer/statistik/2024/saison_id/2025/selectedOptionKey/6/land_id/0/altersklasse//ausrichtung//spielerposition_id//filter/0/yt0/Show/plus/1/galerie/0`;
-  const urls = Array.from({ length: SCORER_PAGES }, (_, i) => {
+function paginateUrls(baseUrl: string, pages: number): string[] {
+  return Array.from({ length: pages }, (_, i) => {
     const page = i + 1;
     return page === 1 ? `${baseUrl}?ajax=yw1` : `${baseUrl}/page/${page}?ajax=yw1`;
   });
+}
 
-  const results = await Promise.allSettled(urls.map((url) => fetchPage(url)));
+/** Season top scorers (10 pages, ~250 players). */
+export function fetchTopScorersRaw(): Promise<MinutesValuePlayer[]> {
+  const baseUrl = `${BASE_URL}/scorer/topscorer/statistik/2024/saison_id/2025/selectedOptionKey/6/land_id/0/altersklasse//ausrichtung//spielerposition_id//filter/0/yt0/Show/plus/1/galerie/0`;
+  return fetchPlayerList(paginateUrls(baseUrl, 10), "topScorers");
+}
 
-  const players: MinutesValuePlayer[] = [];
-  const seen = new Set<string>();
-
-  for (const [index, result] of results.entries()) {
-    if (result.status !== "fulfilled") {
-      console.error(`[fetchTopScorersRaw] Failed to fetch ${urls[index]}:`, result.reason);
-      continue;
-    }
-    const $ = cheerio.load(result.value);
-    $("table.items > tbody > tr").each((_, row) => {
-      const player = parseTopScorerRow($, row);
-      if (player && !seen.has(player.playerId)) {
-        seen.add(player.playerId);
-        players.push(player);
-      }
-    });
-  }
-
-  return players;
+/** Yearly top scorers (10 pages, ~250 players). Uses current year. */
+export function fetchYearlyScorersRaw(): Promise<MinutesValuePlayer[]> {
+  const year = new Date().getFullYear();
+  const basePath = `${BASE_URL}/spieler-statistik/jahrestorschuetzen/statistik/stat/ajax/yw1/jahr/${year}/selectedOptionKey/6/monatVon/01/monatBis/12/altersklasse//land_id//ausrichtung/alle/spielerposition_id/alle/art/2/plus/1/galerie/0`;
+  const referer = `${BASE_URL}/spieler-statistik/jahrestorschuetzen/statistik/stat/plus/1/galerie/0?jahr=${year}&selectedOptionKey=6&monatVon=01&monatBis=12&altersklasse=&land_id=&ausrichtung=alle&spielerposition_id=alle&art=2`;
+  return fetchPlayerList(paginateUrls(basePath, 10), "yearlyScorers", {
+    "X-Requested-With": "XMLHttpRequest",
+    Referer: referer,
+    Accept: "*/*",
+  });
 }
