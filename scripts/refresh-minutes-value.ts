@@ -141,6 +141,7 @@ function mergeStats(players: MinutesValuePlayer[], cache: Cache): void {
     if (s.playedPosition) p.playedPosition = s.playedPosition;
     if (s.recentForm?.length) p.recentForm = s.recentForm;
     if (s.marketValue) { p.marketValue = s.marketValue; p.marketValueDisplay = s.marketValueDisplay; }
+    if (s.age) p.age = s.age;
 
     s.isCurrentIntl ? (p.isCurrentIntl = true) : delete p.isCurrentIntl;
     s.isNewSigning ? (p.isNewSigning = true) : delete p.isNewSigning;
@@ -181,10 +182,13 @@ async function main() {
   mergeStats(players, cache);
   await validate(players, cache);
 
+  const withMV = players.filter((p) => p.marketValue > 0);
+  console.log(`[refresh] Filtered: ${players.length - withMV.length} players with no market value`);
+
   await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(OUT_PATH, JSON.stringify(players));
+  await writeFile(OUT_PATH, JSON.stringify(withMV));
   await writeFile(join(DATA_DIR, "updated-at.txt"), new Date().toISOString());
-  console.log(`[refresh] Done: ${players.length} players → ${OUT_PATH}`);
+  console.log(`[refresh] Done: ${withMV.length} players → ${OUT_PATH}`);
 }
 
 main().catch((err) => {

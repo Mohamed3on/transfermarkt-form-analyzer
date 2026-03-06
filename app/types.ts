@@ -256,4 +256,5 @@ export interface PlayerStatsResult {
   recentForm?: RecentGameStats[];
   marketValue: number;
   marketValueDisplay: string;
+  age: number;
 }

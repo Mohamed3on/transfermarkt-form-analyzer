@@ -28,6 +28,7 @@ const ZERO_STATS: PlayerStatsResult = {
   gamesMissed: 0,
   marketValue: 0,
   marketValueDisplay: "-",
+  age: 0,
 };
 
 const CEAPI_HEADERS = {
@@ -193,8 +194,13 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const marketValue = parseMarketValue(mvText);
   const marketValueDisplay = mvText || "-";
 
+  // Parse age from birth date
+  const birthText = $("span[itemprop='birthDate']").text().trim();
+  const ageMatch = birthText.match(/\((\d+)\)/);
+  const age = ageMatch ? parseInt(ageMatch[1]) : 0;
+
   // Parse stats + league from ceapi
-  const shared = { club, clubLogoUrl, intlCareerCaps, isCurrentIntl, isNewSigning, isOnLoan, playedPosition, contractExpiry, gamesMissed, nationalityFlagUrl, leagueLogoUrl, marketValue, marketValueDisplay };
+  const shared = { club, clubLogoUrl, intlCareerCaps, isCurrentIntl, isNewSigning, isOnLoan, playedPosition, contractExpiry, gamesMissed, nationalityFlagUrl, leagueLogoUrl, marketValue, marketValueDisplay, age };
 
   if (!ceapiRes.ok) {
     return { ...ZERO_STATS, ...shared };
