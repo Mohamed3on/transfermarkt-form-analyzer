@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { PlayerStatsResult } from "@/app/types";
+import type { PlayerStatsResult, RecentGameStats } from "@/app/types";
 import { BASE_URL } from "./constants";
 import { fetchPage } from "./fetch";
 
@@ -60,7 +60,7 @@ function currentSeasonId(): number {
 }
 
 interface CeapiGame {
-  gameInformation: { seasonId: number; competitionTypeId: number; competitionId: string };
+  gameInformation: { seasonId: number; competitionTypeId: number; competitionId: string; date?: { dateTimeUTC?: string } };
   statistics: {
     goalStatistics: { goalsScoredTotal?: number | null; assists?: number | null; penaltyShooterGoalsScored?: number | null; penaltyShooterMisses?: number | null };
     playingTimeStatistics: { playedMinutes?: number | null };
@@ -71,6 +71,7 @@ interface AggregatedStats {
   goals: number; assists: number; minutes: number; appearances: number; penaltyGoals: number; penaltyMisses: number;
   intlGoals: number; intlAssists: number; intlMinutes: number; intlAppearances: number; intlPenaltyGoals: number;
   league: string;
+  recentForm: RecentGameStats[];
 }
 
 function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
@@ -78,6 +79,7 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
   let goals = 0, assists = 0, minutes = 0, appearances = 0, penaltyGoals = 0, penaltyMisses = 0;
   let intlGoals = 0, intlAssists = 0, intlMinutes = 0, intlAppearances = 0, intlPenaltyGoals = 0;
   let league = "";
+  const recentDomestic: RecentGameStats[] = [];
   for (const g of games) {
     if (g.gameInformation.seasonId !== seasonId) continue;
     const gs = g.statistics.goalStatistics;
@@ -91,19 +93,31 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
       intlMinutes += mins;
       if (mins > 0) intlAppearances++;
     } else {
-      goals += gs.goalsScoredTotal ?? 0;
-      assists += gs.assists ?? 0;
-      penaltyGoals += gs.penaltyShooterGoalsScored ?? 0;
-      penaltyMisses += gs.penaltyShooterMisses ?? 0;
+      const gls = gs.goalsScoredTotal ?? 0;
+      const ast = gs.assists ?? 0;
+      const pGoals = gs.penaltyShooterGoalsScored ?? 0;
       const mins = pts.playedMinutes ?? 0;
+      goals += gls;
+      assists += ast;
+      penaltyGoals += pGoals;
+      penaltyMisses += gs.penaltyShooterMisses ?? 0;
       minutes += mins;
-      if (mins > 0) appearances++;
+      if (mins > 0) {
+        appearances++;
+        recentDomestic.push({
+          goals: gls, assists: ast, penaltyGoals: pGoals, minutes: mins,
+          date: g.gameInformation.date?.dateTimeUTC?.slice(0, 10) ?? "",
+        });
+      }
       if (!league && g.gameInformation.competitionTypeId === 1) {
         league = LEAGUE_NAMES[g.gameInformation.competitionId] ?? "";
       }
     }
   }
-  return { goals, assists, minutes, appearances, penaltyGoals, penaltyMisses, intlGoals, intlAssists, intlMinutes, intlAppearances, intlPenaltyGoals, league };
+  // ceapi returns games newest-first; sort to ensure that, then keep last 10
+  recentDomestic.sort((a, b) => b.date.localeCompare(a.date));
+  const recentForm = recentDomestic.slice(0, 10);
+  return { goals, assists, minutes, appearances, penaltyGoals, penaltyMisses, intlGoals, intlAssists, intlMinutes, intlAppearances, intlPenaltyGoals, league, recentForm };
 }
 
 /** Raw fetch — no caching. Used by the offline refresh script. */

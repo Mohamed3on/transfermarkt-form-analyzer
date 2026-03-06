@@ -26,6 +26,21 @@ function contractExpiryYear(expiry?: string): number | null {
 
 const BASE_SORT_LABELS: Record<SortKey, string> = { value: "Value", mins: "Mins", games: "Games", ga: "G+A", pen: "Pen", miss: "Miss" };
 
+type FormWindow = "season" | 10 | 5;
+
+interface FormGAResult { total: number; goals: number; assists: number }
+
+function getFormGA(player: MinutesValuePlayer, window: FormWindow, includePen: boolean): FormGAResult {
+  if (window === "season") {
+    const penAdj = includePen ? 0 : (player.penaltyGoals ?? 0);
+    return { total: (player.goals - penAdj) + player.assists, goals: player.goals - penAdj, assists: player.assists };
+  }
+  const games = (player.recentForm ?? []).slice(0, window);
+  const goals = games.reduce((s, g) => s + g.goals - (includePen ? 0 : g.penaltyGoals), 0);
+  const assists = games.reduce((s, g) => s + g.assists, 0);
+  return { total: goals + assists, goals, assists };
+}
+
 /** Count badge that pops on value change */
 function AnimatedCount({ value }: { value: number }) {
   const [popKey, setPopKey] = useState(0);
@@ -64,17 +79,18 @@ function AvatarBadge({ bgClass, icon, tooltip, position = "bottom-right" }: { bg
   );
 }
 
-interface CardContext { sortBy: SortKey; showCaps: boolean; includePen: boolean; showContract: boolean }
+interface CardContext { sortBy: SortKey; showCaps: boolean; includePen: boolean; showContract: boolean; formWindow: FormWindow; formGA: (player: MinutesValuePlayer) => number }
 
 function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePlayer; index: number; injuryMap?: InjuryMap; ctx: CardContext }) {
-  const { sortBy, showCaps, includePen, showContract } = ctx;
+  const { sortBy, showCaps, includePen, showContract, formWindow } = ctx;
   const expiryYear = contractExpiryYear(player.contractExpiry);
   const penGoals = player.penaltyGoals ?? 0;
   const penMisses = player.penaltyMisses ?? 0;
   const penAttempts = penGoals + penMisses;
+  const isRecent = formWindow !== "season";
+  const seasonGA = getFormGA(player, "season", includePen);
+  const recentGA = isRecent ? getFormGA(player, formWindow, includePen) : null;
   const penAdj = includePen ? 0 : penGoals;
-  const gaTotal = (player.goals - penAdj) + player.assists;
-  const pointsLabel = includePen ? "G+A" : "npG+A";
   const injuryInfo = injuryMap?.[player.playerId];
   const benchmarkHref = `/value-analysis?${new URLSearchParams({ id: player.playerId, name: player.name })}`;
 
@@ -229,9 +245,15 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
               <div className="text-xs text-text-secondary">games</div>
             </div>
             <div>
-              <div className="text-sm font-bold tabular-nums text-text-primary">{gaTotal}</div>
-              <div className="text-xs tabular-nums text-text-secondary">{player.goals - penAdj}{penAdj > 0 ? "npG" : "G"} {player.assists}A</div>
+              <div className="text-sm font-bold tabular-nums text-text-primary">{seasonGA.total}</div>
+              <div className="text-xs tabular-nums text-text-secondary">{seasonGA.goals}G {seasonGA.assists}A</div>
             </div>
+            {recentGA && (
+              <div>
+                <div className="text-sm font-bold tabular-nums text-accent-hot">{recentGA.total}</div>
+                <div className="text-xs tabular-nums text-accent-hot/50">{recentGA.goals}G {recentGA.assists}A</div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -239,7 +261,10 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
 
       {/* Mobile stat tray */}
       <div className="sm:hidden mt-2 bg-elevated rounded-lg px-2.5 py-1.5 flex items-baseline gap-2.5 flex-wrap text-xs font-value text-text-secondary">
-        <span className="text-base text-accent-hot">{gaTotal} <span className="text-[10px] text-accent-hot/60">{pointsLabel}</span></span>
+        {recentGA && (
+          <span className="text-base text-accent-hot">{recentGA.total} <span className="text-[10px] text-accent-hot/60">last {formWindow}</span></span>
+        )}
+        <span className={recentGA ? "text-sm" : "text-base text-accent-hot"}>{seasonGA.total} <span className="text-[10px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
         <span className="text-sm text-accent-blue">{player.marketValueDisplay}</span>
         <span>{player.age}y</span>
         <span>{player.totalMatches} games</span>
@@ -295,6 +320,12 @@ function parseSortKey(v: string | null): SortKey {
   return "ga";
 }
 
+function parseFormWindow(v: string | null): FormWindow {
+  if (v === "5") return 5;
+  if (v === "10") return 10;
+  return "season";
+}
+
 function parseSigningFilter(v: string | null): SigningFilter {
   if (v === "transfer" || v === "loan") return v;
   return null;
@@ -307,6 +338,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
 
   const sortBy = parseSortKey(params.get("sort"));
   const sortAsc = params.get("dir") === "asc";
+  const formWindow = parseFormWindow(params.get("fw"));
   const leagueFilter = params.get("league") || "all";
   const clubFilter = params.get("club") || "all";
   const nationalityFilter = params.get("nat") || "all";
@@ -408,7 +440,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
         case "mins": diff = b.minutes - a.minutes; break;
         case "games": diff = b.totalMatches - a.totalMatches; break;
         case "ga":
-          diff = ((b.goals - (b.penaltyGoals ?? 0) * penAdj) + b.assists) - ((a.goals - (a.penaltyGoals ?? 0) * penAdj) + a.assists);
+          diff = getFormGA(b, formWindow, includePen).total - getFormGA(a, formWindow, includePen).total;
           if (diff === 0) diff = a.minutes - b.minutes;
           break;
         case "pen": diff = (b.penaltyGoals ?? 0) - (a.penaltyGoals ?? 0); break;
@@ -417,7 +449,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
       }
       return sortAsc ? -diff : diff;
     });
-  }, [players, sortBy, sortAsc, leagueFilter, clubFilter, nationalityFilter, top5Only, signingFilter, includePen, excludeCurrentIntl, minCaps, maxCaps, minAge, maxAge, contractYear]);
+  }, [players, sortBy, sortAsc, leagueFilter, clubFilter, nationalityFilter, top5Only, signingFilter, includePen, excludeCurrentIntl, minCaps, maxCaps, minAge, maxAge, contractYear, formWindow]);
 
   return (
     <>
@@ -440,29 +472,53 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
 
           {/* Sort */}
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-5">
-            <ToggleGroup
-              type="single"
-              value={sortBy}
-              onValueChange={(value) => {
-                setIsFiltering(true);
-                if (!value) { update({ dir: sortAsc ? null : "asc" }); return; }
-                update({ sort: value === "ga" ? null : value, dir: null });
-              }}
-              className="rounded-lg overflow-hidden w-max border border-border-subtle"
-            >
-              {(["value", "mins", "games", "ga", "pen", "miss"] as const).map((key) => (
-                <ToggleGroupItem
-                  key={key}
-                  value={key}
-                  className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+            <div className="flex items-center gap-2 w-max">
+              <ToggleGroup
+                type="single"
+                value={sortBy}
+                onValueChange={(value) => {
+                  setIsFiltering(true);
+                  if (!value) { update({ dir: sortAsc ? null : "asc" }); return; }
+                  update({ sort: value === "ga" ? null : value, dir: null });
+                }}
+                className="rounded-lg overflow-hidden border border-border-subtle"
+              >
+                {(["value", "mins", "games", "ga", "pen", "miss"] as const).map((key) => (
+                  <ToggleGroupItem
+                    key={key}
+                    value={key}
+                    className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                  >
+                    {key === "ga" ? pointsLabel : BASE_SORT_LABELS[key]}
+                    {sortBy === key && (
+                      <span className="text-[10px]">{sortAsc ? "▲" : "▼"}</span>
+                    )}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              {sortBy === "ga" && (
+                <ToggleGroup
+                  type="single"
+                  value={String(formWindow)}
+                  onValueChange={(v) => {
+                    if (!v) return;
+                    setIsFiltering(true);
+                    update({ fw: v === "season" ? null : v });
+                  }}
+                  className="rounded-lg overflow-hidden border border-border-subtle"
                 >
-                  {key === "ga" ? pointsLabel : BASE_SORT_LABELS[key]}
-                  {sortBy === key && (
-                    <span className="text-[10px]">{sortAsc ? "▲" : "▼"}</span>
-                  )}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
+                  {(["season", 10, 5] as const).map((w) => (
+                    <ToggleGroupItem
+                      key={w}
+                      value={String(w)}
+                      className="px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                    >
+                      {w === "season" ? "Season" : `Last ${w}`}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              )}
+            </div>
           </div>
 
           {/* Filters */}
@@ -535,7 +591,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           </div>
 
           <div className={isFiltering ? "animate-filter-dim" : ""} onAnimationEnd={() => setIsFiltering(false)}>
-            <VirtualPlayerList items={sortedPlayers} injuryMap={injuryMap} ctx={{ sortBy, showCaps: minCaps !== null || maxCaps !== null, includePen, showContract: contractYear !== null }} />
+            <VirtualPlayerList items={sortedPlayers} injuryMap={injuryMap} ctx={{ sortBy, showCaps: minCaps !== null || maxCaps !== null, includePen, showContract: contractYear !== null, formWindow, formGA: (p) => getFormGA(p, formWindow, includePen).total }} />
           </div>
         </section>
     </>

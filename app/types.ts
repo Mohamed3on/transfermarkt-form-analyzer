@@ -193,6 +193,7 @@ export interface MinutesValuePlayer {
   gamesMissed?: number;
   nationalityFlagUrl?: string;
   leagueLogoUrl?: string;
+  recentForm?: RecentGameStats[];
 }
 
 export type InjuryMap = Record<string, { injury: string; returnDate: string; injurySince: string }>;
@@ -220,6 +221,14 @@ export interface MarketValueMoversResult {
   periods: { date: string; movers: MarketValueMover[] }[];
 }
 
+export interface RecentGameStats {
+  goals: number;
+  assists: number;
+  penaltyGoals: number;
+  minutes: number;
+  date: string;
+}
+
 export interface PlayerStatsResult {
   minutes: number;
   appearances: number;
@@ -244,4 +253,5 @@ export interface PlayerStatsResult {
   gamesMissed: number;
   nationalityFlagUrl?: string;
   leagueLogoUrl?: string;
+  recentForm?: RecentGameStats[];
 }

@@ -1,214 +1,192 @@
 import { writeFile, readFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { fetchMinutesValueRaw } from "@/lib/fetch-minutes-value";
-import { fetchTopScorersRaw } from "@/lib/fetch-top-scorers";
+import { fetchTopScorersRaw, fetchYearlyScorersRaw } from "@/lib/fetch-top-scorers";
 import { fetchPlayerMinutesRaw } from "@/lib/fetch-player-minutes";
-import type { MinutesValuePlayer } from "@/app/types";
-import type { PlayerStatsResult } from "@/app/types";
+import type { MinutesValuePlayer, PlayerStatsResult } from "@/app/types";
 
-const INITIAL_CONCURRENCY = 30;
-const MIN_CONCURRENCY = 5;
-const INITIAL_DELAY_MS = 500;
-const BACKOFF_MULTIPLIER = 2;
+const CONCURRENCY = { max: 50, min: 10 };
+const DELAY = { base: 200, multiplier: 2 };
 const FAILURE_THRESHOLD = 0.3;
-const CLEAN_BATCHES_TO_RAMP_UP = 3;
+const CLEAN_BATCHES_TO_RAMP = 3;
 const MAX_RETRY_ROUNDS = 5;
-const MIN_EXPECTED_PLAYERS = 100;
 
-type PlayerCache = Record<string, PlayerStatsResult>;
-type PlayerEntry = { playerId: string };
+const DATA_DIR = join(process.cwd(), "data");
+const OUT_PATH = join(DATA_DIR, "minutes-value.json");
+const CACHE_PATH = join(DATA_DIR, "player-cache.json");
 
-const CACHE_PATH = join(process.cwd(), "data", "player-cache.json");
+type Cache = Record<string, PlayerStatsResult>;
 
-async function saveCache(cache: PlayerCache): Promise<void> {
-  await writeFile(CACHE_PATH, JSON.stringify(cache));
-}
+// --- 1. Gather & dedupe player pool ---
 
-async function fetchBatched(
-  players: PlayerEntry[],
-  cache: PlayerCache,
-  state: { concurrency: number; delayMs: number },
-) {
-  let cleanStreak = 0;
-  let batchNum = 0;
-  const failed: PlayerEntry[] = [];
-  const total = players.length;
+async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
+  console.log("[refresh] Fetching player lists...");
+  const [mvPlayers, seasonScorers, yearlyScorers] = await Promise.all([
+    fetchMinutesValueRaw(),
+    fetchTopScorersRaw(),
+    fetchYearlyScorersRaw(),
+  ]);
 
-  for (let i = 0; i < total; i += state.concurrency) {
-    batchNum++;
-    const batch = players.slice(i, i + state.concurrency);
-    const results = await Promise.allSettled(
-      batch.map((p) => fetchPlayerMinutesRaw(p.playerId))
-    );
+  if (mvPlayers.length === 0) {
+    throw new Error("0 players from MV pages — likely rate-limited.");
+  }
 
-    let batchFailures = 0;
-    batch.forEach((p, j) => {
-      if (results[j].status === "fulfilled") {
-        cache[p.playerId] = results[j].value;
-      } else {
-        batchFailures++;
-        failed.push(p);
-      }
-    });
-
-    const failRate = batchFailures / batch.length;
-    if (failRate > FAILURE_THRESHOLD && state.concurrency > MIN_CONCURRENCY) {
-      state.concurrency = Math.max(MIN_CONCURRENCY, Math.floor(state.concurrency / 2));
-      state.delayMs *= BACKOFF_MULTIPLIER;
-      cleanStreak = 0;
-      console.log(`[refresh] Batch ${batchNum}: ${batchFailures}/${batch.length} failed → concurrency=${state.concurrency}, delay=${state.delayMs}ms`);
-    } else {
-      console.log(`[refresh] Batch ${batchNum}: ${batch.length - batchFailures}/${batch.length} ok (${Object.keys(cache).length}/${total} total)`);
-      if (batchFailures === 0) {
-        cleanStreak++;
-        if (cleanStreak >= CLEAN_BATCHES_TO_RAMP_UP && state.concurrency < INITIAL_CONCURRENCY) {
-          state.concurrency = Math.min(INITIAL_CONCURRENCY, state.concurrency * 2);
-          state.delayMs = Math.max(INITIAL_DELAY_MS, Math.floor(state.delayMs / BACKOFF_MULTIPLIER));
-          cleanStreak = 0;
-          console.log(`[refresh] Ramping up → concurrency=${state.concurrency}, delay=${state.delayMs}ms`);
-        }
-      } else {
-        cleanStreak = 0;
+  const seen = new Set<string>();
+  const players: MinutesValuePlayer[] = [];
+  for (const { label, list } of [
+    { label: "MV", list: mvPlayers },
+    { label: "season scorers", list: seasonScorers },
+    { label: "yearly scorers", list: yearlyScorers },
+  ]) {
+    let added = 0;
+    for (const p of list) {
+      if (!seen.has(p.playerId)) {
+        seen.add(p.playerId);
+        players.push(p);
+        added++;
       }
     }
-
-    await saveCache(cache);
-    if (i + state.concurrency < total) {
-      await new Promise((r) => setTimeout(r, state.delayMs));
-    }
+    console.log(`[refresh] ${label}: +${added} new (${list.length} total)`);
   }
 
-  return failed;
+  if (players.length < 100) {
+    throw new Error(`Only ${players.length} players — expected 100+.`);
+  }
+  return players;
 }
 
-async function fetchWithRetry(
-  players: PlayerEntry[],
-  cache: PlayerCache,
-): Promise<void> {
-  const state = { concurrency: INITIAL_CONCURRENCY, delayMs: INITIAL_DELAY_MS };
-  let remaining = players;
+// --- 2. Fetch per-player stats with adaptive concurrency ---
 
-  for (let round = 0; round < MAX_RETRY_ROUNDS; round++) {
-    if (round > 0) {
-      state.concurrency = MIN_CONCURRENCY;
-      state.delayMs = INITIAL_DELAY_MS * 2 ** round;
-      console.log(`[refresh] Retry round ${round}: ${remaining.length} players (concurrency=${state.concurrency}, delay=${state.delayMs}ms)`);
+async function fetchAllStats(playerIds: string[]): Promise<Cache> {
+  const cache: Cache = {};
+  let remaining = [...playerIds];
+
+  for (let round = 0; round <= MAX_RETRY_ROUNDS && remaining.length > 0; round++) {
+    if (round > 0) console.log(`[refresh] Retry ${round}: ${remaining.length} remaining`);
+
+    const state = {
+      concurrency: round === 0 ? CONCURRENCY.max : CONCURRENCY.min,
+      delay: DELAY.base * (round === 0 ? 1 : 2 ** round),
+      cleanStreak: 0,
+    };
+    const failed: string[] = [];
+
+    for (let i = 0; i < remaining.length; i += state.concurrency) {
+      const batch = remaining.slice(i, i + state.concurrency);
+      const results = await Promise.allSettled(batch.map((id) => fetchPlayerMinutesRaw(id)));
+
+      let failures = 0;
+      for (let j = 0; j < batch.length; j++) {
+        const r = results[j];
+        if (r.status === "fulfilled") cache[batch[j]] = r.value;
+        else { failures++; failed.push(batch[j]); }
+      }
+
+      const failRate = failures / batch.length;
+      if (failRate > FAILURE_THRESHOLD && state.concurrency > CONCURRENCY.min) {
+        state.concurrency = Math.max(CONCURRENCY.min, state.concurrency >> 1);
+        state.delay *= DELAY.multiplier;
+        state.cleanStreak = 0;
+      } else if (failures === 0 && ++state.cleanStreak >= CLEAN_BATCHES_TO_RAMP && state.concurrency < CONCURRENCY.max) {
+        state.concurrency = Math.min(CONCURRENCY.max, state.concurrency * 2);
+        state.delay = Math.max(DELAY.base, state.delay >> 1);
+        state.cleanStreak = 0;
+      } else if (failures > 0) {
+        state.cleanStreak = 0;
+      }
+
+      console.log(`[refresh] ${Object.keys(cache).length}/${playerIds.length} fetched (batch: ${batch.length - failures}/${batch.length} ok)`);
+      await writeFile(CACHE_PATH, JSON.stringify(cache));
+
+      if (i + state.concurrency < remaining.length) {
+        await new Promise((r) => setTimeout(r, state.delay));
+      }
     }
-
-    remaining = await fetchBatched(remaining, cache, state);
-    if (remaining.length === 0) return;
+    remaining = failed;
   }
 
-  throw new Error(`${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds: ${remaining.map((p) => p.playerId).join(", ")}`);
+  if (remaining.length > 0) {
+    throw new Error(`${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds: ${remaining.join(", ")}`);
+  }
+  return cache;
 }
 
-async function main() {
-  console.log("[refresh] Fetching MV pages...");
-  const players = await fetchMinutesValueRaw();
-  console.log(`[refresh] Got ${players.length} players from MV pages`);
+// --- 3. Merge fetched stats into player objects ---
 
-  if (players.length === 0) {
-    throw new Error("Got 0 players from MV pages — likely rate-limited. Aborting to protect existing data.");
-  }
-
-  console.log("[refresh] Fetching top scorers...");
-  const scorers = await fetchTopScorersRaw();
-  const mvIds = new Set(players.map((p) => p.playerId));
-  let added = 0;
-  for (const scorer of scorers) {
-    if (!mvIds.has(scorer.playerId)) {
-      players.push(scorer);
-      mvIds.add(scorer.playerId);
-      added++;
-    }
-  }
-  console.log(`[refresh] Added ${added} new players from top scorers (${scorers.length} total, ${scorers.length - added} already in MV)`);
-
-  if (players.length < MIN_EXPECTED_PLAYERS) {
-    throw new Error(`Only got ${players.length} players (expected ${MIN_EXPECTED_PLAYERS}+). Aborting to protect existing data.`);
-  }
-
-  const cache: PlayerCache = {};
-  console.log(`[refresh] Fetching stats for ${players.length} players (concurrency: ${INITIAL_CONCURRENCY})...`);
-
-  await fetchWithRetry(players, cache);
-
-  // Merge stats into players
+function mergeStats(players: MinutesValuePlayer[], cache: Cache): void {
   for (const p of players) {
-    const entry = cache[p.playerId];
-    if (entry) {
-      p.minutes = entry.minutes;
-      p.totalMatches = entry.appearances || p.totalMatches;
-      p.goals = entry.goals;
-      p.assists = entry.assists;
-      p.penaltyGoals = entry.penaltyGoals;
-      p.penaltyMisses = entry.penaltyMisses;
-      p.intlGoals = entry.intlGoals;
-      p.intlAssists = entry.intlAssists;
-      p.intlMinutes = entry.intlMinutes;
-      p.intlAppearances = entry.intlAppearances;
-      p.intlPenaltyGoals = entry.intlPenaltyGoals;
-      p.intlCareerCaps = entry.intlCareerCaps;
-      if (entry.isCurrentIntl) {
-        p.isCurrentIntl = true;
-      } else {
-        delete p.isCurrentIntl;
-      }
-      if (entry.contractExpiry) p.contractExpiry = entry.contractExpiry;
-      if (entry.playedPosition) p.playedPosition = entry.playedPosition;
-      if (entry.club) p.club = entry.club;
-      if (entry.clubLogoUrl) p.clubLogoUrl = entry.clubLogoUrl;
-      if (entry.league) p.league = entry.league;
-      if (entry.nationalityFlagUrl) p.nationalityFlagUrl = entry.nationalityFlagUrl;
-      if (entry.leagueLogoUrl) p.leagueLogoUrl = entry.leagueLogoUrl;
-      if (entry.isNewSigning) {
-        p.isNewSigning = true;
-      } else {
-        delete p.isNewSigning;
-      }
-      if (entry.isOnLoan) {
-        p.isOnLoan = true;
-      } else {
-        delete p.isOnLoan;
-      }
-      p.gamesMissed = entry.gamesMissed;
-    }
-  }
+    const s = cache[p.playerId];
+    if (!s) continue;
 
-  // Guard 1: abort if stats look broken (>80% of fetched players have zero goals+assists+minutes)
+    p.minutes = s.minutes;
+    p.totalMatches = s.appearances || p.totalMatches;
+    p.goals = s.goals;
+    p.assists = s.assists;
+    p.penaltyGoals = s.penaltyGoals;
+    p.penaltyMisses = s.penaltyMisses;
+    p.intlGoals = s.intlGoals;
+    p.intlAssists = s.intlAssists;
+    p.intlMinutes = s.intlMinutes;
+    p.intlAppearances = s.intlAppearances;
+    p.intlPenaltyGoals = s.intlPenaltyGoals;
+    p.intlCareerCaps = s.intlCareerCaps;
+    p.gamesMissed = s.gamesMissed;
+
+    if (s.club) p.club = s.club;
+    if (s.clubLogoUrl) p.clubLogoUrl = s.clubLogoUrl;
+    if (s.league) p.league = s.league;
+    if (s.nationalityFlagUrl) p.nationalityFlagUrl = s.nationalityFlagUrl;
+    if (s.leagueLogoUrl) p.leagueLogoUrl = s.leagueLogoUrl;
+    if (s.contractExpiry) p.contractExpiry = s.contractExpiry;
+    if (s.playedPosition) p.playedPosition = s.playedPosition;
+    if (s.recentForm?.length) p.recentForm = s.recentForm;
+
+    s.isCurrentIntl ? (p.isCurrentIntl = true) : delete p.isCurrentIntl;
+    s.isNewSigning ? (p.isNewSigning = true) : delete p.isNewSigning;
+    s.isOnLoan ? (p.isOnLoan = true) : delete p.isOnLoan;
+  }
+}
+
+// --- 4. Validate ---
+
+async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<void> {
   const fetched = players.filter((p) => cache[p.playerId]);
-  const allZero = fetched.filter((p) => p.goals === 0 && p.assists === 0 && p.minutes === 0);
-  if (fetched.length > 50 && allZero.length / fetched.length > 0.8) {
-    throw new Error(
-      `${allZero.length}/${fetched.length} players have zero stats — likely a scraping issue. Aborting to protect existing data.`
-    );
+  const zeroCount = fetched.filter((p) => p.goals === 0 && p.assists === 0 && p.minutes === 0).length;
+  if (fetched.length > 50 && zeroCount / fetched.length > 0.8) {
+    throw new Error(`${zeroCount}/${fetched.length} players have zero stats — scraping issue.`);
   }
 
-  // Guard 2: regression check — compare total stats against existing data
-  const outDir = join(process.cwd(), "data");
-  const outPath = join(outDir, "minutes-value.json");
   try {
-    const existing: MinutesValuePlayer[] = JSON.parse(await readFile(outPath, "utf-8"));
-    const oldTotal = existing.reduce((s, p) => s + p.goals + p.assists, 0);
-    const newTotal = players.reduce((s, p) => s + p.goals + p.assists, 0);
-    if (oldTotal > 100 && newTotal < oldTotal * 0.5) {
-      throw new Error(
-        `Stats regressed: old total G+A=${oldTotal}, new=${newTotal} (${Math.round(newTotal / oldTotal * 100)}%). Aborting to protect existing data.`
-      );
+    const existing: MinutesValuePlayer[] = JSON.parse(await readFile(OUT_PATH, "utf-8"));
+    const oldGA = existing.reduce((s, p) => s + p.goals + p.assists, 0);
+    const newGA = players.reduce((s, p) => s + p.goals + p.assists, 0);
+    if (oldGA > 100 && newGA < oldGA * 0.5) {
+      throw new Error(`Stats regressed: G+A ${oldGA} → ${newGA} (${Math.round((newGA / oldGA) * 100)}%).`);
     }
-    console.log(`[refresh] Stats check: old G+A=${oldTotal}, new=${newTotal} (${newTotal >= oldTotal ? "+" : ""}${newTotal - oldTotal})`);
+    console.log(`[refresh] G+A: ${oldGA} → ${newGA} (${newGA >= oldGA ? "+" : ""}${newGA - oldGA})`);
   } catch (e) {
     if (e instanceof Error && e.message.startsWith("Stats regressed")) throw e;
-    console.log("[refresh] No existing data to compare against, skipping regression check");
   }
+}
 
-  await mkdir(outDir, { recursive: true });
-  await writeFile(outPath, JSON.stringify(players));
-  await writeFile(join(outDir, "updated-at.txt"), new Date().toISOString());
-  console.log(`[refresh] Done: ${Object.keys(cache).length}/${players.length} players → ${outPath}`);
+// --- Main pipeline ---
+
+async function main() {
+  const players = await gatherPlayers();
+
+  console.log(`[refresh] Fetching stats for ${players.length} players...`);
+  const cache = await fetchAllStats(players.map((p) => p.playerId));
+
+  mergeStats(players, cache);
+  await validate(players, cache);
+
+  await mkdir(DATA_DIR, { recursive: true });
+  await writeFile(OUT_PATH, JSON.stringify(players));
+  await writeFile(join(DATA_DIR, "updated-at.txt"), new Date().toISOString());
+  console.log(`[refresh] Done: ${players.length} players → ${OUT_PATH}`);
 }
 
 main().catch((err) => {
-  console.error("[refresh] Fatal error:", err);
+  console.error("[refresh] Fatal:", err);
   process.exit(1);
 });
