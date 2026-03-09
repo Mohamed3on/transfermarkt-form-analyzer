@@ -9,7 +9,7 @@ const CONCURRENCY = { max: 50, min: 10 };
 const DELAY = { base: 200, multiplier: 2 };
 const FAILURE_THRESHOLD = 0.3;
 const CLEAN_BATCHES_TO_RAMP = 3;
-const MAX_RETRY_ROUNDS = 5;
+const MAX_RETRY_ROUNDS = 8;
 
 const DATA_DIR = join(process.cwd(), "data");
 const OUT_PATH = join(DATA_DIR, "minutes-value.json");
@@ -19,17 +19,38 @@ type Cache = Record<string, PlayerStatsResult>;
 
 // --- 1. Gather & dedupe player pool ---
 
+async function fetchMVWithRetry(maxAttempts = 6): Promise<MinutesValuePlayer[]> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const result = await fetchMinutesValueRaw();
+      if (result.length > 0) return result;
+      console.warn(`[refresh] MV pages returned 0 (attempt ${attempt}/${maxAttempts})`);
+    } catch (e) {
+      console.warn(`[refresh] MV pages failed (attempt ${attempt}/${maxAttempts}): ${e}`);
+    }
+    if (attempt < maxAttempts) {
+      const delay = Math.min(120_000, 10_000 * 2 ** (attempt - 1));
+      console.warn(`[refresh] Waiting ${delay / 1000}s before retry...`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  return [];
+}
+
 async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
   console.log("[refresh] Fetching player lists...");
+
   const [mvPlayers, seasonScorers, yearlyScorers] = await Promise.all([
-    fetchMinutesValueRaw(),
-    fetchTopScorersRaw(),
-    fetchYearlyScorersRaw(),
+    fetchMVWithRetry(),
+    fetchTopScorersRaw().catch(() => [] as MinutesValuePlayer[]),
+    fetchYearlyScorersRaw().catch(() => [] as MinutesValuePlayer[]),
   ]);
 
   if (mvPlayers.length === 0) {
-    throw new Error("0 players from MV pages — likely rate-limited.");
+    throw new Error("0 players from MV pages after 6 attempts — rate-limited.");
   }
+  if (seasonScorers.length === 0) console.warn("[refresh] season scorers unavailable — continuing without");
+  if (yearlyScorers.length === 0) console.warn("[refresh] yearly scorers unavailable — continuing without");
 
   const seen = new Set<string>();
   const players: MinutesValuePlayer[] = [];
@@ -106,7 +127,10 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
   }
 
   if (remaining.length > 0) {
-    throw new Error(`${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds: ${remaining.join(", ")}`);
+    if (remaining.length > 5) {
+      throw new Error(`${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds — too many`);
+    }
+    console.warn(`[refresh] ${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds — skipping: ${remaining.join(", ")}`);
   }
   return cache;
 }

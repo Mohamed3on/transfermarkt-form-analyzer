@@ -6,6 +6,10 @@ on:
     - cron: "0 6 * * 1" # Weekly Monday 6am UTC for biggest-movers
   workflow_dispatch:
 
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
 jobs:
   warm-caches:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 */3 * * *'
@@ -68,23 +72,15 @@ jobs:
           key: player-cache-${{ github.run_id }}
 
       - name: Commit and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/minutes-value.json data/updated-at.txt
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "chore: refresh minutes-value data"
-            git pull --rebase --autostash
-            git push
-          fi
+        run: bash scripts/ci-push.sh "chore: refresh minutes-value data" data/minutes-value.json data/updated-at.txt
 
       - name: Alert on failure
         if: failure() && steps.refresh.outcome == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          gh label create "scraper-broken" --color "d73a4a" 2>/dev/null || true
           EXISTING=$(gh issue list --label "scraper-broken" --state open --json number --jq '.[0].number')
           if [ -n "$EXISTING" ]; then
             echo "Alert issue #$EXISTING already open, skipping."
@@ -94,7 +90,7 @@ jobs:
               --label "scraper-broken" \
               --body "The data refresh script failed. Transfermarkt may have changed their page structure again.
 
-          **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          **Run:** $RUN_URL
 
           Check \`lib/fetch-player-minutes.ts\` — the ceapi or HTML selectors likely need updating."
           fi
@@ -118,14 +114,4 @@ jobs:
         run: bun run scripts/refresh-biggest-movers.ts
 
       - name: Commit and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/biggest-winners.json data/biggest-losers.json data/biggest-movers-updated-at.txt
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "chore: refresh biggest-movers data"
-            git pull --rebase --autostash
-            git push
-          fi
+        run: bash scripts/ci-push.sh "chore: refresh biggest-movers data" data/biggest-winners.json data/biggest-losers.json data/biggest-movers-updated-at.txt

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Resilient commit+push for CI-generated data files.
+# Avoids merge conflicts by resetting to latest remote before committing.
+# Usage: scripts/ci-push.sh "commit message" file1 [file2 ...]
+set -euo pipefail
+
+msg="$1"; shift
+files=("$@")
+
+git config user.name "github-actions[bot]"
+git config user.email "github-actions[bot]@users.noreply.github.com"
+
+stash=$(mktemp -d)
+for f in "${files[@]}"; do cp "$f" "$stash/"; done
+
+for attempt in 1 2 3; do
+  git fetch origin main
+  git reset --hard origin/main
+  for f in "${files[@]}"; do cp "$stash/$(basename "$f")" "$f"; done
+  git add "${files[@]}"
+  if git diff --cached --quiet; then
+    echo "No changes to commit."
+    exit 0
+  fi
+  git commit -m "$msg"
+  git push && { echo "Pushed."; exit 0; }
+  echo "Attempt $attempt failed, retrying..."
+  sleep $((attempt * 2))
+done
+echo "Failed to push after 3 attempts."
+exit 1
