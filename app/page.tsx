@@ -316,7 +316,6 @@ function playerItem(
   };
 }
 
-const MAX_PLAYER_CATEGORIES = 7;
 
 type FeatureTone = {
   card: string;
@@ -857,7 +856,7 @@ export default async function Home() {
       `${p.club}${p.nationality ? ` · ${p.nationality}` : ""} · ${getNpga(p)} npG+A`,
       { metrics: [`${formatMinutes(p.minutes)} mins`, p.marketValueDisplay] },
     )),
-  ].filter((a) => a.length).slice(0, MAX_PLAYER_CATEGORIES).flat();
+  ].filter((a) => a.length).flat();
 
   const injuryItems: SnapshotItem[] = [
     ...mostValuableInjuredPlayers.map((p) => playerItem(
