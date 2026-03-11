@@ -254,6 +254,10 @@ function getNpga(player: Pick<MinutesValuePlayer, "goals" | "assists" | "penalty
   return player.goals - (player.penaltyGoals ?? 0) + player.assists;
 }
 
+function getFormNpga(player: MinutesValuePlayer, window: number): number {
+  return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.goals - (g.penaltyGoals ?? 0) + g.assists, 0);
+}
+
 function sortByNpgaDesc(players: MinutesValuePlayer[]): MinutesValuePlayer[] {
   return [...players].sort((a, b) => {
     const npgaDiff = getNpga(b) - getNpga(a);
@@ -310,7 +314,6 @@ function playerItem(
   };
 }
 
-const MAX_PLAYER_CATEGORIES = 5;
 
 type FeatureTone = {
   card: string;
@@ -664,6 +667,23 @@ export default async function Home() {
     { sort: (a, b) => b.marketValue - a.marketValue },
   );
 
+  let maxForm10 = 0;
+  let maxForm5 = 0;
+  let tiedForm10: MinutesValuePlayer[] = [];
+  let tiedForm5: MinutesValuePlayer[] = [];
+  for (const p of players) {
+    const s5 = getFormNpga(p, 5);
+    if (s5 > maxForm5) { maxForm5 = s5; tiedForm5 = [p]; }
+    else if (s5 === maxForm5 && s5 > 0) tiedForm5.push(p);
+
+    const s10 = getFormNpga(p, 10);
+    if (s10 > maxForm10) { maxForm10 = s10; tiedForm10 = [p]; }
+    else if (s10 === maxForm10 && s10 > 0) tiedForm10.push(p);
+  }
+  const byValueDesc = (a: MinutesValuePlayer, b: MinutesValuePlayer) => b.marketValue - a.marketValue;
+  const topScorersLast10 = tiedForm10.sort(byValueDesc);
+  const topScorersLast5 = tiedForm5.sort(byValueDesc);
+
   const mostValuableInjuredPlayers = pickWithTies(
     injuredPlayers,
     (player) => player.marketValueNum,
@@ -771,12 +791,44 @@ export default async function Home() {
     )] : []),
   ];
 
+  // Build form scorer snapshot items, combining if same players top both windows
+  const formScorerItems: SnapshotItem[][] = [];
+  if (topScorersLast10.length > 0 || topScorersLast5.length > 0) {
+    const last10Ids = new Set(topScorersLast10.map((p) => p.playerId));
+    const last5Ids = new Set(topScorersLast5.map((p) => p.playerId));
+    const sameSet = last10Ids.size === last5Ids.size && [...last10Ids].every((id) => last5Ids.has(id));
+
+    if (sameSet && topScorersLast10.length > 0) {
+      formScorerItems.push(topScorersLast10.map((p) => playerItem(
+        p, "Top scorer (last 5 & 10)", "/players?sort=ga&fw=5",
+        `${p.club} · ${getFormNpga(p, 5)} npG+A (5) · ${getFormNpga(p, 10)} npG+A (10)`,
+        { metrics: [`Season ${getNpga(p)} npG+A`, p.marketValueDisplay], tone: "green" },
+      )));
+    } else {
+      if (topScorersLast10.length > 0) {
+        formScorerItems.push(topScorersLast10.map((p) => playerItem(
+          p, "Top scorer (last 10)", "/players?sort=ga&fw=10",
+          `${p.club} · ${getFormNpga(p, 10)} npG+A in last 10`,
+          { metrics: [`Season ${getNpga(p)} npG+A`, p.marketValueDisplay], tone: "green" },
+        )));
+      }
+      if (topScorersLast5.length > 0) {
+        formScorerItems.push(topScorersLast5.map((p) => playerItem(
+          p, "Top scorer (last 5)", "/players?sort=ga&fw=5",
+          `${p.club} · ${getFormNpga(p, 5)} npG+A in last 5`,
+          { metrics: [`Season ${getNpga(p)} npG+A`, p.marketValueDisplay], tone: "green" },
+        )));
+      }
+    }
+  }
+
   const playerItems = [
     mostNpgaPlayers.map((p) => playerItem(
       p, "Top scorer (npG+A)", "/players?sort=ga",
       `${p.club} · ${getNpga(p)} npG+A`,
       { metrics: [`${formatMinutes(p.minutes)} mins`, p.marketValueDisplay] },
     )),
+    ...formScorerItems,
     mostNpgaSignings.map((p) => playerItem(
       p, "Top scoring signing", "/players?signing=transfer&sort=ga",
       `${p.club} · ${getNpga(p)} npG+A`,
@@ -797,7 +849,7 @@ export default async function Home() {
       `${p.club}${p.nationality ? ` · ${p.nationality}` : ""} · ${getNpga(p)} npG+A`,
       { metrics: [`${formatMinutes(p.minutes)} mins`, p.marketValueDisplay] },
     )),
-  ].filter((a) => a.length).slice(0, MAX_PLAYER_CATEGORIES).flat();
+  ].filter((a) => a.length).flat();
 
   const injuryItems: SnapshotItem[] = [
     ...mostValuableInjuredPlayers.map((p) => playerItem(
