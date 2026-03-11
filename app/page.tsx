@@ -316,7 +316,7 @@ function playerItem(
   };
 }
 
-const MAX_PLAYER_CATEGORIES = 5;
+const MAX_PLAYER_CATEGORIES = 7;
 
 type FeatureTone = {
   card: string;
