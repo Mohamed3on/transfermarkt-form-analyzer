@@ -670,18 +670,27 @@ export default async function Home() {
     { sort: (a, b) => b.marketValue - a.marketValue },
   );
 
-  const topScorersLast10 = pickWithTies(
-    players.filter((p) => (p.recentForm ?? []).length >= 10),
-    (p) => getFormNpga(p, 10),
-    "top",
-    { sort: (a, b) => b.marketValue - a.marketValue },
-  );
-  const topScorersLast5 = pickWithTies(
-    players.filter((p) => (p.recentForm ?? []).length >= 5),
-    (p) => getFormNpga(p, 5),
-    "top",
-    { sort: (a, b) => b.marketValue - a.marketValue },
-  );
+  let maxForm10 = 0;
+  let maxForm5 = 0;
+  let tiedForm10: MinutesValuePlayer[] = [];
+  let tiedForm5: MinutesValuePlayer[] = [];
+  for (const p of players) {
+    const formLen = (p.recentForm ?? []).length;
+    if (formLen >= 5) {
+      const s5 = getFormNpga(p, 5);
+      if (s5 > maxForm5) { maxForm5 = s5; tiedForm5 = [p]; }
+      else if (s5 === maxForm5) tiedForm5.push(p);
+
+      if (formLen >= 10) {
+        const s10 = getFormNpga(p, 10);
+        if (s10 > maxForm10) { maxForm10 = s10; tiedForm10 = [p]; }
+        else if (s10 === maxForm10) tiedForm10.push(p);
+      }
+    }
+  }
+  const byValueDesc = (a: MinutesValuePlayer, b: MinutesValuePlayer) => b.marketValue - a.marketValue;
+  const topScorersLast10 = tiedForm10.sort(byValueDesc);
+  const topScorersLast5 = tiedForm5.sort(byValueDesc);
 
   const mostValuableInjuredPlayers = pickWithTies(
     injuredPlayers,
