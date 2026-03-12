@@ -2,14 +2,14 @@
 
 import { useMemo, useRef, useState, useEffect, useCallback, type ReactNode } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { Combobox, type ComboboxGroup } from "@/components/Combobox";
+import { Combobox } from "@/components/Combobox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { RangeFilter } from "@/components/RangeFilter";
 import { FilterButton } from "@/components/FilterButton";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { PositionDisplay } from "@/components/PositionDisplay";
+import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { filterPlayersByLeagueAndClub, filterTop5 } from "@/lib/filter-players";
 import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
@@ -332,27 +332,26 @@ function parseSigningFilter(v: string | null): SigningFilter {
 }
 
 const POSITION_CATEGORIES: Record<string, string[]> = {
-  Attackers: ["Centre-Forward", "Second Striker", "Left Winger", "Right Winger"],
-  Midfielders: ["Attacking Midfield", "Central Midfield", "Defensive Midfield", "Left Midfield", "Right Midfield"],
-  Defenders: ["Centre-Back", "Left-Back", "Right-Back"],
-  Goalkeeper: ["Goalkeeper"],
+  att: ["Centre-Forward", "Second Striker", "Left Winger", "Right Winger"],
+  mid: ["Attacking Midfield", "Central Midfield", "Defensive Midfield", "Left Midfield", "Right Midfield"],
+  def: ["Centre-Back", "Left-Back", "Right-Back"],
+  gk: ["Goalkeeper"],
 };
 
-const POSITION_GROUP_OPTIONS: ComboboxGroup[] = [
-  { options: [{ value: "all", label: "All positions" }] },
-  ...Object.entries(POSITION_CATEGORIES).map(([heading, positions]) => ({
-    heading,
-    options: positions.length > 1
-      ? [{ value: `group:${heading}`, label: `All ${heading}` }, ...positions.map((p) => ({ value: p, label: p }))]
-      : positions.map((p) => ({ value: p, label: p })),
-  })),
-];
+const CATEGORY_LABELS: Record<string, string> = { att: "ATT", mid: "MID", def: "DEF", gk: "GK" };
+
+function getPositionCategory(pos: string): string | null {
+  if (POSITION_CATEGORIES[pos]) return pos;
+  for (const [key, positions] of Object.entries(POSITION_CATEGORIES)) {
+    if (positions.includes(pos)) return key;
+  }
+  return null;
+}
 
 function matchesPositionFilter(player: MinutesValuePlayer, filter: string): boolean {
-  if (filter === "all") return true;
-  if (filter.startsWith("group:")) {
-    const positions = POSITION_CATEGORIES[filter.slice(6)];
-    if (!positions) return false;
+  if (!filter) return true;
+  const positions = POSITION_CATEGORIES[filter];
+  if (positions) {
     return positions.includes(player.position) || (!!player.playedPosition && positions.includes(player.playedPosition));
   }
   return player.position === filter || player.playedPosition === filter;
@@ -371,7 +370,9 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
   const leagueFilter = params.get("league") || "all";
   const clubFilter = params.get("club") || "all";
   const nationalityFilter = params.get("nat") || "all";
-  const positionFilter = params.get("pos") || "all";
+  const positionFilter = params.get("pos") || "";
+  const activeCategory = getPositionCategory(positionFilter);
+  const specificPosition = activeCategory && !POSITION_CATEGORIES[positionFilter] ? positionFilter : null;
   const top5Only = params.get("top5") === "1";
   const signingFilter = parseSigningFilter(params.get("signing"));
   const includePen = params.get("pen") === "1";
@@ -441,7 +442,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
     let base = filterPlayersByLeagueAndClub(players, leagueFilter, clubFilter);
     if (top5Only) base = filterTop5(base);
     if (nationalityFilter !== "all") base = base.filter((p) => p.nationality === nationalityFilter);
-    if (positionFilter !== "all") base = base.filter((p) => matchesPositionFilter(p, positionFilter));
+    if (positionFilter) base = base.filter((p) => matchesPositionFilter(p, positionFilter));
     return {
       newSignings: base.filter((p) => p.isNewSigning).length,
       loans: base.filter((p) => p.isOnLoan).length,
@@ -553,6 +554,52 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
             </div>
           </div>
 
+          {/* Position */}
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-5">
+            <div className="flex items-center gap-2 w-max">
+              <ToggleGroup
+                type="single"
+                value={activeCategory ?? ""}
+                onValueChange={(v) => {
+                  setIsFiltering(true);
+                  update({ pos: v || null });
+                }}
+                className="rounded-lg overflow-hidden border border-border-subtle"
+              >
+                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                  <ToggleGroupItem
+                    key={key}
+                    value={key}
+                    className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                  >
+                    {label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              {activeCategory && POSITION_CATEGORIES[activeCategory].length > 1 && (
+                <ToggleGroup
+                  type="single"
+                  value={specificPosition ?? ""}
+                  onValueChange={(v) => {
+                    setIsFiltering(true);
+                    update({ pos: v || activeCategory });
+                  }}
+                  className="rounded-lg overflow-hidden border border-border-subtle"
+                >
+                  {POSITION_CATEGORIES[activeCategory].map((p) => (
+                    <ToggleGroupItem
+                      key={p}
+                      value={p}
+                      className="px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                    >
+                      {POS_ABBREV[p] || p}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              )}
+            </div>
+          </div>
+
           {/* Filters */}
           <div className="flex flex-col gap-3 mb-5">
             {/* Primary filters */}
@@ -563,7 +610,6 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
               </FilterButton>
               <Combobox value={clubFilter} onChange={(v) => { setIsFiltering(true); update({ club: v === "all" ? null : v || null }); }} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
               <Combobox value={nationalityFilter} onChange={(v) => { setIsFiltering(true); update({ nat: v === "all" ? null : v || null }); }} options={nationalityOptions} placeholder="All nationalities" searchPlaceholder="Search nationalities..." />
-              <Combobox value={positionFilter} onChange={(v) => { setIsFiltering(true); update({ pos: v === "all" ? null : v || null }); }} groups={POSITION_GROUP_OPTIONS} placeholder="All positions" searchPlaceholder="Search positions..." />
             </div>
 
             {/* Advanced filters — collapsible */}
