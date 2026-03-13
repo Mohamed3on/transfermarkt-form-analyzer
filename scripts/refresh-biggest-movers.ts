@@ -111,7 +111,7 @@ function parsePeriodMovers(html: string, date: string): MarketValueMover[] {
     const diffText = cells.eq(7).text().trim();
     const absoluteChange = parseMarketValue(diffText.replace(/[+-]/g, ""));
 
-    if (name && playerId) {
+    if (name && playerId && previousValue > 0) {
       players.push({
         name, position, age, club, clubLogoUrl, nationality,
         currentValue, previousValue, absoluteChange, relativeChange,
