@@ -76,12 +76,12 @@ export async function fetchLeagueInjured(leagueCode: string): Promise<InjuredPla
 }
 
 export async function getInjuredPlayers() {
-  // Per-league 3s timeout: cached leagues resolve instantly, uncached bail fast for client retry
+  // Per-league 8s timeout: gives build env enough time; cached leagues resolve instantly
   const results = await Promise.allSettled(
     LEAGUES.map((league) =>
       Promise.race([
         fetchLeagueInjuredCached(league),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000)),
       ])
     )
   );
