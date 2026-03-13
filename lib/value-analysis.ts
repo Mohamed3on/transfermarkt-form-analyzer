@@ -2,16 +2,12 @@ import type { PlayerStats } from "@/app/types";
 import {
   canBeUnderperformerAgainst,
   canBeOutperformerAgainst,
+  effectivePosition as pos,
   isAttackingPosition,
   strictlyOutperforms,
 } from "@/lib/positions";
 
 export type ValueCandidate = PlayerStats & { count: number };
-
-/** Effective position for hierarchy checks — prefers most-played position this season. */
-function pos(p: PlayerStats): string {
-  return p.playedPosition || p.position;
-}
 
 export const MIN_COMPARISON_COUNT = 3;
 

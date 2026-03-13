@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import type { PlayerStats } from "@/app/types";
 import { getPlayerStatsData, applyStatsToggles } from "@/lib/fetch-minutes-value";
-import { canBeOutperformerAgainst, canBeUnderperformerAgainst, strictlyOutperforms } from "@/lib/positions";
+import { canBeOutperformerAgainst, canBeUnderperformerAgainst, effectivePosition as pos, strictlyOutperforms } from "@/lib/positions";
 import { normalizeForSearch } from "@/lib/normalize";
-
-function pos(p: PlayerStats): string {
-  return p.playedPosition || p.position;
-}
 
 function findPlayerByName(players: PlayerStats[], searchName: string): PlayerStats | null {
   const normalized = normalizeForSearch(searchName);

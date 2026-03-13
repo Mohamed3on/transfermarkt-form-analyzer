@@ -66,16 +66,35 @@ function currentSeasonId(): number {
 interface CeapiGame {
   gameInformation: { seasonId: number; competitionTypeId: number; competitionId: string; date?: { dateTimeUTC?: string } };
   statistics: {
+    generalStatistics: { positionId?: number | null };
     goalStatistics: { goalsScoredTotal?: number | null; assists?: number | null; penaltyShooterGoalsScored?: number | null; penaltyShooterMisses?: number | null };
     playingTimeStatistics: { playedMinutes?: number | null };
   };
 }
+
+/** Transfermarkt CEAPI positionId → display name */
+const POSITION_NAMES: Record<number, string> = {
+  1: "Goalkeeper",
+  3: "Centre-Back",
+  4: "Left-Back",
+  5: "Right-Back",
+  6: "Defensive Midfield",
+  7: "Central Midfield",
+  8: "Right Midfield",
+  9: "Left Midfield",
+  10: "Attacking Midfield",
+  11: "Left Winger",
+  12: "Right Winger",
+  13: "Second Striker",
+  14: "Centre-Forward",
+};
 
 interface AggregatedStats {
   goals: number; assists: number; minutes: number; appearances: number; penaltyGoals: number; penaltyMisses: number;
   intlGoals: number; intlAssists: number; intlMinutes: number; intlAppearances: number; intlPenaltyGoals: number;
   league: string;
   recentForm: RecentGameStats[];
+  playedPosition: string;
 }
 
 function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
@@ -84,23 +103,24 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
   let intlGoals = 0, intlAssists = 0, intlMinutes = 0, intlAppearances = 0, intlPenaltyGoals = 0;
   let league = "";
   const recentDomestic: RecentGameStats[] = [];
+  const minutesByPosition: Record<number, number> = {};
   for (const g of games) {
     if (g.gameInformation.seasonId !== seasonId) continue;
     const gs = g.statistics.goalStatistics;
     const pts = g.statistics.playingTimeStatistics;
+    const mins = pts.playedMinutes ?? 0;
+    const posId = g.statistics.generalStatistics.positionId;
     const isIntl = g.gameInformation.competitionTypeId === 11;
     if (isIntl) {
       intlGoals += gs.goalsScoredTotal ?? 0;
       intlAssists += gs.assists ?? 0;
       intlPenaltyGoals += gs.penaltyShooterGoalsScored ?? 0;
-      const mins = pts.playedMinutes ?? 0;
       intlMinutes += mins;
       if (mins > 0) intlAppearances++;
     } else {
       const gls = gs.goalsScoredTotal ?? 0;
       const ast = gs.assists ?? 0;
       const pGoals = gs.penaltyShooterGoalsScored ?? 0;
-      const mins = pts.playedMinutes ?? 0;
       goals += gls;
       assists += ast;
       penaltyGoals += pGoals;
@@ -117,11 +137,23 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
         league = LEAGUE_NAMES[g.gameInformation.competitionId] ?? "";
       }
     }
+    if (mins > 0 && posId) {
+      minutesByPosition[posId] = (minutesByPosition[posId] ?? 0) + mins;
+    }
   }
   // ceapi returns games newest-first; sort to ensure that, then keep last 10
   recentDomestic.sort((a, b) => b.date.localeCompare(a.date));
   const recentForm = recentDomestic.slice(0, 10);
-  return { goals, assists, minutes, appearances, penaltyGoals, penaltyMisses, intlGoals, intlAssists, intlMinutes, intlAppearances, intlPenaltyGoals, league, recentForm };
+  // Most-played position by total minutes (including international)
+  let playedPosition = "";
+  let maxMins = 0;
+  for (const [id, total] of Object.entries(minutesByPosition)) {
+    if (total > maxMins) {
+      maxMins = total;
+      playedPosition = POSITION_NAMES[Number(id)] ?? "";
+    }
+  }
+  return { goals, assists, minutes, appearances, penaltyGoals, penaltyMisses, intlGoals, intlAssists, intlMinutes, intlAppearances, intlPenaltyGoals, league, recentForm, playedPosition };
 }
 
 /** Raw fetch — no caching. Used by the offline refresh script. */
@@ -156,17 +188,6 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const leagueLinkImg = $(".data-header__league-link img").first();
   const leagueLogoUrl = (leagueLinkImg.attr("src") || "").replace(/\/(verytiny|tiny)\//, "/header/") || "";
 
-  // Most-played position this season from the "Positions played" pitch visualization
-  let playedPosition = "";
-  let maxGames = 0;
-  $(".zahl-anzeige.played-position__pos-box").each((_, el) => {
-    const games = parseInt($(el).find(".played-position__text-box").text().trim()) || 0;
-    if (games > maxGames) {
-      maxGames = games;
-      playedPosition = $(el).attr("title")?.trim() || "";
-    }
-  });
-
   // Parse senior international caps from profile header (Caps/Goals: N)
   // The team label varies: "Current international", "Former International", "National player"
   // Find the <ul> containing Caps/Goals, then check the team name in the sibling <li>
@@ -200,7 +221,7 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const age = ageMatch ? parseInt(ageMatch[1]) : 0;
 
   // Parse stats + league from ceapi
-  const shared = { club, clubLogoUrl, intlCareerCaps, isCurrentIntl, isNewSigning, isOnLoan, playedPosition, contractExpiry, gamesMissed, nationalityFlagUrl, leagueLogoUrl, marketValue, marketValueDisplay, age };
+  const shared = { club, clubLogoUrl, intlCareerCaps, isCurrentIntl, isNewSigning, isOnLoan, contractExpiry, gamesMissed, nationalityFlagUrl, leagueLogoUrl, marketValue, marketValueDisplay, age };
 
   if (!ceapiRes.ok) {
     return { ...ZERO_STATS, ...shared };

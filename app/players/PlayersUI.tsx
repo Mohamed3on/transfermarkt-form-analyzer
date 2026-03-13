@@ -90,6 +90,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
   const isRecent = formWindow !== "season";
   const seasonGA = getFormGA(player, "season", includePen);
   const recentGA = isRecent ? getFormGA(player, formWindow, includePen) : null;
+  const displayMinutes = isRecent ? getFormMinutes(player, formWindow) : player.minutes;
   const injuryInfo = injuryMap?.[player.playerId];
   const benchmarkHref = `/value-analysis?${new URLSearchParams({ id: player.playerId, name: player.name })}`;
 
@@ -210,7 +211,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
           <div className="w-px h-7 bg-border-subtle" />
           <div className="text-right">
             <div className="text-sm font-value tabular-nums text-text-primary">
-              {player.minutes.toLocaleString()}&apos;
+              {displayMinutes.toLocaleString()}&apos;
             </div>
           </div>
           {showCaps && (
@@ -267,7 +268,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
         <span className="text-sm text-accent-blue">{player.marketValueDisplay}</span>
         <span>{player.age}y</span>
         <span>{player.totalMatches} games</span>
-        <span>{player.minutes.toLocaleString()}&apos;</span>
+        <span>{displayMinutes.toLocaleString()}&apos;</span>
         {showCaps && (player.intlCareerCaps ?? 0) > 0 && (
           <span>{player.intlCareerCaps} caps</span>
         )}
@@ -467,7 +468,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
     return [...list].sort((a, b) => {
       let diff: number;
       switch (sortBy) {
-        case "mins": diff = b.minutes - a.minutes; break;
+        case "mins": diff = getFormMinutes(b, formWindow) - getFormMinutes(a, formWindow); break;
         case "games": diff = b.totalMatches - a.totalMatches; break;
         case "ga":
           diff = getFormGA(b, formWindow, includePen).total - getFormGA(a, formWindow, includePen).total;
@@ -526,7 +527,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
-              {sortBy === "ga" && (
+              {(sortBy === "ga" || sortBy === "mins") && (
                 <ToggleGroup
                   type="single"
                   value={String(formWindow)}

@@ -25,6 +25,11 @@ const DEFENSIVE_POSITIONS = new Set<string>([
   "Right Wing-Back",
 ]);
 
+/** Effective position — prefers the most-played position this season over the registered position. */
+export function effectivePosition(p: { playedPosition?: string; position: string }): string {
+  return p.playedPosition || p.position;
+}
+
 export function getPositionClass(position: string): PositionClass {
   return POSITION_CLASS_MAP[position] ?? "other";
 }
