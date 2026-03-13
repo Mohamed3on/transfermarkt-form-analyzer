@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { formatMarketValue } from "@/lib/format";
 import type { MarketValueMover, MarketValueMoversResult } from "@/app/types";
 
 type Variant = "losers" | "winners";
@@ -34,13 +35,6 @@ const VARIANT_CONFIG = {
     sign: "+",
   },
 } as const;
-
-function formatValue(value: number): string {
-  if (value >= 1_000_000_000) return `€${(value / 1_000_000_000).toFixed(2)}B`;
-  if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `€${(value / 1_000).toFixed(0)}K`;
-  return `€${value}`;
-}
 
 function formatPeriodLabel(date: string): string {
   const [year, month] = date.split("-");
@@ -73,14 +67,19 @@ function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMov
         <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
           <PlayerImage player={latest} />
           <div className="flex-1 min-w-0">
-            <a
-              href={latest.profileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-base sm:text-lg font-pixel text-text-primary hover:text-accent-hot transition-colors"
-            >
-              {latest.name}
-            </a>
+            <div className="flex items-center gap-1.5">
+              <a
+                href={latest.profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-base sm:text-lg font-pixel text-text-primary hover:text-accent-hot transition-colors"
+              >
+                {latest.name}
+              </a>
+              <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 shrink-0 font-value">
+                {sorted.length}×
+              </Badge>
+            </div>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               {latest.clubLogoUrl && (
                 <img src={latest.clubLogoUrl} alt={latest.club} className="w-4 h-4 sm:w-5 sm:h-5 object-contain bg-white rounded p-0.5" />
@@ -94,7 +93,7 @@ function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMov
           </div>
           <div className="text-right shrink-0">
             <div className="text-lg sm:text-xl font-value text-text-primary">
-              {formatValue(latest.currentValue)}
+              {formatMarketValue(latest.currentValue)}
             </div>
             <div className="text-[10px] sm:text-xs text-text-muted">current value</div>
           </div>
@@ -120,7 +119,7 @@ function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMov
                       style={{ width: `${Math.max(barWidth, 4)}%` }}
                     />
                     <span className={cn("absolute inset-0 flex items-center px-2 text-xs font-value", cfg.color)}>
-                      {cfg.prefix}{formatValue(entry.absoluteChange)}
+                      {cfg.prefix}{formatMarketValue(entry.absoluteChange)}
                     </span>
                   </div>
                   <span className="text-[10px] sm:text-xs text-text-muted w-10 sm:w-12 text-right shrink-0 font-value">
@@ -179,7 +178,7 @@ function PeriodPlayerRow({ player, isRepeat, variant }: { player: MarketValueMov
         </div>
       </div>
       <div className="text-right shrink-0">
-        <div className={cn("text-sm font-value", cfg.color)}>{cfg.prefix}{formatValue(player.absoluteChange)}</div>
+        <div className={cn("text-sm font-value", cfg.color)}>{cfg.prefix}{formatMarketValue(player.absoluteChange)}</div>
         <div className="text-[10px] text-text-muted font-value">
           {variant === "losers" ? "-" : "+"}{player.relativeChange.toFixed(1)}%
         </div>
@@ -231,19 +230,9 @@ export function MarketValueMoversUI({ data, variant }: MarketValueMoversUIProps)
     return ids;
   }, [repeatMovers]);
 
-  const sortedRepeatMovers = useMemo(
-    () =>
-      [...repeatMovers].sort((a, b) => {
-        const maxA = Math.max(...a.map((m) => m.absoluteChange));
-        const maxB = Math.max(...b.map((m) => m.absoluteChange));
-        return maxB - maxA;
-      }),
-    [repeatMovers]
-  );
-
   return (
     <div className="space-y-6 sm:space-y-8">
-      {sortedRepeatMovers.length > 0 && (
+      {repeatMovers.length > 0 && (
         <section>
           <div className="mb-3">
             <div className="flex items-baseline gap-2">
@@ -251,7 +240,7 @@ export function MarketValueMoversUI({ data, variant }: MarketValueMoversUIProps)
                 {cfg.sectionTitle}
               </h2>
               <span className="text-xs text-text-muted font-value">
-                {sortedRepeatMovers.length}
+                {repeatMovers.length}
               </span>
             </div>
             <p className="text-xs text-text-muted mt-0.5">
@@ -259,7 +248,7 @@ export function MarketValueMoversUI({ data, variant }: MarketValueMoversUIProps)
             </p>
           </div>
           <div className="space-y-3">
-            {sortedRepeatMovers.map((appearances) => (
+            {repeatMovers.map((appearances) => (
               <RepeatMoverCard key={appearances[0].playerId} appearances={appearances} variant={variant} />
             ))}
           </div>

@@ -1,5 +1,4 @@
-import { findRepeatLosers } from "@/lib/biggest-losers";
-import { findRepeatWinners } from "@/lib/biggest-winners";
+import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { BiggestMoversUI } from "./BiggestMoversUI";
 import { DataLastUpdated } from "@/app/components/DataLastUpdated";
 import { createPageMetadata } from "@/lib/metadata";

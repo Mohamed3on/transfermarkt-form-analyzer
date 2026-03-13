@@ -11,7 +11,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
-import { filterPlayersByLeagueAndClub, filterTop5 } from "@/lib/filter-players";
+import { filterPlayersByLeagueAndClub, filterTop5, getFormMinutes } from "@/lib/filter-players";
 import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
 import type { MinutesValuePlayer, InjuryMap } from "@/app/types";
 
@@ -471,7 +471,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
         case "games": diff = b.totalMatches - a.totalMatches; break;
         case "ga":
           diff = getFormGA(b, formWindow, includePen).total - getFormGA(a, formWindow, includePen).total;
-          if (diff === 0) diff = a.minutes - b.minutes;
+          if (diff === 0) diff = getFormMinutes(a, formWindow) - getFormMinutes(b, formWindow);
           break;
         case "pen": diff = (b.penaltyGoals ?? 0) - (a.penaltyGoals ?? 0); break;
         case "miss": diff = (b.penaltyMisses ?? 0) - (a.penaltyMisses ?? 0); break;

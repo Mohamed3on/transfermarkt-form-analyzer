@@ -16,6 +16,15 @@ export function filterTop5<T extends { league: string }>(players: T[]): T[] {
   return players.filter((p) => TOP_5_LEAGUES.includes(p.league));
 }
 
+export function getFormMinutes(player: { minutes: number; recentForm?: { minutes: number }[] }, window: "season" | number): number {
+  if (window === "season") return player.minutes;
+  return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.minutes, 0);
+}
+
+export function getFormNpga(player: { recentForm?: { goals: number; assists: number; penaltyGoals: number }[] }, window: number): number {
+  return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.goals - (g.penaltyGoals ?? 0) + g.assists, 0);
+}
+
 /** Fraction of games missed (0–1). Players with 0 matches and 0 minutes are treated as 100% unavailable. */
 export function missedPct(p: { totalMatches: number; minutes: number; gamesMissed?: number }): number {
   const missed = p.gamesMissed ?? 0;

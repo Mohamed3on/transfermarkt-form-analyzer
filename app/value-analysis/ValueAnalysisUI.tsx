@@ -15,7 +15,7 @@ import { FilterButton } from "@/components/FilterButton";
 import { PositionDisplay } from "@/components/PositionDisplay";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES, missedPct } from "@/lib/filter-players";
 import { countComparisons, MIN_COMPARISON_COUNT } from "@/lib/value-analysis";
-import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
+import { formatReturnInfo, formatInjuryDuration, formatMarketValue, PROFIL_RE } from "@/lib/format";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { BenchmarkCard, BigNumber } from "./BenchmarkCard";
 import type { PlayerStats, MinutesValuePlayer, InjuryMap } from "@/app/types";
@@ -41,11 +41,7 @@ interface PlayerFormResult {
 
 const EMPTY_MV: MinutesValuePlayer[] = [];
 
-function formatValue(v: number): string {
-  if (v >= 1_000_000) return `\u20AC${(v / 1_000_000).toFixed(1)}m`;
-  if (v >= 1_000) return `\u20AC${(v / 1_000).toFixed(0)}k`;
-  return `\u20AC${v}`;
-}
+
 
 function getPlayerBenchmarkHref(id: string, name: string, top5?: boolean): string {
   const p = new URLSearchParams({ id, name });
@@ -498,7 +494,7 @@ function MvPlayerCard({ player, target, index, variant = "less", onSelect, injur
 }) {
   const theme = variant === "less" ? CARD_THEMES.cold : CARD_THEMES.green;
   const valueDiff = target ? player.marketValue - target.marketValue : 0;
-  const valueDiffDisplay = valueDiff > 0 ? `+${formatValue(valueDiff)}` : formatValue(valueDiff);
+  const valueDiffDisplay = valueDiff > 0 ? `+${formatMarketValue(valueDiff)}` : formatMarketValue(valueDiff);
   const minsDiff = target ? player.minutes - target.minutes : 0;
 
   return (

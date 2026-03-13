@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { cn } from "@/lib/utils";
 import type { InjuredPlayer } from "@/app/types";
 import { getLeagueLogoUrl, getLeagueUrl } from "@/lib/leagues";
-import { formatReturnInfo, formatInjuryDuration } from "@/lib/format";
+import { formatReturnInfo, formatInjuryDuration, formatMarketValue } from "@/lib/format";
 import { useProgressiveFetch } from "@/lib/use-progressive-fetch";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { Combobox } from "@/components/Combobox";
@@ -63,18 +63,7 @@ function getLeagueStyle(league: string): { bg: string; text: string } {
   return styles[league] || { bg: "bg-gray-600", text: "text-white" };
 }
 
-function formatValueNum(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `€${(value / 1_000_000_000).toFixed(2)}B`;
-  }
-  if (value >= 1_000_000) {
-    return `€${(value / 1_000_000).toFixed(0)}M`;
-  }
-  if (value >= 1_000) {
-    return `€${(value / 1_000).toFixed(0)}K`;
-  }
-  return `€${value}`;
-}
+
 
 function RankBadge({ rank }: { rank: number }) {
   return (
@@ -222,7 +211,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
               </div>
               <div className="text-right shrink-0">
                 <div className="text-sm sm:text-lg font-medium text-accent-hot font-value">
-                  {formatValueNum(team.totalValue)}
+                  {formatMarketValue(team.totalValue)}
                 </div>
                 <div className="text-[10px] sm:text-xs text-text-muted">
                   {team.count} {team.count === 1 ? "player" : "players"}
@@ -316,7 +305,7 @@ function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; ra
         <RankBadge rank={rank} />
         <h3 className="font-bold text-sm sm:text-base text-text-primary flex-1 text-left">{group.injury}</h3>
         <span className="text-[10px] sm:text-xs text-text-muted font-value shrink-0">{group.count}</span>
-        <span className="text-xs sm:text-sm font-medium text-accent-hot font-value shrink-0">{formatValueNum(group.totalValue)}</span>
+        <span className="text-xs sm:text-sm font-medium text-accent-hot font-value shrink-0">{formatMarketValue(group.totalValue)}</span>
         <svg className="w-4 h-4 text-text-muted shrink-0 transition-transform [[data-state=open]>&]:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
@@ -396,7 +385,7 @@ function StatsHighlights({
             <StatCell
               label="Most Players Out"
               value={mostPlayersClub.club}
-              sub={`${mostPlayersClub.count} players · ${formatValueNum(mostPlayersClub.totalValue)}`}
+              sub={`${mostPlayersClub.count} players · ${formatMarketValue(mostPlayersClub.totalValue)}`}
             />
           </div>
         )}
@@ -410,7 +399,7 @@ function StatsHighlights({
             <StatCell
               label="Most Value Out"
               value={mostValueClub.club}
-              sub={`${formatValueNum(mostValueClub.totalValue)} · ${mostValueClub.count} players`}
+              sub={`${formatMarketValue(mostValueClub.totalValue)} · ${mostValueClub.count} players`}
             />
           </div>
         )}
@@ -421,7 +410,7 @@ function StatsHighlights({
             <StatCell
               label="Most Common"
               value={topInjury.injury}
-              sub={`${topInjury.count} players · ${formatValueNum(topInjury.totalValue)}`}
+              sub={`${topInjury.count} players · ${formatMarketValue(topInjury.totalValue)}`}
             />
           </div>
         )}

@@ -1,5 +1,12 @@
 export const PROFIL_RE = /\/profil\//;
 
+export function formatMarketValue(value: number): string {
+  if (value >= 1_000_000_000) return `€${(value / 1_000_000_000).toFixed(2)}B`;
+  if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `€${(value / 1_000).toFixed(0)}K`;
+  return `€${value}`;
+}
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export function formatReturnInfo(dateStr: string): { label: string; imminent: boolean } | null {

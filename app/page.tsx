@@ -19,9 +19,9 @@ import { getTeamFormData } from "@/lib/team-form";
 import { applyStatsToggles, getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
 import { findValueCandidates } from "@/lib/value-analysis";
 import { getInjuredPlayers } from "@/lib/injured";
-import { missedPct } from "@/lib/filter-players";
-import { findRepeatLosers } from "@/lib/biggest-losers";
-import { findRepeatWinners } from "@/lib/biggest-winners";
+import { missedPct, getFormMinutes, getFormNpga } from "@/lib/filter-players";
+import { formatMarketValue } from "@/lib/format";
+import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { getManagerInfo } from "@/lib/fetch-manager";
 import type { AggregatedTeam, ManagerInfo, MarketValueMover, MinutesValuePlayer } from "@/app/types";
 
@@ -238,12 +238,7 @@ function formatSigned(value: number): string {
   return value > 0 ? `+${value}` : `${value}`;
 }
 
-function formatMarketValueNum(value: number): string {
-  if (value >= 1_000_000_000) return `€${(value / 1_000_000_000).toFixed(2)}B`;
-  if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(0)}M`;
-  if (value >= 1_000) return `€${(value / 1_000).toFixed(0)}K`;
-  return `€${value}`;
-}
+
 
 function formatMinutes(value?: number): string {
   if (value === undefined) return "0";
@@ -254,15 +249,11 @@ function getNpga(player: Pick<MinutesValuePlayer, "goals" | "assists" | "penalty
   return player.goals - (player.penaltyGoals ?? 0) + player.assists;
 }
 
-function getFormNpga(player: MinutesValuePlayer, window: number): number {
-  return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.goals - (g.penaltyGoals ?? 0) + g.assists, 0);
-}
-
 function sortByNpgaDesc(players: MinutesValuePlayer[]): MinutesValuePlayer[] {
   return [...players].sort((a, b) => {
     const npgaDiff = getNpga(b) - getNpga(a);
     if (npgaDiff !== 0) return npgaDiff;
-    return b.marketValue - a.marketValue;
+    return a.minutes - b.minutes;
   });
 }
 
@@ -636,21 +627,22 @@ export default async function Home() {
   const mostOverpricedPlayer = mostOverpricedPlayers[0] ?? null;
 
   const playersByNpga = sortByNpgaDesc(players);
+  const byFewerMins = (a: MinutesValuePlayer, b: MinutesValuePlayer) => a.minutes - b.minutes;
   const mostNpgaPlayers = pickWithTies(playersByNpga, (player) => getNpga(player), "top", {
-    sort: (a, b) => b.marketValue - a.marketValue,
+    sort: byFewerMins, max: 1,
   });
   const mostNpgaPlayer = mostNpgaPlayers[0] ?? null;
   const mostNpgaSignings = pickWithTies(
     players.filter((p) => p.isNewSigning),
     (player) => getNpga(player),
     "top",
-    { sort: (a, b) => b.marketValue - a.marketValue },
+    { sort: byFewerMins, max: 1 },
   );
   const mostValuableLoans = pickWithTies(
     players.filter((p) => p.isOnLoan),
     (player) => player.marketValue,
     "top",
-    { sort: (a, b) => getNpga(b) - getNpga(a) || b.minutes - a.minutes },
+    { sort: (a, b) => getNpga(b) - getNpga(a) || a.minutes - b.minutes, max: 1 },
   );
 
   const zeroCapsPlayers = players.filter((p) => (p.intlCareerCaps ?? 0) === 0);
@@ -658,31 +650,33 @@ export default async function Home() {
     zeroCapsPlayers,
     (player) => player.marketValue,
     "top",
-    { sort: (a, b) => getNpga(b) - getNpga(a) },
+    { sort: (a, b) => getNpga(b) - getNpga(a) || a.minutes - b.minutes, max: 1 },
   );
   const mostNpgaZeroCapsPlayers = pickWithTies(
     sortByNpgaDesc(zeroCapsPlayers),
     (player) => getNpga(player),
     "top",
-    { sort: (a, b) => b.marketValue - a.marketValue },
+    { sort: byFewerMins, max: 1 },
   );
 
-  let maxForm10 = 0;
-  let maxForm5 = 0;
-  let tiedForm10: MinutesValuePlayer[] = [];
-  let tiedForm5: MinutesValuePlayer[] = [];
-  for (const p of players) {
-    const s5 = getFormNpga(p, 5);
-    if (s5 > maxForm5) { maxForm5 = s5; tiedForm5 = [p]; }
-    else if (s5 === maxForm5 && s5 > 0) tiedForm5.push(p);
-
-    const s10 = getFormNpga(p, 10);
-    if (s10 > maxForm10) { maxForm10 = s10; tiedForm10 = [p]; }
-    else if (s10 === maxForm10 && s10 > 0) tiedForm10.push(p);
-  }
-  const byValueDesc = (a: MinutesValuePlayer, b: MinutesValuePlayer) => b.marketValue - a.marketValue;
-  const topScorersLast10 = tiedForm10.sort(byValueDesc);
-  const topScorersLast5 = tiedForm5.sort(byValueDesc);
+  const topScorerLast5 = players.length > 0
+    ? players.reduce((best, p) => {
+        const s = getFormNpga(p, 5);
+        const bestS = getFormNpga(best, 5);
+        if (s > bestS) return p;
+        if (s === bestS && getFormMinutes(p, 5) < getFormMinutes(best, 5)) return p;
+        return best;
+      })
+    : null;
+  const topScorerLast10 = players.length > 0
+    ? players.reduce((best, p) => {
+        const s = getFormNpga(p, 10);
+        const bestS = getFormNpga(best, 10);
+        if (s > bestS) return p;
+        if (s === bestS && getFormMinutes(p, 10) < getFormMinutes(best, 10)) return p;
+        return best;
+      })
+    : null;
 
   const mostValuableInjuredPlayers = pickWithTies(
     injuredPlayers,
@@ -791,34 +785,26 @@ export default async function Home() {
     )] : []),
   ];
 
-  // Build form scorer snapshot items, combining if same players top both windows
   const formScorerItems: SnapshotItem[][] = [];
-  if (topScorersLast10.length > 0 || topScorersLast5.length > 0) {
-    const last10Ids = new Set(topScorersLast10.map((p) => p.playerId));
-    const last5Ids = new Set(topScorersLast5.map((p) => p.playerId));
-    const sameSet = last10Ids.size === last5Ids.size && [...last10Ids].every((id) => last5Ids.has(id));
-
-    if (sameSet && topScorersLast10.length > 0) {
-      formScorerItems.push(topScorersLast10.map((p) => playerItem(
-        p, "Top scorer (last 5 & 10)", "/players?sort=ga&fw=5",
-        `${p.club} · ${getFormNpga(p, 5)} npG+A (5) · ${getFormNpga(p, 10)} npG+A (10)`,
-        { metrics: [`Season ${getNpga(p)} npG+A`, p.marketValueDisplay], tone: "green" },
-      )));
+  if (topScorerLast5 && topScorerLast10) {
+    const p5 = topScorerLast5, p10 = topScorerLast10;
+    if (p5.playerId === p10.playerId) {
+      formScorerItems.push([playerItem(
+        p5, "Top scorer (last 5 & 10)", "/players?sort=ga&fw=5",
+        `${p5.club} · ${getFormNpga(p5, 5)} npG+A (5) · ${getFormNpga(p5, 10)} npG+A (10)`,
+        { metrics: [`Season ${getNpga(p5)} npG+A`, p5.marketValueDisplay], tone: "green" },
+      )]);
     } else {
-      if (topScorersLast10.length > 0) {
-        formScorerItems.push(topScorersLast10.map((p) => playerItem(
-          p, "Top scorer (last 10)", "/players?sort=ga&fw=10",
-          `${p.club} · ${getFormNpga(p, 10)} npG+A in last 10`,
-          { metrics: [`Season ${getNpga(p)} npG+A`, p.marketValueDisplay], tone: "green" },
-        )));
-      }
-      if (topScorersLast5.length > 0) {
-        formScorerItems.push(topScorersLast5.map((p) => playerItem(
-          p, "Top scorer (last 5)", "/players?sort=ga&fw=5",
-          `${p.club} · ${getFormNpga(p, 5)} npG+A in last 5`,
-          { metrics: [`Season ${getNpga(p)} npG+A`, p.marketValueDisplay], tone: "green" },
-        )));
-      }
+      formScorerItems.push([playerItem(
+        p10, "Top scorer (last 10)", "/players?sort=ga&fw=10",
+        `${p10.club} · ${getFormNpga(p10, 10)} npG+A in last 10`,
+        { metrics: [`Season ${getNpga(p10)} npG+A`, p10.marketValueDisplay], tone: "green" },
+      )]);
+      formScorerItems.push([playerItem(
+        p5, "Top scorer (last 5)", "/players?sort=ga&fw=5",
+        `${p5.club} · ${getFormNpga(p5, 5)} npG+A in last 5`,
+        { metrics: [`Season ${getNpga(p5)} npG+A`, p5.marketValueDisplay], tone: "green" },
+      )]);
     }
   }
 
@@ -860,7 +846,7 @@ export default async function Home() {
     ...mostAffectedInjuryTeams.map((team): SnapshotItem => ({
       label: "Hardest hit club",
       value: team.club,
-      detail: `${team.league} · ${formatMarketValueNum(team.totalValue)} lost · ${team.count} injured`,
+      detail: `${team.league} · ${formatMarketValue(team.totalValue)} lost · ${team.count} injured`,
       href: "/injured?tab=teams",
       imageUrl: team.clubLogoUrl,
       imageContain: true,
@@ -868,21 +854,18 @@ export default async function Home() {
   ];
 
   const biggestMoversItems: SnapshotItem[] = [];
-  function addRepeatMovers(movers: MarketValueMover[][] | undefined, label: string, tab: string, tone: SnapshotTone): void {
+  function addTopMover(movers: MarketValueMover[][] | undefined, label: string, tab: string, tone: SnapshotTone): void {
     if (!movers || movers.length === 0) return;
-    const sorted = [...movers].sort((a, b) => {
-      const maxA = Math.max(...a.map((m) => m.absoluteChange));
-      const maxB = Math.max(...b.map((m) => m.absoluteChange));
-      return maxB - maxA;
-    });
-    for (const appearances of sorted) {
+    const topTotal = movers[0].reduce((s, m) => s + m.absoluteChange, 0);
+    for (const appearances of movers) {
+      if (appearances.reduce((s, m) => s + m.absoluteChange, 0) < topTotal) break;
       const latest = [...appearances].sort((a, b) => b.period.localeCompare(a.period))[0];
       const earliest = [...appearances].sort((a, b) => a.period.localeCompare(b.period))[0];
       const sign = tone === "red" ? "-" : "+";
       biggestMoversItems.push({
         label,
         value: latest.name,
-        detail: `${latest.club} · ${sign}${formatMarketValueNum(earliest.absoluteChange)} in last ${Math.ceil((Date.now() - new Date(earliest.period).getTime()) / (365.25 * 86400000))}y`,
+        detail: `${latest.club} · ${sign}${formatMarketValue(earliest.absoluteChange)} in last ${Math.ceil((Date.now() - new Date(earliest.period).getTime()) / (365.25 * 86400000))}y`,
         href: `/biggest-movers?tab=${tab}`,
         imageUrl: latest.imageUrl,
         secondaryImageUrl: latest.clubLogoUrl,
@@ -891,16 +874,16 @@ export default async function Home() {
       });
     }
   }
-  addRepeatMovers(biggestLosers?.repeatMovers, "In freefall", "losers", "red");
-  addRepeatMovers(biggestWinners?.repeatMovers, "On the rise", "winners", "green");
+  addTopMover(biggestLosers?.repeatMovers, "In freefall", "losers", "red");
+  addTopMover(biggestWinners?.repeatMovers, "On the rise", "winners", "green");
 
   const snapshotGroups = [
     recentFormItems.length && { title: "Recent Form", description: "Teams leading the most categories across their last 5–20 matches.", href: "/form", items: recentFormItems },
     teamFormItems.length && { title: "Value vs Table", description: "Largest gaps between results and squad value expectation.", href: "/expected-position", items: teamFormItems },
     valueAnalysisItems.length && { title: "Over/Under", description: "Most overpriced profiles and strongest bargain cases.", href: "/value-analysis", items: valueAnalysisItems },
     playerItems.length && { title: "Player Explorer", description: "Output leaders, signings, loans, and uncapped talents.", href: "/players", items: playerItems },
-    injuryItems.length && { title: "Injury Impact", description: "Highest-value absences and hardest-hit clubs.", href: "/injured", items: injuryItems },
     biggestMoversItems.length && { title: "Biggest Movers", description: "Players on sustained value rises or drops.", href: "/biggest-movers", items: biggestMoversItems },
+    injuryItems.length && { title: "Injury Impact", description: "Highest-value absences and hardest-hit clubs.", href: "/injured", items: injuryItems },
   ].filter(Boolean) as SnapshotGroup[];
 
   return (
