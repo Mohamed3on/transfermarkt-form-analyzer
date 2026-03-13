@@ -22,7 +22,6 @@ export const metadata = createPageMetadata({
 
 export default async function FormPage() {
   const [data, teamForm] = await Promise.all([getAnalysis(), getTeamFormData()]);
-  if (data.analysis.length === 0) throw new Error("Empty form data");
 
   // Build clubId → deltaPts map from expected-position data
   const deltaMap: Record<string, number> = {};
