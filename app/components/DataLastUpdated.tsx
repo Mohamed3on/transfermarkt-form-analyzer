@@ -33,7 +33,7 @@ export async function DataLastUpdated({ file = "updated-at.txt" }: { file?: stri
       <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
       <span>
         Updated {formatted}
-        <span className="ml-1.5 opacity-60">({timeAgo(updatedAt)})</span>
+        <span className="ml-1.5 text-text-secondary">({timeAgo(updatedAt)})</span>
       </span>
     </div>
   );

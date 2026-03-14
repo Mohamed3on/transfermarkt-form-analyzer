@@ -655,11 +655,11 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                     />
                     <FilterButton active={signingFilter === "transfer"} onClick={() => fadeUpdate({ signing: signingFilter === "transfer" ? null : "transfer", new: null })}>
                       Signings
-                      <span className="tabular-nums opacity-60">{signingCounts.newSignings}</span>
+                      <span className="tabular-nums text-text-secondary">{signingCounts.newSignings}</span>
                     </FilterButton>
                     <FilterButton active={signingFilter === "loan"} onClick={() => fadeUpdate({ signing: signingFilter === "loan" ? null : "loan", new: null })}>
                       Loans
-                      <span className="tabular-nums opacity-60">{signingCounts.loans}</span>
+                      <span className="tabular-nums text-text-secondary">{signingCounts.loans}</span>
                     </FilterButton>
                   </div>
                   <div className="w-px h-6 self-center bg-border-subtle hidden sm:block" />

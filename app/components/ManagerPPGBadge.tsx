@@ -105,7 +105,7 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
       {isOnly && <span className="hidden sm:inline">👑</span>}
       <span className="sm:hidden">{manager.ppg!.toFixed(2)}</span>
       <span className="hidden sm:inline">{manager.ppg!.toFixed(2)} PPG</span>
-      <span className="opacity-70">({manager.ppgRank}/{manager.totalComparableManagers})</span>
+      <span className="text-text-secondary">({manager.ppgRank}/{manager.totalComparableManagers})</span>
     </span>
   );
 
