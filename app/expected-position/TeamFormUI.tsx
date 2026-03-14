@@ -167,7 +167,7 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
             <span className="text-[10px] text-text-muted">vs</span>
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-elevated text-text-muted">
               <span className="font-value">{ordinal(team.marketValueRank)} · {team.expectedPoints}pts</span>
-              <span className="hidden sm:inline text-[10px] opacity-60">by value{formatValue(team.marketValue) !== "-" ? ` · ${formatValue(team.marketValue)}` : ""}</span>
+              <span className="hidden sm:inline text-xs text-text-secondary">by value{formatValue(team.marketValue) !== "-" ? ` · ${formatValue(team.marketValue)}` : ""}</span>
             </span>
           </div>
 
