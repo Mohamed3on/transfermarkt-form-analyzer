@@ -166,7 +166,7 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
             </span>
             <span className="text-border-medium">|</span>
             <span>
-              <span className="hidden sm:inline text-text-secondary">Squad ranked {ordinal(team.marketValueRank)},</span>
+              <span className="hidden sm:inline text-text-secondary">{ordinal(team.marketValueRank)} in squad value,</span>
               <span className="sm:hidden text-text-secondary">{ordinal(team.marketValueRank)} by value,</span>
               {" "}{team.expectedPoints}pts expected
             </span>
