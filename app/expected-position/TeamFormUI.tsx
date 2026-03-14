@@ -160,22 +160,12 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
           </div>
 
           {/* Stats Row */}
-          <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1 mt-2.5 text-xs sm:text-sm text-text-muted">
-            <span>
-              <span className="text-text-secondary">{ordinal(team.leaguePosition)}</span> · {team.points}pts
-            </span>
-            <span className="text-border-medium">|</span>
-            <span>
-              <span className="hidden sm:inline text-text-secondary">{ordinal(team.marketValueRank)} in squad value,</span>
-              <span className="sm:hidden text-text-secondary">{ordinal(team.marketValueRank)} by value,</span>
-              {" "}{team.expectedPoints}pts expected
-            </span>
-            <span className="text-border-medium">|</span>
-            <span>
-              <span className="hidden sm:inline text-text-secondary">Avg player value:</span>
-              <span className="sm:hidden text-text-secondary">Avg:</span>
-              {" "}{formatValue(team.marketValue)}
-            </span>
+          <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-2.5 text-xs sm:text-sm text-text-muted">
+            <span><span className="text-text-secondary">{ordinal(team.leaguePosition)}</span> · <span className="font-value">{team.points}</span>pts</span>
+            <span className="text-border-medium">·</span>
+            <span><span className="text-text-secondary">By value:</span> {ordinal(team.marketValueRank)} · <span className="font-value">{team.expectedPoints}</span>pts</span>
+            <span className="hidden sm:inline text-border-medium">·</span>
+            <span className="hidden sm:inline"><span className="text-text-secondary">Avg:</span> {formatValue(team.marketValue)}</span>
           </div>
 
           {/* Manager info */}
