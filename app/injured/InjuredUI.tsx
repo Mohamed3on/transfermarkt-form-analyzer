@@ -12,6 +12,7 @@ import { formatReturnInfo, formatInjuryDuration, formatMarketValue } from "@/lib
 import { useProgressiveFetch } from "@/lib/use-progressive-fetch";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { Combobox } from "@/components/Combobox";
+import { InfoTip } from "@/app/components/InfoTip";
 import { filterPlayersByLeagueAndClub } from "@/lib/filter-players";
 
 interface TeamInjuryGroup {
@@ -383,7 +384,7 @@ function StatsHighlights({
               <img src={mostPlayersClub.clubLogoUrl} alt="" className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-sm bg-white p-px shrink-0 mt-3" />
             )}
             <StatCell
-              label="Most Players Out"
+              label="Most Players Injured"
               value={mostPlayersClub.club}
               sub={`${mostPlayersClub.count} players · ${formatMarketValue(mostPlayersClub.totalValue)}`}
             />
@@ -397,7 +398,7 @@ function StatsHighlights({
               <img src={mostValueClub.clubLogoUrl} alt="" className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-sm bg-white p-px shrink-0 mt-3" />
             )}
             <StatCell
-              label="Most Value Out"
+              label="Most Value Sidelined"
               value={mostValueClub.club}
               sub={`${formatMarketValue(mostValueClub.totalValue)} · ${mostValueClub.count} players`}
             />
@@ -408,7 +409,7 @@ function StatsHighlights({
         {topInjury && (
           <div className="p-3 sm:p-4">
             <StatCell
-              label="Most Common"
+              label="Most Common Injury"
               value={topInjury.injury}
               sub={`${topInjury.count} players · ${formatMarketValue(topInjury.totalValue)}`}
             />
@@ -522,7 +523,12 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
       <Tabs value={tab} onValueChange={(v) => update({ tab: v === "players" ? null : v })} className="w-full">
         <TabsList className="mb-4 sm:mb-6">
           <TabsTrigger value="players">All Players</TabsTrigger>
-          <TabsTrigger value="teams">By Team</TabsTrigger>
+          <TabsTrigger value="teams" className="gap-1.5">
+            By Team
+            <InfoTip>
+              Total market value of all injured players at each club — shows which teams are carrying the heaviest injury burden in financial terms.
+            </InfoTip>
+          </TabsTrigger>
           <TabsTrigger value="injuries">By Injury</TabsTrigger>
         </TabsList>
 

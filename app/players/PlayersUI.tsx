@@ -9,6 +9,7 @@ import { RangeFilter } from "@/components/RangeFilter";
 import { FilterButton } from "@/components/FilterButton";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
+import { InfoTip } from "@/app/components/InfoTip";
 import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { filterPlayersByLeagueAndClub, filterTop5, getFormMinutes } from "@/lib/filter-players";
@@ -217,19 +218,19 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
           {showCaps && (
             <div className="text-right">
               <div className="text-sm font-bold tabular-nums text-text-primary">{player.intlCareerCaps ?? 0}</div>
-              <div className="text-xs text-text-secondary">caps</div>
+              <div className="text-xs text-text-secondary">intl caps</div>
             </div>
           )}
           {showContract && expiryYear && (
             <div className="text-right">
               <div className="text-sm font-bold tabular-nums text-text-primary">{expiryYear}</div>
-              <div className="text-xs text-text-secondary">contract</div>
+              <div className="text-xs text-text-secondary">expires</div>
             </div>
           )}
           {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
             <div className="text-right min-w-[3rem]">
               <div className="text-sm font-bold tabular-nums text-text-primary">{penGoals}/{penAttempts}</div>
-              <div className="text-xs text-text-secondary">pens · {Math.round(penGoals / penAttempts * 100)}%</div>
+              <div className="text-xs text-text-secondary">pen conv. {Math.round(penGoals / penAttempts * 100)}%</div>
             </div>
           )}
           {sortBy === "miss" && (
@@ -262,7 +263,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
       {/* Mobile stat tray */}
       <div className="sm:hidden mt-2 bg-elevated rounded-lg px-2.5 py-1.5 flex items-baseline gap-2.5 flex-wrap text-xs font-value text-text-secondary">
         {recentGA && (
-          <span className="text-base text-accent-hot">{recentGA.total} <span className="text-[10px] text-accent-hot/60">last {formWindow}</span></span>
+          <span className="text-base text-accent-hot">{recentGA.total} <span className="text-[10px] text-accent-hot/60">last {formWindow} games</span></span>
         )}
         <span className={recentGA ? "text-sm" : "text-base text-accent-hot"}>{seasonGA.total} <span className="text-[10px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
         <span className="text-sm text-accent-blue">{player.marketValueDisplay}</span>
@@ -270,10 +271,10 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
         <span>{player.totalMatches} games</span>
         <span>{displayMinutes.toLocaleString()}&apos;</span>
         {showCaps && (player.intlCareerCaps ?? 0) > 0 && (
-          <span>{player.intlCareerCaps} caps</span>
+          <span>{player.intlCareerCaps} intl caps</span>
         )}
         {showContract && expiryYear && (
-          <span>{expiryYear} contract</span>
+          <span>expires {expiryYear}</span>
         )}
         {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
           <span>{penGoals}/{penAttempts} pen</span>
@@ -489,7 +490,8 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
             Player <span className="text-accent-blue">Explorer</span>
           </h1>
           <p className="text-sm sm:text-base text-text-muted">
-            The top 500 most valuable players in world football plus top scorers in Europe&apos;s top 5 leagues.          </p>
+            The top 500 most valuable players in world football plus top scorers in Europe&apos;s top 5 leagues.
+          </p>
         </div>
 
         <section>
@@ -504,6 +506,14 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           {/* Sort */}
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-5">
             <div className="flex items-center gap-2 w-max">
+              <InfoTip>
+                <p><strong>Value</strong> — market value (Transfermarkt estimate)</p>
+                <p className="mt-1"><strong>Mins</strong> — total minutes played this season</p>
+                <p className="mt-1"><strong>Games</strong> — total matches this season</p>
+                <p className="mt-1"><strong>G+A / npG+A</strong> — goals + assists. &ldquo;np&rdquo; means non-penalty (excl. penalty goals) for a truer picture of open-play output</p>
+                <p className="mt-1"><strong>Pen</strong> — penalty goals scored</p>
+                <p className="mt-1"><strong>Miss</strong> — penalties missed</p>
+              </InfoTip>
               <ToggleGroup
                 type="single"
                 value={sortBy}
@@ -528,26 +538,32 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                 ))}
               </ToggleGroup>
               {sortBy === "ga" && (
-                <ToggleGroup
-                  type="single"
-                  value={String(formWindow)}
-                  onValueChange={(v) => {
-                    if (!v) return;
-                    setIsFiltering(true);
-                    update({ fw: v === "season" ? null : v });
-                  }}
-                  className="rounded-lg overflow-hidden border border-border-subtle"
-                >
-                  {(["season", 10, 5] as const).map((w) => (
-                    <ToggleGroupItem
-                      key={w}
-                      value={String(w)}
-                      className="px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
-                    >
-                      {w === "season" ? "Season" : `Last ${w}`}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
+                <>
+                  <ToggleGroup
+                    type="single"
+                    value={String(formWindow)}
+                    onValueChange={(v) => {
+                      if (!v) return;
+                      setIsFiltering(true);
+                      update({ fw: v === "season" ? null : v });
+                    }}
+                    className="rounded-lg overflow-hidden border border-border-subtle"
+                  >
+                    {(["season", 10, 5] as const).map((w) => (
+                      <ToggleGroupItem
+                        key={w}
+                        value={String(w)}
+                        className="px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                      >
+                        {w === "season" ? "Season" : `Last ${w}`}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                  <InfoTip>
+                    <p><strong>Season</strong> — full season totals</p>
+                    <p className="mt-1"><strong>Last 10 / Last 5</strong> — stats from only the player&apos;s most recent matches. Useful for spotting who&apos;s in form right now vs. their season average.</p>
+                  </InfoTip>
+                </>
               )}
             </div>
           </div>
@@ -604,7 +620,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
             <div className="flex flex-wrap items-center gap-2">
               <Combobox value={leagueFilter} onChange={(v) => { setIsFiltering(true); update({ league: v === "all" ? null : v || null }); }} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
               <FilterButton active={top5Only} onClick={() => fadeUpdate({ top5: top5Only ? null : "1" })}>
-                Top 5
+                Top 5 leagues
               </FilterButton>
               <Combobox value={clubFilter} onChange={(v) => { setIsFiltering(true); update({ club: v === "all" ? null : v || null }); }} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
               <Combobox value={nationalityFilter} onChange={(v) => { setIsFiltering(true); update({ nat: v === "all" ? null : v || null }); }} options={nationalityOptions} placeholder="All nationalities" searchPlaceholder="Search nationalities..." />
@@ -649,7 +665,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                   <div className="w-px h-6 self-center bg-border-subtle hidden sm:block" />
                   <div className="flex items-center gap-2">
                     <FilterButton active={excludeCurrentIntl} onClick={() => fadeUpdate({ xcintl: excludeCurrentIntl ? null : "1" })}>
-                      Excl. Current Intl
+                      Excl. called-up
                     </FilterButton>
                     <RangeFilter label="Caps" min={minCaps} max={maxCaps} onMinChange={(v) => { setIsFiltering(true); update({ mincaps: v }); }} onMaxChange={(v) => { setIsFiltering(true); update({ maxcaps: v }); }} />
                   </div>

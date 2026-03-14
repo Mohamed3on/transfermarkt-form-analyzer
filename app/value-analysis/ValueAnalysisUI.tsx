@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ExternalLink } from "lucide-react";
+import { InfoTip } from "@/app/components/InfoTip";
 import { getLeagueLogoUrl, getLeagueUrl } from "@/lib/leagues";
 import { FilterButton } from "@/components/FilterButton";
 import { PositionDisplay } from "@/components/PositionDisplay";
@@ -296,7 +297,7 @@ function DiscoveryListCard({ player, index = 0, top5, variant, pointsLabel = "G+
   const isOverpriced = variant === "overpriced";
   const theme = isOverpriced ? CARD_THEMES.cold : CARD_THEMES.green;
   const countColor = isOverpriced ? "var(--accent-hot)" : "var(--accent-green)";
-  const countLabel = isOverpriced ? "doing better" : "outperforms";
+  const countLabel = isOverpriced ? "cheaper & better" : "pricier & worse";
   const valueColor = isOverpriced ? "var(--accent-cold-soft)" : "var(--accent-green)";
 
   return (
@@ -408,8 +409,13 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="w-1 h-6 rounded-full" style={{ background: accentColor }} />
-          <h2 className="text-base sm:text-lg font-bold uppercase tracking-wider" style={{ color: accentColor }}>
+          <h2 className="text-base sm:text-lg font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: accentColor }}>
             {isOverpriced ? "Overpriced" : "Bargains"}
+            <InfoTip>
+              {isOverpriced
+                ? "Expensive players who are outscored by 3+ cheaper players in the same or similar position. The count shows how many cheaper alternatives have matched or beaten their output."
+                : "Lower-value players who outperform 3+ more expensive peers. The count shows how many pricier players they've matched or beaten on goals + assists in equal or fewer minutes."}
+            </InfoTip>
           </h2>
         </div>
         {filteredCandidates.length > 0 && (
@@ -433,7 +439,7 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
             }}
           >
             <ToggleGroupItem value="count" className="rounded-lg">
-              {isOverpriced ? "Most underperforming" : "Most outperforming"}
+              {isOverpriced ? "Most outscored" : "Most outperforming"}
             </ToggleGroupItem>
             <ToggleGroupItem value="value" className="rounded-lg">
               Value {isValueActive && (sortBy === "value-asc" ? "\u2191" : "\u2193")}
@@ -456,7 +462,7 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
       {filteredCandidates.length === 0 && (
         <div className="rounded-xl p-8 text-center animate-fade-in bg-card border border-border-subtle">
           <p className="font-semibold text-text-primary">{isOverpriced ? "No overpriced players found" : "No bargain players found"}</p>
-          <p className="text-sm mt-1 text-text-muted">{isOverpriced ? "Everyone is producing as expected for their price tag" : "No cheap players are outperforming their price tag right now"}</p>
+          <p className="text-sm mt-1 text-text-muted">{isOverpriced ? "Every expensive player is producing as expected. Try broadening filters or switching leagues." : "No cheaper players are outperforming pricier peers right now. Try broadening filters."}</p>
         </div>
       )}
       {filteredCandidates.length > 0 && (
@@ -619,7 +625,7 @@ interface ValueAnalysisUIProps {
 export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, initialUnderperformers, initialOverperformers, includePen, includeIntl }: ValueAnalysisUIProps) {
   const { params, update, push } = useQueryParams("/value-analysis");
 
-  const pointsLabel = includePen ? "G+A" : "Non-pen G+A";
+  const pointsLabel = includePen ? "G+A" : "npG+A";
 
   // Mode
   const mode: Mode = params.get("mode") === "mins" ? "mins" : "ga";
@@ -744,7 +750,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
           </h1>
           <p className="text-sm sm:text-base text-text-muted">
             {mode === "ga"
-              ? `Are expensive players worth it? Compare any player's goals and assists against cheaper alternatives — based on ${pointsLabel}.`
+              ? `Are expensive players worth it? Compare any player's goals and assists against cheaper alternatives — based on ${includePen ? "G+A" : "G+A (excl. penalties)"}.`
               : "Expensive players ranked by fewest minutes. Search any player to compare against others at the same or higher value."}
           </p>
         </div>
@@ -851,8 +857,13 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                   Top 5 leagues
                 </FilterButton>
 
-                <p className="text-xs text-text-muted">
-                  Players at the same position or higher value. &ldquo;Underdelivering&rdquo; = costs more, produces the same or fewer G+A. &ldquo;Better Value&rdquo; = costs less, produces the same or more G+A.
+                <p className="text-xs text-text-muted flex items-start gap-1.5">
+                  <span>Players at the same position or higher value. &ldquo;Underdelivering&rdquo; = costs more, produces the same or fewer G+A. &ldquo;Better Value&rdquo; = costs less, produces the same or more G+A.</span>
+                  <InfoTip className="mt-0.5 shrink-0">
+                    <p>We compare players in <strong>similar attacking positions</strong> (e.g. strikers vs. wingers, but not defenders).</p>
+                    <p className="mt-1.5">A player must be outperformed by <strong>3 or more</strong> cheaper players to be flagged as underdelivering. This avoids one-off flukes.</p>
+                    <p className="mt-1.5">The comparison uses non-penalty goals + assists and minutes played — a player must match or beat on both metrics, not just one.</p>
+                  </InfoTip>
                 </p>
 
                 <Tabs value={gaTab} onValueChange={(v) => push({ tab: v === "underdelivering" ? null : v })}>
@@ -994,8 +1005,12 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                   <MvBenchmarkCard player={minsSelected} />
                 </section>
 
-                <p className="text-xs text-text-muted">
-                  Comparing against players at the same or higher market value who have missed the same % of games or fewer — so injured or suspended players don&apos;t skew the comparison.
+                <p className="text-xs text-text-muted flex items-start gap-1.5">
+                  <span>Comparing against players at the same or higher market value who have missed the same % of games or fewer — so injured or suspended players don&apos;t skew the comparison.</span>
+                  <InfoTip className="mt-0.5 shrink-0">
+                    <p><strong>&ldquo;Missed %&rdquo;</strong> is the share of their team&apos;s total matches the player has been unavailable for (injury, suspension, etc.).</p>
+                    <p className="mt-1.5">&ldquo;Playing Less&rdquo; shows equally or more expensive players who are getting fewer minutes. &ldquo;Playing More&rdquo; shows the reverse.</p>
+                  </InfoTip>
                 </p>
 
                 <section>
@@ -1045,7 +1060,13 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-5 rounded-full bg-accent-cold" />
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-accent-cold-soft">Fewest Minutes</h2>
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-accent-cold-soft flex items-center gap-1.5">
+                      Fewest Minutes
+                      <InfoTip>
+                        <p>High-value players ranked by fewest minutes played — potential wasted investment or players returning from injury.</p>
+                        <p className="mt-1.5">Use the &ldquo;missed&rdquo; filters to exclude players who missed a large share of games (so you see fit but benched players, not just injured ones).</p>
+                      </InfoTip>
+                    </h2>
                   </div>
                   {minsDiscoveryList.length > 0 && (
                     <span className="text-sm font-bold px-2.5 py-1 rounded-lg tabular-nums bg-accent-cold-glow text-accent-cold-soft">{minsDiscoveryList.length}</span>

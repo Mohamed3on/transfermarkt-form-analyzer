@@ -19,11 +19,11 @@ export function BiggestMoversUI({ losers, winners }: BiggestMoversUIProps) {
     <Tabs defaultValue={defaultTab}>
       <TabsList className="mb-4 sm:mb-6">
         <TabsTrigger value="losers">
-          Biggest Falls
+          Biggest Value Drops
           <span className="ml-1.5 text-xs text-text-muted font-value">{losers.repeatMovers.length}</span>
         </TabsTrigger>
         <TabsTrigger value="winners">
-          Biggest Rises
+          Biggest Value Gains
           <span className="ml-1.5 text-xs text-text-muted font-value">{winners.repeatMovers.length}</span>
         </TabsTrigger>
       </TabsList>

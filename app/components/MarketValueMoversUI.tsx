@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatMarketValue } from "@/lib/format";
+import { InfoTip } from "@/app/components/InfoTip";
 import type { MarketValueMover, MarketValueMoversResult } from "@/app/types";
 
 type Variant = "losers" | "winners";
@@ -19,7 +20,7 @@ const VARIANT_CONFIG = {
     sectionTitle: "In Freefall",
     sectionSubtitle: "Consistently lost value across recent updates",
     barLabel: "Value lost since each date",
-    breakdownTitle: "Date by Date",
+    breakdownTitle: "All Movers by Update Date",
     sign: "-",
   },
   winners: {
@@ -31,7 +32,7 @@ const VARIANT_CONFIG = {
     sectionTitle: "On the Rise",
     sectionSubtitle: "Consistently gained value across recent updates",
     barLabel: "Value gained since each date",
-    breakdownTitle: "Date by Date",
+    breakdownTitle: "All Movers by Update Date",
     sign: "+",
   },
 } as const;
@@ -159,8 +160,8 @@ function PeriodPlayerRow({ player, isRepeat, variant }: { player: MarketValueMov
             {player.name}
           </a>
           {isRepeat && (
-            <Badge variant={variant === "losers" ? "destructive" : "default"} className="text-[9px] px-1 py-0 h-3.5 shrink-0">
-              2+ WINDOWS
+            <Badge variant={variant === "losers" ? "destructive" : "default"} className="text-[9px] px-1 py-0 h-3.5 shrink-0" title={`Value ${variant === "losers" ? "dropped" : "rose"} in 2+ consecutive Transfermarkt updates`}>
+              Repeat mover
             </Badge>
           )}
         </div>
@@ -243,8 +244,13 @@ export function MarketValueMoversUI({ data, variant }: MarketValueMoversUIProps)
                 {repeatMovers.length}
               </span>
             </div>
-            <p className="text-xs text-text-muted mt-0.5">
-              {cfg.sectionSubtitle}
+            <p className="text-xs text-text-muted mt-0.5 flex items-center gap-1.5">
+              <span>{cfg.sectionSubtitle}</span>
+              <InfoTip>
+                <p>These players have had their Transfermarkt market value {variant === "losers" ? "reduced" : "increased"} in <strong>2 or more consecutive</strong> valuation updates.</p>
+                <p className="mt-1.5">Transfermarkt updates market values periodically throughout the season. The bar chart shows the change at each update date.</p>
+                <p className="mt-1.5">Ranked by total absolute change — bigger swings rank higher.</p>
+              </InfoTip>
             </p>
           </div>
           <div className="space-y-3">

@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ManagerSection, ManagerSkeleton } from "./ManagerPPGBadge";
+import { InfoTip } from "./InfoTip";
 import { getLeagueLogoUrl, getLeagueUrl } from "@/lib/leagues";
 import { ChevronDown } from "lucide-react";
 
@@ -122,7 +123,7 @@ function AggregatedTeamCard({
             )}
             {deltaPts != null && (
               <a href="/expected-position" className={`inline-flex items-center gap-0.5 font-value text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full transition-all duration-150 hover:scale-105 hover:brightness-125 ${deltaPts > 0 ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}>
-                {deltaPts > 0 ? "+" : ""}{deltaPts} vs expected <span className="text-[8px] opacity-60">→</span>
+                {deltaPts > 0 ? "+" : ""}{deltaPts} points gap <span className="text-[8px] opacity-60">→</span>
               </a>
             )}
           </div>
@@ -131,7 +132,7 @@ function AggregatedTeamCard({
           variant="outline"
           className={`shrink-0 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${isTop ? "bg-accent-hot-glow text-accent-hot border-accent-hot" : "bg-accent-cold-glow text-accent-cold border-accent-cold"}`}
         >
-          <span className="font-value">{team.count}</span>&nbsp;stats
+          <span className="font-value">{team.count}</span>&nbsp;{team.count === 1 ? "category" : "categories"} led
         </Badge>
       </div>
 
@@ -208,6 +209,11 @@ function AggregatedSection({ teams, type, deltaMap }: { teams: AggregatedTeam[];
           {isTop ? "↑" : "↓"}
         </span>
         {isTop ? "Best Form" : "Worst Form"}
+        <InfoTip>
+          {isTop
+            ? "Teams that top the most categories (points, goal difference, goals scored, fewest conceded) when we look across all 4 match windows."
+            : "Teams that rank last in the most categories (fewest points, worst goal difference, fewest goals scored, most conceded) across all 4 match windows."}
+        </InfoTip>
       </h3>
       <div className="space-y-2 sm:space-y-3">
         {teams.map((team, index) => (
@@ -244,7 +250,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
           variant={period.hasMatch ? "default" : "secondary"}
           className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${period.hasMatch ? "bg-accent-hot-glow text-accent-hot border-accent-hot" : ""}`}
         >
-          {period.hasMatch ? "Clear Standouts" : "No Clear Standouts"}
+          {period.hasMatch ? "Teams dominate 2+ categories" : "No team leads 2+ categories"}
         </Badge>
       </div>
 
@@ -310,7 +316,7 @@ function CompactTeamCard({ team, type }: { team: QualifiedTeam; type: "top" | "b
             ) : team.name}
           </div>
           <div className="text-xs text-text-muted">
-            {formatOrdinal(team.leaguePosition)} place · <span className="font-value">{team.stats.points}</span> pts · GD: <span className="font-value">{team.stats.goalDiff > 0 ? "+" : ""}{team.stats.goalDiff}</span>
+            {formatOrdinal(team.leaguePosition)} place · <span className="font-value">{team.stats.points}</span> pts · goal diff: <span className="font-value">{team.stats.goalDiff > 0 ? "+" : ""}{team.stats.goalDiff}</span>
           </div>
         </div>
       </div>
@@ -331,7 +337,7 @@ function LeaderCard({
   const gd = leaders.goalDiff.value;
   const rows = [
     { label: "Points", value: `${leaders.points.value}`, teams: leaders.points.teams },
-    { label: "Goal Diff", value: `${gd > 0 ? "+" : ""}${gd}`, teams: leaders.goalDiff.teams },
+    { label: "Goal Difference", value: `${gd > 0 ? "+" : ""}${gd}`, teams: leaders.goalDiff.teams },
     { label: "Goals For", value: `${leaders.goalsScored.value}`, teams: leaders.goalsScored.teams },
     { label: "Goals Against", value: `${leaders.goalsConceded.value}`, teams: leaders.goalsConceded.teams },
   ];
@@ -341,6 +347,11 @@ function LeaderCard({
       <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 flex items-center gap-2 ${accentClass}`}>
         <span className={`w-2 h-2 rounded-full ${isTop ? "bg-accent-hot shadow-[0_0_8px_var(--accent-hot)]" : "bg-accent-cold shadow-[0_0_8px_var(--accent-cold)]"}`} aria-hidden="true" />
         {isTop ? "Best In Class" : "Worst In Class"}
+        <InfoTip className="ml-0.5">
+          {isTop
+            ? "The team(s) with the single best value in each category for this time window — most points, best goal difference, most goals scored, fewest conceded."
+            : "The team(s) with the worst value in each category for this time window — fewest points, worst goal difference, fewest goals scored, most conceded."}
+        </InfoTip>
       </h4>
       <div className="space-y-1.5 sm:space-y-2">
         {rows.map((row) => (
@@ -380,11 +391,16 @@ export function AnalyzerUI({ initialData, deltaMap }: { initialData: AnalysisRes
                 ✓
               </span>
               <div>
-                <h2 className="text-xl sm:text-2xl font-pixel text-text-primary text-balance">
+                <h2 className="text-xl sm:text-2xl font-pixel text-text-primary text-balance flex items-center gap-2">
                   Aggregated Form Leaders
+                  <InfoTip>
+                    <p>We track 4 categories — <strong>points, goal difference, goals scored, and goals conceded</strong> — across 4 time windows (last 5, 10, 15, and 20 matches).</p>
+                    <p className="mt-1.5">Teams that lead or trail <strong>2 or more categories</strong> across any window appear here, ranked by total categories led.</p>
+                    <p className="mt-1.5 text-text-muted">Data covers all competitions, not just the league.</p>
+                  </InfoTip>
                 </h2>
                 <p className="text-sm sm:text-base text-text-secondary">
-                  Teams that lead the most stats across their last 5, 10, 15, and 20 matches.
+                  Teams leading or trailing the most categories across their last 5, 10, 15, and 20 matches.
                 </p>
               </div>
             </div>
@@ -402,10 +418,10 @@ export function AnalyzerUI({ initialData, deltaMap }: { initialData: AnalysisRes
       ) : (
         <Card className="rounded-2xl p-4 sm:p-6 text-center animate-scale-in border-accent-cold">
           <h2 className="text-lg sm:text-xl font-pixel mb-2 text-accent-cold">
-            No Clear Pattern
+            No Clear Form Leader
           </h2>
           <p className="text-sm sm:text-base text-text-secondary">
-            No team leads 2+ stats across their last 5, 10, 15, and 20 matches right now.
+            No team dominates 2+ categories (points, goal difference, goals scored, goals conceded) across any time window right now. Check the per-window breakdown below for individual leaders.
           </p>
         </Card>
       )}
@@ -424,8 +440,13 @@ export function AnalyzerUI({ initialData, deltaMap }: { initialData: AnalysisRes
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <p className="text-sm mt-4 mb-4 text-text-muted">
-            Breakdown by the last 5, 10, 15, and 20 matches. Only teams leading or trailing 2+ stats are shown.
+          <p className="text-sm mt-4 mb-4 text-text-muted flex items-center gap-1.5 flex-wrap">
+            <span>Each window shows which team leads or trails each category. Smaller windows (5 matches) capture short-term momentum; larger windows (20 matches) show sustained form.</span>
+            <InfoTip>
+              <p>A team needs to lead or trail <strong>2 or more categories</strong> within a single window to be highlighted.</p>
+              <p className="mt-1.5">Categories: points, goal difference, goals scored, goals conceded.</p>
+              <p className="mt-1.5">&ldquo;Clear Standouts&rdquo; means at least one team dominates 2+ categories in that window.</p>
+            </InfoTip>
           </p>
           <div className="space-y-4">
             {initialData.analysis.map((period, index) => (

@@ -352,7 +352,7 @@ const features: readonly Feature[] = [
     href: "/expected-position",
     tag: "Expectation Gap",
     description:
-      "Compare actual points to value-based expectation and spot over- and under-achievers.",
+      "Rank squads by market value, compare to actual league standings, and see who's punching above or below their weight.",
     highlights: [
       "Ranked overperformer and underperformer lists",
       "League filter plus all-leagues view",
@@ -730,22 +730,22 @@ export default async function Home() {
     ...recentFormItems,
     mostOverperformingTeam && teamItem(
       mostOverperformingTeam, "Biggest overperformer", "/expected-position",
-      `${mostOverperformingTeam.league} · ${formatSigned(mostOverperformingTeam.deltaPts)} pts vs expected`,
+      `${mostOverperformingTeam.league} · ${formatSigned(mostOverperformingTeam.deltaPts)} points above squad value expectation`,
       { manager: getManagerForClub(mostOverperformingTeam.clubId), tone: "green" },
     ),
     mostUnderperformingTeam && teamItem(
       mostUnderperformingTeam, "Biggest underperformer", "/expected-position",
-      `${mostUnderperformingTeam.league} · ${formatSigned(mostUnderperformingTeam.deltaPts)} pts vs expected`,
+      `${mostUnderperformingTeam.league} · ${formatSigned(mostUnderperformingTeam.deltaPts)} points below squad value expectation`,
       { manager: getManagerForClub(mostUnderperformingTeam.clubId), tone: "red" },
     ),
     mostOverpricedPlayer && playerItem(
       mostOverpricedPlayer, "Most overpriced player", "/value-analysis?mode=ga",
-      `${mostOverpricedPlayer.marketValueDisplay} · outscored by ${mostOverpricedPlayer.count} cheaper peers`,
+      `${mostOverpricedPlayer.marketValueDisplay} · outscored by ${mostOverpricedPlayer.count} players who cost less`,
       { tone: "red" },
     ),
     mostNpgaPlayer && playerItem(
       mostNpgaPlayer, "Top scorer (npG+A)", "/players?sort=ga",
-      `${mostNpgaPlayer.club} · ${getNpga(mostNpgaPlayer)} npG+A`,
+      `${mostNpgaPlayer.club} · ${getNpga(mostNpgaPlayer)} G+A (excl. pens)`,
       { tone: "green" },
     ),
   ].filter(Boolean) as SnapshotItem[];
@@ -753,12 +753,12 @@ export default async function Home() {
   const teamFormItems: SnapshotItem[] = [
     ...mostOverperformingTeams.map((team) => teamItem(
       team, "Biggest overperformer", "/expected-position",
-      `${team.league} · ${formatSigned(team.deltaPts)} pts vs expected`,
+      `${team.league} · ${formatSigned(team.deltaPts)} points gap (above expectation)`,
       { manager: getManagerForClub(team.clubId), tone: "green" },
     )),
     ...mostUnderperformingTeams.map((team) => teamItem(
       team, "Biggest underperformer", "/expected-position",
-      `${team.league} · ${formatSigned(team.deltaPts)} pts vs expected`,
+      `${team.league} · ${formatSigned(team.deltaPts)} points gap (below expectation)`,
       { manager: getManagerForClub(team.clubId), tone: "red" },
     )),
   ];
@@ -771,15 +771,15 @@ export default async function Home() {
     ...mostOverpricedPlayers.map((p) => playerItem(
       p, "Most overpriced", "/value-analysis?mode=ga",
       `${p.club} · ${p.marketValueDisplay}`,
-      { metrics: [`npG+A ${p.points}`, `${formatMinutes(p.minutes)} mins`, `outscored by ${p.count} cheaper peers`], tone: "red" },
+      { metrics: [`${p.points} npG+A`, `${formatMinutes(p.minutes)} mins`, `outscored by ${p.count} cheaper players`], tone: "red" },
     )),
     ...mostBargainPlayers.map((p) => playerItem(
       p, "Best bargain", "/value-analysis?mode=ga&dTab=bargains",
       `${p.club} · ${p.marketValueDisplay}`,
-      { metrics: [`npG+A ${p.points}`, `${formatMinutes(p.minutes)} mins`, `outscores ${p.count} pricier peers`], tone: "green" },
+      { metrics: [`${p.points} npG+A`, `${formatMinutes(p.minutes)} mins`, `outscores ${p.count} pricier players`], tone: "green" },
     )),
     ...(fitButBenched ? [playerItem(
-      fitButBenched, "Fit but benched", "/value-analysis?mode=mins&maxMiss=50",
+      fitButBenched, "Available but barely playing", "/value-analysis?mode=mins&maxMiss=50",
       `${fitButBenched.club} · ${fitButBenched.marketValueDisplay}`,
       { metrics: [`${formatMinutes(fitButBenched.minutes)} mins`, `${fitButBenched.totalMatches} games`, `<50% missed`], tone: "red" },
     )] : []),
@@ -797,12 +797,12 @@ export default async function Home() {
     } else {
       formScorerItems.push([playerItem(
         p10, "Top scorer (last 10)", "/players?sort=ga&fw=10",
-        `${p10.club} · ${getFormNpga(p10, 10)} npG+A in last 10`,
+        `${p10.club} · ${getFormNpga(p10, 10)} G+A (excl. pens) in last 10`,
         { metrics: [`Season ${getNpga(p10)} npG+A`, p10.marketValueDisplay], tone: "green" },
       )]);
       formScorerItems.push([playerItem(
         p5, "Top scorer (last 5)", "/players?sort=ga&fw=5",
-        `${p5.club} · ${getFormNpga(p5, 5)} npG+A in last 5`,
+        `${p5.club} · ${getFormNpga(p5, 5)} G+A (excl. pens) in last 5`,
         { metrics: [`Season ${getNpga(p5)} npG+A`, p5.marketValueDisplay], tone: "green" },
       )]);
     }
@@ -811,13 +811,13 @@ export default async function Home() {
   const playerItems = [
     mostNpgaPlayers.map((p) => playerItem(
       p, "Top scorer (npG+A)", "/players?sort=ga",
-      `${p.club} · ${getNpga(p)} npG+A`,
+      `${p.club} · ${getNpga(p)} G+A (excl. pens)`,
       { metrics: [`${formatMinutes(p.minutes)} mins`, p.marketValueDisplay] },
     )),
     ...formScorerItems,
     mostNpgaSignings.map((p) => playerItem(
       p, "Top scoring signing", "/players?signing=transfer&sort=ga",
-      `${p.club} · ${getNpga(p)} npG+A`,
+      `${p.club} · ${getNpga(p)} G+A (excl. pens)`,
       { metrics: [`${formatMinutes(p.minutes)} mins`, p.marketValueDisplay] },
     )),
     mostValuableLoans.map((p) => playerItem(
@@ -832,7 +832,7 @@ export default async function Home() {
     )),
     mostNpgaZeroCapsPlayers.map((p) => playerItem(
       p, "Top scoring uncapped", "/players?sort=ga&maxcaps=0",
-      `${p.club}${p.nationality ? ` · ${p.nationality}` : ""} · ${getNpga(p)} npG+A`,
+      `${p.club}${p.nationality ? ` · ${p.nationality}` : ""} · ${getNpga(p)} G+A (excl. pens)`,
       { metrics: [`${formatMinutes(p.minutes)} mins`, p.marketValueDisplay] },
     )),
   ].filter((a) => a.length).flat();
@@ -879,8 +879,8 @@ export default async function Home() {
 
   const snapshotGroups = [
     recentFormItems.length && { title: "Recent Form", description: "Teams leading the most categories across their last 5–20 matches.", href: "/form", items: recentFormItems },
-    teamFormItems.length && { title: "Value vs Table", description: "Largest gaps between results and squad value expectation.", href: "/expected-position", items: teamFormItems },
-    valueAnalysisItems.length && { title: "Over/Under", description: "Most overpriced profiles and strongest bargain cases.", href: "/value-analysis", items: valueAnalysisItems },
+    teamFormItems.length && { title: "Value vs Table", description: "Teams doing better or worse than their squad spending predicts.", href: "/expected-position", items: teamFormItems },
+    valueAnalysisItems.length && { title: "Over/Under", description: "Expensive players outscored by cheaper alternatives, and bargains outproducing pricier peers.", href: "/value-analysis", items: valueAnalysisItems },
     playerItems.length && { title: "Player Explorer", description: "Output leaders, signings, loans, and uncapped talents.", href: "/players", items: playerItems },
     biggestMoversItems.length && { title: "Biggest Movers", description: "Players on sustained value rises or drops.", href: "/biggest-movers", items: biggestMoversItems },
     injuryItems.length && { title: "Injury Impact", description: "Highest-value absences and hardest-hit clubs.", href: "/injured", items: injuryItems },
@@ -906,7 +906,7 @@ export default async function Home() {
               </h1>
 
               <p className="mt-5 max-w-2xl text-sm text-text-secondary sm:text-lg">
-                SquadStat surfaces the biggest swings fast: hot and cold teams, overpriced names, bargain output, and injury cost.
+                SquadStat surfaces the biggest swings fast: hot and cold teams, overpriced players, undervalued performers, and injury cost.
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -1021,7 +1021,12 @@ export default async function Home() {
       <section className="pt-12 sm:pt-16">
         <div className="rounded-2xl border border-border-medium bg-card p-5 sm:p-6">
           <h2 className="text-xl font-pixel text-text-primary sm:text-2xl">Open a dashboard</h2>
-          <p className="mt-1 text-sm text-text-muted">Start from the question you want to answer.</p>
+          <p className="mt-1 text-sm text-text-muted">
+            Start from the question you want to answer.{" "}
+            <Link href="/how-it-works" className="text-accent-blue hover:text-text-primary transition-colors">
+              How do we calculate these stats?
+            </Link>
+          </p>
 
           <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (

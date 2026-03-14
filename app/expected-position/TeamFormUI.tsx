@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ManagerSection } from "@/app/components/ManagerPPGBadge";
+import { InfoTip } from "@/app/components/InfoTip";
 import { LEAGUES, getLeagueLogoUrl, getLeagueUrl } from "@/lib/leagues";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 
@@ -165,11 +166,11 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
             </span>
             <span className="text-border-medium">|</span>
             <span>
-              <span className="text-text-secondary">Exp:</span> {ordinal(team.marketValueRank)} → {team.expectedPoints}pts
+              <span className="text-text-secondary">{ordinal(team.marketValueRank)} richest,</span> should have {team.expectedPoints}pts
             </span>
             <span className="text-border-medium">|</span>
             <span>
-              <span className="text-text-secondary">Avg:</span> {formatValue(team.marketValue)}
+              <span className="text-text-secondary">Squad:</span> {formatValue(team.marketValue)}
             </span>
           </div>
 
@@ -191,9 +192,11 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
             {team.deltaPts > 0 ? `+${team.deltaPts}` : team.deltaPts}
           </span>
           <span
-            className={`text-[9px] uppercase tracking-wider mt-0.5 ${isOver ? "text-green-600/60" : "text-red-600/60"}`}
+            className={`text-[8px] sm:text-[9px] uppercase tracking-wider mt-0.5 text-center leading-tight ${isOver ? "text-green-600/60" : "text-red-600/60"}`}
           >
-            pts
+            points
+            <br />
+            gap
           </span>
         </div>
       </div>
@@ -235,6 +238,11 @@ function TeamListsGrid({
                 <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
               Overperformers
+              <InfoTip>
+                <p>Teams earning <strong>more points</strong> than their squad market value would predict.</p>
+                <p className="mt-1.5">The &ldquo;points gap&rdquo; is calculated by ranking all teams in a league by squad value, then comparing each team&apos;s actual points to the points earned by the team sitting in that value-based position.</p>
+                <p className="mt-1.5 text-text-muted">&ldquo;By value: 3rd → 58pts&rdquo; means the team has the 3rd most expensive squad, and the team currently in 3rd has 58 points.</p>
+              </InfoTip>
             </h2>
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-green-600/10 text-green-600/70">
               {overperformers.length}
@@ -247,6 +255,10 @@ function TeamListsGrid({
                 <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
               Underperformers
+              <InfoTip>
+                <p>Teams earning <strong>fewer points</strong> than their squad market value would predict.</p>
+                <p className="mt-1.5">A negative points gap means the team is underdelivering relative to how much their squad costs.</p>
+              </InfoTip>
             </h2>
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-red-600/10 text-red-600/70">
               {underperformers.length}
@@ -285,6 +297,10 @@ function TeamListsGrid({
                 <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
               Overperformers
+              <InfoTip>
+                <p>Teams earning <strong>more points</strong> than their squad market value would predict.</p>
+                <p className="mt-1.5">The &ldquo;points gap&rdquo; compares actual points to the points earned by the team sitting in the equivalent value-based position.</p>
+              </InfoTip>
             </h2>
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-green-600/10 text-green-600/70">
               {overperformers.length}
@@ -308,6 +324,10 @@ function TeamListsGrid({
                 <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
               Underperformers
+              <InfoTip>
+                <p>Teams earning <strong>fewer points</strong> than their squad market value would predict.</p>
+                <p className="mt-1.5">A negative points gap means the team is underdelivering relative to how much their squad costs.</p>
+              </InfoTip>
             </h2>
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-red-600/10 text-red-600/70">
               {underperformers.length}

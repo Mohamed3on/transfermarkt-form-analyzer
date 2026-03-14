@@ -15,7 +15,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Menu } from "lucide-react";
+import { Menu, HelpCircle } from "lucide-react";
 
 const PAGE_CACHE_MAP: Record<string, { tags?: string[]; workflow?: boolean }> = {
   "/form": { tags: ["form-analysis"] },
@@ -151,6 +151,16 @@ export function Header() {
         {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="hidden h-auto p-2 text-text-muted hover:text-text-primary lg:inline-flex"
+          >
+            <Link href="/how-it-works" aria-label="How it works">
+              <HelpCircle className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button
             onClick={handleBustCache}
             disabled={isRevalidating}
             aria-label={isRevalidating ? "Refreshing data" : "Refresh data"}
@@ -189,7 +199,7 @@ export function Header() {
             >
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <nav className="mt-8 flex flex-col gap-1">
-                {navItems.map(({ href, label }) => {
+                {[...navItems, { href: "/how-it-works", label: "How It Works" } as const].map(({ href, label }) => {
                   const isActive = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
                   return (
                     isActive ? (

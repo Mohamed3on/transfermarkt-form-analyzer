@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from "react";
+import { useIsTouchDevice } from "@/lib/hooks/use-touch-device";
 
 interface ManagerPPGBadgeProps {
   manager: ManagerInfo;
@@ -36,23 +36,6 @@ export function ManagerSkeleton() {
       <Skeleton className="h-5 w-20 rounded" />
     </div>
   );
-}
-
-function useIsTouchDevice() {
-  const [isTouch, setIsTouch] = useState(false);
-
-  useEffect(() => {
-    const checkTouch = () => {
-      setIsTouch(
-        "ontouchstart" in window ||
-          navigator.maxTouchPoints > 0 ||
-          window.matchMedia("(pointer: coarse)").matches
-      );
-    };
-    checkTouch();
-  }, []);
-
-  return isTouch;
 }
 
 export function ManagerSection({ manager }: ManagerPPGBadgeProps) {
