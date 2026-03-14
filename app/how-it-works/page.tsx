@@ -136,7 +136,7 @@ export default function HowItWorksPage() {
             <ul className="mt-1.5 ml-4 list-disc space-y-1">
               <li><Term>+8 points gap</Term> — the team has 8 more points than their squad value would predict (overperforming)</li>
               <li><Term>-5 points gap</Term> — the team has 5 fewer points than expected (underperforming)</li>
-              <li><Term>&ldquo;By value: 3rd → 58pts&rdquo;</Term> — this team has the 3rd most expensive squad, and the team currently in 3rd place has 58 points</li>
+              <li><Term>&ldquo;Squad ranked 3rd, 58pts expected&rdquo;</Term> — this team has the 3rd most valuable squad, and the team currently in 3rd place has 58 points</li>
             </ul>
           </div>
         </Section>

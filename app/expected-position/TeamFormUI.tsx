@@ -166,11 +166,15 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
             </span>
             <span className="text-border-medium">|</span>
             <span>
-              <span className="text-text-secondary">{ordinal(team.marketValueRank)} richest,</span> should have {team.expectedPoints}pts
+              <span className="hidden sm:inline text-text-secondary">Squad ranked {ordinal(team.marketValueRank)},</span>
+              <span className="sm:hidden text-text-secondary">{ordinal(team.marketValueRank)} by value,</span>
+              {" "}{team.expectedPoints}pts expected
             </span>
             <span className="text-border-medium">|</span>
             <span>
-              <span className="text-text-secondary">Squad:</span> {formatValue(team.marketValue)}
+              <span className="hidden sm:inline text-text-secondary">Avg player value:</span>
+              <span className="sm:hidden text-text-secondary">Avg:</span>
+              {" "}{formatValue(team.marketValue)}
             </span>
           </div>
 
@@ -241,7 +245,7 @@ function TeamListsGrid({
               <InfoTip>
                 <p>Teams earning <strong>more points</strong> than their squad market value would predict.</p>
                 <p className="mt-1.5">The &ldquo;points gap&rdquo; is calculated by ranking all teams in a league by squad value, then comparing each team&apos;s actual points to the points earned by the team sitting in that value-based position.</p>
-                <p className="mt-1.5 text-text-muted">&ldquo;By value: 3rd → 58pts&rdquo; means the team has the 3rd most expensive squad, and the team currently in 3rd has 58 points.</p>
+                <p className="mt-1.5 text-text-muted">&ldquo;Squad ranked 3rd, 58pts expected&rdquo; means the team has the 3rd most valuable squad, and the team currently in 3rd has 58 points.</p>
               </InfoTip>
             </h2>
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-green-600/10 text-green-600/70">
