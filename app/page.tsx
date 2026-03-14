@@ -333,9 +333,9 @@ const features: readonly Feature[] = [
     description:
       "Compare 5, 10, 15, and 20-match windows to spot momentum shifts early.",
     highlights: [
-      "Top and bottom teams by points, goal difference, scoring, and defense",
-      "Window cards make trend changes easy to scan",
-      "Manager points-per-game on standout clubs",
+      "Best and worst teams by points, goal difference, scoring, and defense",
+      "See how form shifts across 5, 10, 15, and 20-match windows",
+      "Manager points-per-game ranking for context",
     ],
     icon: Activity,
     tone: {
@@ -354,9 +354,9 @@ const features: readonly Feature[] = [
     description:
       "Rank squads by market value, compare to actual league standings, and see who's punching above or below their weight.",
     highlights: [
-      "Ranked overperformer and underperformer lists",
-      "League filter plus all-leagues view",
-      "Manager overlays for added context",
+      "See which teams are beating or trailing their spending expectations",
+      "Filter by league or view all five at once",
+      "Manager record shown alongside each team",
     ],
     icon: Scale,
     tone: {
@@ -375,9 +375,9 @@ const features: readonly Feature[] = [
     description:
       "Filter 500+ players by value, output, minutes, loans, new signings, and more.",
     highlights: [
-      "Loan and new-signing filters with top-5 scope",
-      "League, club, nationality, and sorting controls",
-      "Injury overlays with penalty context",
+      "Find loans and new signings across Europe's top 5 leagues",
+      "Filter by league, club, nationality, or position",
+      "See who's injured and who's scoring from penalties",
     ],
     icon: Clock,
     tone: {
@@ -394,11 +394,11 @@ const features: readonly Feature[] = [
     href: "/value-analysis",
     tag: "Value Efficiency",
     description:
-      "Benchmark players against peers to flag expensive underdeliverers and undervalued output.",
+      "Find expensive players outscored by cheaper alternatives, and bargains doing better than players who cost more.",
     highlights: [
-      "Two modes: output efficiency and low-minutes risk",
-      "Penalty and international output toggles",
-      "Optional injury exclusion for cleaner minutes analysis",
+      "Compare goals + assists, or find high-value players barely getting minutes",
+      "Include or exclude penalty goals and international stats",
+      "Filter out injured players for a fairer comparison",
     ],
     icon: TrendingUp,
     tone: {
@@ -417,9 +417,9 @@ const features: readonly Feature[] = [
     description:
       "Track where injuries hurt most by player, club, and injury type.",
     highlights: [
-      "Tabs for players, teams, and injury categories",
-      "Club-level value loss with injury counts",
-      "Injury duration and return-date context",
+      "Browse by player, by team, or by injury type",
+      "See how much squad value each club has sidelined",
+      "Expected return dates and time already missed",
     ],
     icon: HeartPulse,
     tone: {
@@ -438,9 +438,9 @@ const features: readonly Feature[] = [
     description:
       "Track players whose market value keeps rising or falling across updates.",
     highlights: [
-      "Continuous rise and decline detection",
-      "Tabs for biggest falls and biggest rises",
-      "Per-date breakdowns with value-change bars",
+      "Players whose value has dropped or risen in multiple consecutive updates",
+      "Separate tabs for biggest value drops and gains",
+      "See exactly how much changed at each update date",
     ],
     icon: ArrowUpDown,
     tone: {
@@ -781,7 +781,7 @@ export default async function Home() {
     ...(fitButBenched ? [playerItem(
       fitButBenched, "Available but barely playing", "/value-analysis?mode=mins&maxMiss=50",
       `${fitButBenched.club} · ${fitButBenched.marketValueDisplay}`,
-      { metrics: [`${formatMinutes(fitButBenched.minutes)} mins`, `${fitButBenched.totalMatches} games`, `<50% missed`], tone: "red" },
+      { metrics: [`${formatMinutes(fitButBenched.minutes)} mins`, `${fitButBenched.totalMatches} games`, `available for 50%+ of games`], tone: "red" },
     )] : []),
   ];
 
@@ -895,7 +895,7 @@ export default async function Home() {
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
             <div>
               <Badge className="mb-5 border-accent-hot-border bg-accent-hot-glow px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-accent-hot">
-                Transfermarkt Signals Across Europe&apos;s Top Leagues
+                Football Analytics Across Europe&apos;s Top 5 Leagues
               </Badge>
 
               <h1 className="max-w-4xl text-4xl font-pixel leading-tight tracking-tight text-text-primary sm:text-5xl lg:text-6xl">
@@ -960,7 +960,7 @@ export default async function Home() {
         <SectionHeading
           eyebrow="Live data"
           title="Latest Standouts"
-          description="Scan leaders and laggards from each dashboard, then open the full view."
+          description="The best and worst from each dashboard — open the full view for more."
         />
 
         {snapshotGroups.length > 0 ? (
@@ -1007,7 +1007,7 @@ export default async function Home() {
         <SectionHeading
           eyebrow="Explore"
           title="Core Dashboards"
-          description="Six focused lenses for form, value, player output, injuries, and market trends."
+          description="Six dashboards covering form, squad value, player stats, injuries, and market trends."
           action={{ href: "/value-analysis", label: "Open Over/Under" }}
         />
 
