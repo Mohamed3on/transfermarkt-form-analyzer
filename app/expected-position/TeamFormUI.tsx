@@ -163,7 +163,7 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
           <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-2.5 text-xs sm:text-sm text-text-muted">
             <span><span className="text-text-secondary">{ordinal(team.leaguePosition)}</span> · <span className="font-value">{team.points}</span>pts</span>
             <span className="text-border-medium">·</span>
-            <span><span className="text-text-secondary">By value:</span> {ordinal(team.marketValueRank)} · <span className="font-value">{team.expectedPoints}</span>pts</span>
+            <span><span className="text-text-secondary">By value:</span> {ordinal(team.marketValueRank)} · <span className="font-value">{team.expectedPoints}</span>pts expected</span>
             <span className="hidden sm:inline text-border-medium">·</span>
             <span className="hidden sm:inline"><span className="text-text-secondary">Avg:</span> {formatValue(team.marketValue)}</span>
           </div>
