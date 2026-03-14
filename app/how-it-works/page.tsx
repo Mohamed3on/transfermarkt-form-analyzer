@@ -155,7 +155,6 @@ export default function HowItWorksPage() {
             <ul className="mt-1.5 ml-4 list-disc space-y-1">
               <li><Term>G+A (excl. pens)</Term> — goals + assists, excluding penalty goals. Shown as <Term>npG+A</Term> in compact views. This better reflects open-play contribution.</li>
               <li><Term>Form window (Last 5 / Last 10)</Term> — stats from only the player&apos;s most recent 5 or 10 matches, useful for spotting current form vs. season-long totals.</li>
-              <li><Term>Missed %</Term> — percentage of total team matches the player has missed (through injury, suspension, etc.). Lower means more available.</li>
             </ul>
           </div>
 
@@ -191,6 +190,10 @@ export default function HowItWorksPage() {
             <h3 className="font-semibold text-text-primary mb-1">Minutes mode</h3>
             <p>
               Shows high-value players getting the fewest minutes — potential wasted investment or squad depth issues.
+            </p>
+            <p className="mt-1.5">
+              <Term>Missed %</Term> is the percentage of total team matches the player has been unavailable for (injury, suspension, etc.).
+              Use the missed-% filters to exclude heavily injured players and focus on fit players who simply aren&apos;t getting minutes.
             </p>
           </div>
 
