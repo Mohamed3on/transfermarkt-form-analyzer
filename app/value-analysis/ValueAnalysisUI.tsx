@@ -318,7 +318,7 @@ function DiscoveryListCard({ player, index = 0, top5, variant, pointsLabel = "G+
           <>
             <div className="text-right min-w-[4rem]">
               <div className="text-base font-value leading-none" style={{ color: countColor }}>{player.comparisonCount}</div>
-              <div className="text-[10px] text-text-muted mt-0.5">{countLabel}</div>
+              <div className="text-xs text-text-secondary">{countLabel}</div>
             </div>
             <div className="w-px h-8 bg-border-subtle" />
           </>
