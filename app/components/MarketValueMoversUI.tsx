@@ -237,7 +237,7 @@ export function MarketValueMoversUI({ data, variant }: MarketValueMoversUIProps)
         <section>
           <div className="mb-3">
             <div className="flex items-baseline gap-2">
-              <h2 className="text-sm sm:text-base font-bold text-text-primary">
+              <h2 className="text-sm sm:text-base font-pixel font-bold text-text-primary">
                 {cfg.sectionTitle}
               </h2>
               <span className="text-xs text-text-muted font-value">
@@ -264,7 +264,7 @@ export function MarketValueMoversUI({ data, variant }: MarketValueMoversUIProps)
       <section>
         <div className="mb-3">
           <div className="flex items-baseline gap-2">
-            <h2 className="text-sm sm:text-base font-bold text-text-secondary">
+            <h2 className="text-sm sm:text-base font-pixel font-bold text-text-secondary">
               {cfg.breakdownTitle}
             </h2>
             <span className="text-xs text-text-muted font-value">

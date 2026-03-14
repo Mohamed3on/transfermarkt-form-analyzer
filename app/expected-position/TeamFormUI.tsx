@@ -132,7 +132,7 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
                 href={team.clubUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold text-sm sm:text-base hover:underline block truncate text-text-primary"
+                className="font-semibold text-sm sm:text-base hover:underline block truncate text-text-primary"
               >
                 {team.name}
               </a>
@@ -165,10 +165,10 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
               {ordinal(team.leaguePosition)} · {team.points}pts
             </span>
             <span className="text-[10px] text-text-muted">vs</span>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-value bg-elevated text-text-muted">
-              {ordinal(team.marketValueRank)} · {team.expectedPoints}pts
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-elevated text-text-muted">
+              <span className="font-value">{ordinal(team.marketValueRank)} · {team.expectedPoints}pts</span>
+              <span className="hidden sm:inline text-[10px] opacity-60">by value{formatValue(team.marketValue) !== "-" ? ` · ${formatValue(team.marketValue)}` : ""}</span>
             </span>
-            <span className="text-[10px] text-text-muted hidden sm:inline">by squad value · {formatValue(team.marketValue)} avg</span>
           </div>
 
           {/* Manager info */}

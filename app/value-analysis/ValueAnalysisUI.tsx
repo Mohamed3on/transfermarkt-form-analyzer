@@ -131,7 +131,7 @@ function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement,
           {imageUrl ? (
             <img src={imageUrl} alt={name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover bg-elevated" style={{ border: `1px solid ${theme.imageBorder}` }} />
           ) : (
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-base sm:text-lg font-bold bg-elevated text-text-muted border border-border-subtle">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-base sm:text-lg font-medium bg-elevated text-text-muted border border-border-subtle">
               {name.charAt(0)}
             </div>
           )}
@@ -461,7 +461,7 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
       </div>
       {filteredCandidates.length === 0 && (
         <div className="rounded-xl p-8 text-center animate-fade-in bg-card border border-border-subtle">
-          <p className="font-semibold text-text-primary">{isOverpriced ? "No overpriced players found" : "No bargain players found"}</p>
+          <p className="font-medium text-text-primary">{isOverpriced ? "No overpriced players found" : "No bargain players found"}</p>
           <p className="text-sm mt-1 text-text-muted">{isOverpriced ? "Every expensive player is producing as expected. Try broadening filters or switching leagues." : "No cheaper players are outperforming pricier peers right now. Try broadening filters."}</p>
         </div>
       )}
@@ -845,7 +845,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                 <section>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-1 h-5 rounded-full bg-accent-gold" />
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-accent-gold">Benchmark Player</h2>
+                    <h2 className="text-xs font-pixel font-bold uppercase tracking-widest text-accent-gold">Benchmark Player</h2>
                   </div>
                   <TargetPlayerCard player={gaData!.targetPlayer} minutes={targetMinutes} />
                 </section>
@@ -887,7 +887,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                             </svg>
                           </div>
                           <div>
-                            <p className="font-semibold text-base text-accent-cold-soft">Nobody more expensive is doing worse</p>
+                            <p className="font-medium text-base text-accent-cold-soft">Nobody more expensive is doing worse</p>
                             <p className="text-sm mt-1 text-text-muted">
                               Every player worth {gaData!.targetPlayer.marketValueDisplay} or more has produced more G+A.
                               At {gaData!.targetPlayer.points} G+A for {gaData!.targetPlayer.marketValueDisplay}, {gaData!.targetPlayer.name} has the lowest output at this price range.
@@ -913,7 +913,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                             </svg>
                           </div>
                           <div>
-                            <p className="font-semibold text-base text-accent-hot">{gaData!.targetPlayer.name} is a top performer for their price</p>
+                            <p className="font-medium text-base text-accent-hot">{gaData!.targetPlayer.name} is a top performer for their price</p>
                             <p className="text-sm mt-1 text-text-muted">
                               No cheaper player has produced more goal contributions in the same or fewer minutes.
                               At {gaData!.targetPlayer.points} G+A for {gaData!.targetPlayer.marketValueDisplay}, {gaData!.targetPlayer.name} offers excellent value.
@@ -1000,7 +1000,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                 <section>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-1 h-5 rounded-full bg-accent-gold" />
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-accent-gold">Benchmark Player</h2>
+                    <h2 className="text-xs font-pixel font-bold uppercase tracking-widest text-accent-gold">Benchmark Player</h2>
                   </div>
                   <MvBenchmarkCard player={minsSelected} />
                 </section>
@@ -1028,7 +1028,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                     <TabsContent value="less">
                       {playingLess.length === 0 ? (
                         <div className="rounded-xl p-10 text-center animate-fade-in bg-card border border-border-subtle">
-                          <p className="font-semibold text-lg text-text-primary">No results</p>
+                          <p className="font-medium text-lg text-text-primary">No results</p>
                           <p className="text-sm mt-1 text-text-muted">No higher-valued players have fewer minutes than {minsSelected.name}</p>
                         </div>
                       ) : (
@@ -1038,7 +1038,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                     <TabsContent value="more">
                       {playingMore.length === 0 ? (
                         <div className="rounded-xl p-10 text-center animate-fade-in bg-card border border-border-subtle">
-                          <p className="font-semibold text-lg text-text-primary">No results</p>
+                          <p className="font-medium text-lg text-text-primary">No results</p>
                           <p className="text-sm mt-1 text-text-muted">No higher-valued players have more minutes than {minsSelected.name}</p>
                         </div>
                       ) : (

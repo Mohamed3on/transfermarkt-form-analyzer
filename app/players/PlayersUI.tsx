@@ -211,7 +211,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
           </div>
           <div className="w-px h-7 bg-border-subtle" />
           <div className="text-right">
-            <div className="text-sm font-value tabular-nums text-text-primary">
+            <div className="text-sm font-bold tabular-nums text-text-primary">
               {displayMinutes.toLocaleString()}&apos;
             </div>
           </div>
@@ -497,7 +497,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
         <section>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1 h-5 rounded-full shrink-0 bg-accent-blue" />
-            <h2 className="text-xs font-bold uppercase tracking-widest shrink-0 text-text-secondary">
+            <h2 className="text-xs font-pixel font-bold uppercase tracking-widest shrink-0 text-text-secondary">
               All Players
             </h2>
             <AnimatedCount value={sortedPlayers.length} />
@@ -638,7 +638,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                 </svg>
                 More filters
                 {advancedFilterCount > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums text-accent-blue bg-accent-blue/15">
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md tabular-nums text-accent-blue bg-accent-blue/15">
                     {advancedFilterCount}
                   </span>
                 )}

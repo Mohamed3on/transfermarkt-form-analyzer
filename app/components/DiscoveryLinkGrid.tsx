@@ -40,7 +40,7 @@ export function DiscoveryLinkGrid({
 
   return (
     <section className={cn("mt-8 sm:mt-10", className)}>
-      <h2 className="text-base font-semibold text-text-primary sm:text-lg">{title}</h2>
+      <h2 className="text-base font-pixel font-bold text-text-primary sm:text-lg">{title}</h2>
       {description && <p className="mt-1 text-sm text-text-muted">{description}</p>}
 
       <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">

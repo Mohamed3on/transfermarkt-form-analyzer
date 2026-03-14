@@ -38,7 +38,7 @@ export default function DiscoverPage() {
 
           return (
             <section key={section}>
-              <h2 className="mb-3 text-base font-semibold text-text-primary sm:text-lg">
+              <h2 className="mb-3 text-base font-pixel font-bold text-text-primary sm:text-lg">
                 {DISCOVERY_SECTION_LABELS[section]}
               </h2>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">

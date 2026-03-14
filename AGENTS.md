@@ -20,6 +20,8 @@ Use [shadcn/ui](https://ui.shadcn.com) for all UI components. Install new compon
 
 **Numeric values:** All numbers (money, percentages, stats, counts) must use the `font-value` class for monospace rendering. Never use `font-bold`/`font-black` on numbers — let the mono font speak for itself.
 
+**Typography weights:** Never use `font-bold` or `font-semibold` on large/prominent Geist Sans text (section headers, headings). Use `font-pixel font-bold` for those instead. Small bold is fine: player/team names, numbers, badges, inline links.
+
 ## Performance
 
 - **Server-side data fetching:** Always fetch data in async server components and pass as `initialData` props to client components. Never use client-side `useQuery`/`fetch` waterfalls. Use Next.js `loading.tsx` for streaming skeletons while server fetches. See `expected-position`, `injured`, `minutes-value` pages for the pattern.

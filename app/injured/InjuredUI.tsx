@@ -347,7 +347,7 @@ function StatCell({ label, value, sub, accent = false }: { label: string; value:
     <div className="flex flex-col gap-0.5 min-w-0">
       <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-text-muted">{label}</div>
       <div className={cn(
-        "text-sm sm:text-base font-bold",
+        "text-sm sm:text-base font-medium",
         accent ? "text-accent-hot font-value" : "text-text-primary"
       )}>
         {value}
