@@ -409,7 +409,7 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="w-1 h-6 rounded-full" style={{ background: accentColor }} />
-          <h2 className="text-sm sm:text-base font-semibold uppercase tracking-widest flex items-center gap-1.5" style={{ color: accentColor }}>
+          <h2 className="text-sm sm:text-base font-pixel uppercase tracking-widest flex items-center gap-1.5" style={{ color: accentColor }}>
             {isOverpriced ? "Overpriced" : "Bargains"}
             <InfoTip>
               {isOverpriced
