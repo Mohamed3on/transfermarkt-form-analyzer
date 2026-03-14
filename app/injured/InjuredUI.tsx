@@ -377,9 +377,8 @@ function StatsHighlights({
   return (
     <div className="mb-6 sm:mb-8 animate-scale-in rounded-xl border border-border-subtle bg-elevated overflow-hidden">
       <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border-subtle">
-        {/* Most Players Out */}
         {mostPlayersClub && (
-          <div className="p-3 sm:p-4 flex items-start gap-2">
+          <div className="p-3 sm:p-4 flex items-start gap-2 border-l-2 border-l-red-500/50">
             {mostPlayersClub.clubLogoUrl && (
               <img src={mostPlayersClub.clubLogoUrl} alt="" className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-sm bg-white p-px shrink-0 mt-3" />
             )}
@@ -391,9 +390,8 @@ function StatsHighlights({
           </div>
         )}
 
-        {/* Most Value Out */}
         {mostValueClub && (
-          <div className="p-3 sm:p-4 flex items-start gap-2">
+          <div className="p-3 sm:p-4 flex items-start gap-2 border-l-2 border-l-amber-500/50">
             {mostValueClub.clubLogoUrl && (
               <img src={mostValueClub.clubLogoUrl} alt="" className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-sm bg-white p-px shrink-0 mt-3" />
             )}
@@ -405,9 +403,8 @@ function StatsHighlights({
           </div>
         )}
 
-        {/* Most Common Injury */}
         {topInjury && (
-          <div className="p-3 sm:p-4">
+          <div className="p-3 sm:p-4 border-l-2 border-l-blue-500/50">
             <StatCell
               label="Most Common Injury"
               value={topInjury.injury}

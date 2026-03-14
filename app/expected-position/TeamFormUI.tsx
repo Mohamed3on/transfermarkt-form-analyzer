@@ -159,13 +159,16 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
             </div>
           </div>
 
-          {/* Stats Row */}
-          <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-2.5 text-xs sm:text-sm text-text-muted">
-            <span><span className="text-text-secondary">{ordinal(team.leaguePosition)}</span> · <span className="font-value">{team.points}</span>pts</span>
-            <span className="text-border-medium">·</span>
-            <span><span className="hidden sm:inline text-text-secondary">By squad value:</span><span className="sm:hidden text-text-secondary">By value:</span> {ordinal(team.marketValueRank)} · <span className="font-value">{team.expectedPoints}</span>pts expected</span>
-            <span className="hidden sm:inline text-border-medium">·</span>
-            <span className="hidden sm:inline"><span className="text-text-secondary">Avg:</span> {formatValue(team.marketValue)}</span>
+          {/* Stats Row — actual vs expected, color-coded */}
+          <div className="flex flex-wrap items-center gap-1.5 mt-2.5 text-xs sm:text-sm">
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-value ${isOver ? "bg-green-600/10 text-green-500" : "bg-red-600/10 text-red-500"}`}>
+              {ordinal(team.leaguePosition)} · {team.points}pts
+            </span>
+            <span className="text-[10px] text-text-muted">vs</span>
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-value bg-elevated text-text-muted">
+              {ordinal(team.marketValueRank)} · {team.expectedPoints}pts
+            </span>
+            <span className="text-[10px] text-text-muted hidden sm:inline">by squad value · {formatValue(team.marketValue)} avg</span>
           </div>
 
           {/* Manager info */}
