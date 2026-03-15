@@ -131,6 +131,7 @@ body {
   color: var(--text-primary);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Subtle grid background pattern */
