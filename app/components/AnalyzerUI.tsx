@@ -164,15 +164,15 @@ function AggregatedTeamCard({
         {deltaPts != null && (
           <a
             href="/expected-position"
-            className={`w-16 sm:w-20 flex flex-col items-center justify-center shrink-0 border-l transition-opacity hover:opacity-80 ${isTop ? "border-l-[var(--accent-hot)]/20 bg-[var(--accent-hot-glow)]" : "border-l-[var(--accent-cold)]/20 bg-[var(--accent-cold-glow)]"}`}
+            className={`w-16 sm:w-20 flex flex-col items-center justify-center shrink-0 border-l transition-opacity hover:opacity-80 ${deltaPts > 0 ? "border-l-green-600/20 bg-green-600/[0.06]" : "border-l-red-600/20 bg-red-600/[0.06]"}`}
           >
             <span
-              className={`text-xl sm:text-2xl font-pixel ${isTop ? "text-[var(--accent-hot)]" : "text-[var(--accent-cold)]"}`}
+              className={`text-xl sm:text-2xl font-pixel ${deltaPts > 0 ? "text-green-600" : "text-red-600"}`}
             >
               {deltaPts > 0 ? `+${deltaPts}` : deltaPts}
             </span>
             <span
-              className={`text-[8px] sm:text-[9px] uppercase tracking-wider mt-0.5 text-center leading-tight ${isTop ? "text-[var(--accent-hot)]/60" : "text-[var(--accent-cold)]/60"}`}
+              className={`text-[8px] sm:text-[9px] uppercase tracking-wider mt-0.5 text-center leading-tight ${deltaPts > 0 ? "text-green-600/60" : "text-red-600/60"}`}
             >
               points
               <br />
