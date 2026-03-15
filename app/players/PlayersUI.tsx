@@ -14,7 +14,7 @@ import { ExternalLink } from "lucide-react";
 import { InfoTip } from "@/app/components/InfoTip";
 import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
-import { filterPlayersByLeagueAndClub, filterTop5, getFormMinutes, uniqueFilterOptions } from "@/lib/filter-players";
+import { filterPlayersByLeagueAndClub, filterTop5, getFormMinutes, uniqueFilterOptions, TOP_5_LEAGUES } from "@/lib/filter-players";
 import { formatReturnInfo, formatInjuryDuration, getLeistungsdatenUrl } from "@/lib/format";
 import type { MinutesValuePlayer, InjuryMap } from "@/app/types";
 
@@ -334,7 +334,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
   const positionFilter = params.get("pos") || "";
   const activeCategory = getPositionCategory(positionFilter);
   const specificPosition = activeCategory && !POSITION_CATEGORIES[positionFilter] ? positionFilter : null;
-  const top5Only = params.get("top5") === "1";
+  const top5Only = leagueFilter === "top5";
   const signingFilter = parseSigningFilter(params.get("signing"));
   const includePen = params.get("pen") === "1";
   const includeIntl = params.get("intl") === "1";
@@ -377,7 +377,16 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
     }));
   }, [rawPlayers, includeIntl]);
 
-  const leagueOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.league, "All leagues"), [players]);
+  const leagueGroups = useMemo(() => {
+    const allLeagues = Array.from(new Set(players.map((p) => p.league).filter(Boolean))).sort();
+    const top5 = allLeagues.filter((l) => TOP_5_LEAGUES.includes(l));
+    const other = allLeagues.filter((l) => !TOP_5_LEAGUES.includes(l));
+    return [
+      { options: [{ value: "all", label: "All leagues" }, { value: "top5", label: "Top 5 leagues" }] },
+      ...(top5.length ? [{ heading: "Top 5", options: top5.map((l) => ({ value: l, label: l })) }] : []),
+      ...(other.length ? [{ heading: "Other", options: other.map((l) => ({ value: l, label: l })) }] : []),
+    ];
+  }, [players]);
   const nationalityOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.nationality, "All nationalities"), [players]);
   const clubOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.club, "All clubs"), [players]);
 
@@ -570,10 +579,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           <div className="flex flex-col gap-3 mb-5">
             {/* Primary filters */}
             <div className="flex flex-wrap items-center gap-2">
-              <Combobox value={leagueFilter} onChange={(v) => { setIsFiltering(true); update({ league: v === "all" ? null : v || null }); }} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
-              <FilterButton active={top5Only} onClick={() => fadeUpdate({ top5: top5Only ? null : "1" })}>
-                Top 5 leagues
-              </FilterButton>
+              <Combobox value={leagueFilter} onChange={(v) => { setIsFiltering(true); update({ league: v === "all" ? null : v || null, top5: null }); }} groups={leagueGroups} placeholder="All leagues" searchPlaceholder="Search leagues..." />
               <Combobox value={clubFilter} onChange={(v) => { setIsFiltering(true); update({ club: v === "all" ? null : v || null }); }} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
               <Combobox value={nationalityFilter} onChange={(v) => { setIsFiltering(true); update({ nat: v === "all" ? null : v || null }); }} options={nationalityOptions} placeholder="All nationalities" searchPlaceholder="Search nationalities..." />
             </div>
@@ -636,7 +642,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           </div>
 
           <div className={isFiltering ? "animate-filter-dim" : ""} onAnimationEnd={() => setIsFiltering(false)}>
-            <VirtualList items={sortedPlayers} estimateSize={110} gap={8} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <PlayerCard player={p} index={i} injuryMap={injuryMap} ctx={{ sortBy, showCaps: minCaps !== null || maxCaps !== null, includePen, showContract: contractYear !== null, formWindow, formGA: (pl) => getFormGA(pl, formWindow, includePen).total }} />} />
+            <VirtualList key={`${sortBy}-${formWindow}-${includePen}`} items={sortedPlayers} estimateSize={110} gap={8} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <PlayerCard player={p} index={i} injuryMap={injuryMap} ctx={{ sortBy, showCaps: minCaps !== null || maxCaps !== null, includePen, showContract: contractYear !== null, formWindow, formGA: (pl) => getFormGA(pl, formWindow, includePen).total }} />} />
           </div>
         </section>
     </>
