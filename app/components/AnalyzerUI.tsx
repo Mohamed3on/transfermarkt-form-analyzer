@@ -109,7 +109,7 @@ function AggregatedTeamCard({
               team.name
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm truncate text-text-secondary">
+          <div className="flex items-center flex-wrap gap-1.5 text-xs sm:text-sm text-text-secondary">
             {getLeagueUrl(team.league) ? (
               <a href={getLeagueUrl(team.league)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline shrink-0">
                 {getLeagueLogoUrl(team.league) && <img src={getLeagueLogoUrl(team.league)} alt="" width={16} height={16} className="w-4 h-4 object-contain shrink-0 rounded-sm bg-white/90 p-px" />}
