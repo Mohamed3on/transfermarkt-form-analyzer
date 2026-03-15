@@ -4,6 +4,7 @@ import {
   canBeOutperformerAgainst,
   effectivePosition as pos,
   isAttackingPosition,
+  isDefensivePosition,
   strictlyOutperforms,
 } from "@/lib/positions";
 
@@ -46,10 +47,9 @@ export function findValueCandidates(
   const candidates: ValueCandidate[] = [];
 
   for (const player of players) {
-    const ep = pos(player);
-    if (!isAttackingPosition(ep)) continue;
     if (player.minutes === undefined) continue;
     if (minMinutes !== undefined && player.minutes < minMinutes) continue;
+    if (candidateOutperforms ? isDefensivePosition(pos(player)) : !isAttackingPosition(pos(player))) continue;
 
     const count = countComparisons(player, players, candidateOutperforms);
     if (count >= MIN_COMPARISON_COUNT) candidates.push({ ...player, count });
