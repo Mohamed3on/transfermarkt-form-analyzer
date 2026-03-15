@@ -203,47 +203,47 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
           </div>
           <div className="w-px h-7 bg-border-subtle" />
           <div className="text-right">
-            <div className="text-sm font-bold tabular-nums text-text-primary">
+            <div className="text-sm font-value text-text-primary">
               {displayMinutes.toLocaleString()}&apos;
             </div>
           </div>
           {showCaps && (
             <div className="text-right">
-              <div className="text-sm font-bold tabular-nums text-text-primary">{player.intlCareerCaps ?? 0}</div>
+              <div className="text-sm font-value text-text-primary">{player.intlCareerCaps ?? 0}</div>
               <div className="text-xs text-text-secondary">intl caps</div>
             </div>
           )}
           {showContract && expiryYear && (
             <div className="text-right">
-              <div className="text-sm font-bold tabular-nums text-text-primary">{expiryYear}</div>
+              <div className="text-sm font-value text-text-primary">{expiryYear}</div>
               <div className="text-xs text-text-secondary">expires</div>
             </div>
           )}
           {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
-            <div className="text-right min-w-[3rem]">
-              <div className="text-sm font-bold tabular-nums text-text-primary">{penGoals}/{penAttempts}</div>
+            <div className="text-right min-w-12">
+              <div className="text-sm font-value text-text-primary">{penGoals}/{penAttempts}</div>
               <div className="text-xs text-text-secondary">pen conv. {Math.round(penGoals / penAttempts * 100)}%</div>
             </div>
           )}
           {sortBy === "miss" && (
             <div className="text-right">
-              <div className="text-sm font-bold tabular-nums text-text-primary">{penMisses}</div>
+              <div className="text-sm font-value text-text-primary">{penMisses}</div>
               <div className="text-xs text-text-secondary">missed</div>
             </div>
           )}
           <div className="w-px h-7 bg-border-subtle" />
           <div className="flex items-center gap-2.5 text-right">
             <div>
-              <div className="text-sm font-bold tabular-nums text-text-primary">{player.totalMatches}</div>
+              <div className="text-sm font-value text-text-primary">{player.totalMatches}</div>
               <div className="text-xs text-text-secondary">games</div>
             </div>
             <div>
-              <div className="text-sm font-bold tabular-nums text-text-primary">{seasonGA.total}</div>
+              <div className="text-sm font-value text-text-primary">{seasonGA.total}</div>
               <div className="text-xs tabular-nums text-text-secondary">{seasonGA.goals}G {seasonGA.assists}A</div>
             </div>
             {recentGA && (
               <div>
-                <div className="text-sm font-bold tabular-nums text-accent-hot">{recentGA.total}</div>
+                <div className="text-sm font-value text-accent-hot">{recentGA.total}</div>
                 <div className="text-xs tabular-nums text-accent-hot/50">{recentGA.goals}G {recentGA.assists}A</div>
               </div>
             )}
@@ -257,7 +257,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
         {recentGA && (
           <span className="text-base text-accent-hot">{recentGA.total} <span className="text-[10px] text-accent-hot/60">last {formWindow} games</span></span>
         )}
-        <span className={recentGA ? "text-sm" : "text-base text-accent-hot"}>{seasonGA.total} <span className="text-[10px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
+        <span className={recentGA ? "text-sm" : "text-sm text-accent-hot"}>{seasonGA.total} <span className="text-[10px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
         <span className="text-sm text-accent-blue">{player.marketValueDisplay}</span>
         <span>{player.age}y</span>
         <span>{player.totalMatches} games</span>
@@ -454,7 +454,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           </div>
 
           {/* Sort */}
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-5">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 mb-5">
             <div className="flex items-center gap-2 w-max">
               <InfoTip>
                 <p><strong>Value</strong> — market value (Transfermarkt estimate)</p>
@@ -478,7 +478,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                   <ToggleGroupItem
                     key={key}
                     value={key}
-                    className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                    className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
                   >
                     {key === "ga" ? pointsLabel : BASE_SORT_LABELS[key]}
                     {sortBy === key && (
@@ -503,7 +503,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                       <ToggleGroupItem
                         key={w}
                         value={String(w)}
-                        className="px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                        className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
                       >
                         {w === "season" ? "Season" : `Last ${w}`}
                       </ToggleGroupItem>
@@ -519,7 +519,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           </div>
 
           {/* Position */}
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-5">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 mb-5">
             <div className="flex items-center gap-2 w-max">
               <ToggleGroup
                 type="single"
@@ -534,7 +534,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                   <ToggleGroupItem
                     key={key}
                     value={key}
-                    className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                    className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
                   >
                     {label}
                   </ToggleGroupItem>
@@ -554,7 +554,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                     <ToggleGroupItem
                       key={p}
                       value={p}
-                      className="px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                      className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
                     >
                       {POS_ABBREV[p] || p}
                     </ToggleGroupItem>
