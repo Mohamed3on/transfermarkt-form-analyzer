@@ -3,11 +3,13 @@
 import { useMemo } from "react";
 import type { TeamFormEntry } from "@/app/types";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ManagerSection } from "@/app/components/ManagerPPGBadge";
 import { InfoTip } from "@/app/components/InfoTip";
-import { LEAGUES, getLeagueLogoUrl, getLeagueUrl } from "@/lib/leagues";
+import { LEAGUES, getLeagueLogoUrl } from "@/lib/leagues";
+import { LeagueBadge } from "@/components/LeagueBadge";
+import { RankBadge } from "@/components/RankBadge";
+import { formatValueStr, ordinal } from "@/lib/format";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 
 export interface TeamFormResponse {
@@ -23,26 +25,7 @@ interface TeamFormUIProps {
   formLeaders?: Record<string, { type: "top" | "bottom"; count: number }>;
 }
 
-function getLeagueColor(league: string): string {
-  const colors: Record<string, string> = {
-    Bundesliga: "#d20515",
-    "Premier League": "#38003c",
-    "La Liga": "#ff4b44",
-    "Serie A": "#024494",
-    "Ligue 1": "#dae025",
-  };
-  return colors[league] || "#666";
-}
 
-function formatValue(value: string): string {
-  return value || "-";
-}
-
-function ordinal(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
-}
 
 function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: string; onValueChange: (value: string) => void }) {
   return (
@@ -63,27 +46,22 @@ function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: strin
           All Leagues
         </ToggleGroupItem>
 
-        {LEAGUES.map((league) => {
-          const isSelected = selectedLeague === league.name;
-          const color = getLeagueColor(league.name);
-
-          return (
+        {LEAGUES.map((league) => (
             <ToggleGroupItem
               key={league.code}
               value={league.name}
               className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 flex items-center gap-2 border border-border-subtle text-text-secondary hover:text-text-primary hover:bg-card-hover active:scale-[0.97]"
-              style={isSelected ? {
-                backgroundColor: color,
-                borderColor: color,
-                color: league.name === "Ligue 1" ? "#000" : "#fff",
-                boxShadow: `0 0 12px ${color}40`,
+              style={selectedLeague === league.name ? {
+                backgroundColor: league.hex,
+                borderColor: league.hex,
+                color: league.textOnBg === "text-black" ? "#000" : "#fff",
+                boxShadow: `0 0 12px ${league.hex}40`,
               } : undefined}
             >
               <img src={getLeagueLogoUrl(league.name)} alt="" className="w-4 h-4 object-contain rounded-sm bg-white p-px" />
               {league.name}
             </ToggleGroupItem>
-          );
-        })}
+        ))}
       </ToggleGroup>
     </div>
   );
@@ -110,12 +88,7 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
         {/* Main content */}
         <div className="flex-1 min-w-0 p-3 sm:p-4">
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Rank */}
-            <div
-              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 ${rank <= 3 ? (isOver ? "bg-green-600 text-white" : "bg-red-600 text-white") : "bg-elevated text-text-muted"}`}
-            >
-              {rank}
-            </div>
+            <RankBadge rank={rank} highlightClass={isOver ? "bg-green-600 text-white" : "bg-red-600 text-white"} />
 
             {/* Club Logo */}
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1 bg-white shadow-sm">
@@ -137,19 +110,7 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
                 {team.name}
               </a>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <a href={getLeagueUrl(team.league)} target="_blank" rel="noopener noreferrer">
-                  <Badge
-                    className="px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs shrink-0 flex items-center gap-1 w-fit hover:opacity-80 transition-opacity"
-                    style={{
-                      background: getLeagueColor(team.league),
-                      color: team.league === "Ligue 1" ? "#000" : "#fff",
-                      border: "none",
-                    }}
-                  >
-                    {getLeagueLogoUrl(team.league) && <img src={getLeagueLogoUrl(team.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
-                    {team.league}
-                  </Badge>
-                </a>
+                <LeagueBadge league={team.league} />
                 {formLeader && (
                   <a href="/form" className={`inline-flex items-center gap-0.5 text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-semibold transition-all duration-150 hover:scale-105 hover:brightness-125 ${formLeader.type === "top" ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}>
                     {formLeader.type === "top" ? "↑ Best" : "↓ Worst"} form <span className="text-[8px] opacity-60">→</span>
@@ -167,7 +128,7 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
             <span className="text-[10px] text-text-muted">vs</span>
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-elevated text-text-muted">
               <span className="font-value">{ordinal(team.marketValueRank)} · {team.expectedPoints}pts</span>
-              <span className="hidden sm:inline text-xs text-text-secondary">by value{formatValue(team.marketValue) !== "-" ? ` · ${formatValue(team.marketValue)}` : ""}</span>
+              <span className="hidden sm:inline text-xs text-text-secondary">by value{formatValueStr(team.marketValue) !== "-" ? ` · ${formatValueStr(team.marketValue)}` : ""}</span>
             </span>
           </div>
 

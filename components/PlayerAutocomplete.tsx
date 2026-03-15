@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { normalizeForSearch } from "@/lib/normalize";
 
 interface PlayerOption {
@@ -116,13 +117,7 @@ export function PlayerAutocomplete<T extends PlayerOption>({
                 handleSelect(player);
               }}
             >
-              {player.imageUrl ? (
-                <img src={player.imageUrl} alt="" className="w-8 h-8 rounded-md object-cover shrink-0 bg-card" />
-              ) : (
-                <div className="w-8 h-8 rounded-md flex items-center justify-center text-sm font-bold shrink-0 bg-card text-text-muted">
-                  {player.name.charAt(0)}
-                </div>
-              )}
+              <PlayerAvatar imageUrl={player.imageUrl} name={player.name} className="w-8 h-8 rounded-md shrink-0 bg-card" />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate text-text-primary">{player.name}</div>
                 <div className="text-xs truncate text-text-secondary">

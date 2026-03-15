@@ -10,22 +10,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ManagerSection, ManagerSkeleton } from "./ManagerPPGBadge";
 import { InfoTip } from "./InfoTip";
 import { getLeagueLogoUrl, getLeagueUrl } from "@/lib/leagues";
+import { ordinal } from "@/lib/format";
 import { ChevronDown } from "lucide-react";
 
 async function fetchManager(clubId: string): Promise<{ clubId: string; manager: ManagerInfo | null }> {
   const res = await fetch(`/api/manager/${clubId}`);
   if (!res.ok) throw new Error(`Manager fetch failed for ${clubId}: ${res.status}`);
   return res.json();
-}
-
-function formatOrdinal(value: number): string {
-  const mod100 = value % 100;
-  if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
-  const mod10 = value % 10;
-  if (mod10 === 1) return `${value}st`;
-  if (mod10 === 2) return `${value}nd`;
-  if (mod10 === 3) return `${value}rd`;
-  return `${value}th`;
 }
 
 function formatStatValue(category: string, value: number): string {
@@ -119,7 +110,7 @@ function AggregatedTeamCard({
               team.league
             )}
             {team.leaguePosition > 0 && (
-              <span className="font-value text-text-muted">· {formatOrdinal(team.leaguePosition)}</span>
+              <span className="font-value text-text-muted">· {ordinal(team.leaguePosition)}</span>
             )}
             {deltaPts != null && (
               <a href="/expected-position" className={`inline-flex items-center gap-0.5 font-value text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full transition-all duration-150 hover:scale-105 hover:brightness-125 ${deltaPts > 0 ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}>
@@ -316,7 +307,7 @@ function CompactTeamCard({ team, type }: { team: QualifiedTeam; type: "top" | "b
             ) : team.name}
           </div>
           <div className="text-xs text-text-muted">
-            {formatOrdinal(team.leaguePosition)} place · <span className="font-value">{team.stats.points}</span> pts · goal diff: <span className="font-value">{team.stats.goalDiff > 0 ? "+" : ""}{team.stats.goalDiff}</span>
+            {ordinal(team.leaguePosition)} place · <span className="font-value">{team.stats.points}</span> pts · goal diff: <span className="font-value">{team.stats.goalDiff > 0 ? "+" : ""}{team.stats.goalDiff}</span>
           </div>
         </div>
       </div>

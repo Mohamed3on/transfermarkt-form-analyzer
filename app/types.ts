@@ -156,6 +156,8 @@ export interface PlayerStats {
   isNewSigning?: boolean;
   isOnLoan?: boolean;
   outperformedByCount?: number;
+  nationality?: string;
+  nationalityFlagUrl?: string;
 }
 
 export interface MinutesValuePlayer {

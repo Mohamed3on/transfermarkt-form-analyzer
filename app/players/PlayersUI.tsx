@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useRef, useState, useEffect, useCallback, type ReactNode } from "react";
-import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { VirtualList } from "@/components/VirtualList";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { NationalityFlag } from "@/components/NationalityFlag";
 import { Combobox } from "@/components/Combobox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
@@ -12,8 +14,8 @@ import { ExternalLink } from "lucide-react";
 import { InfoTip } from "@/app/components/InfoTip";
 import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
-import { filterPlayersByLeagueAndClub, filterTop5, getFormMinutes } from "@/lib/filter-players";
-import { formatReturnInfo, formatInjuryDuration, PROFIL_RE } from "@/lib/format";
+import { filterPlayersByLeagueAndClub, filterTop5, getFormMinutes, uniqueFilterOptions } from "@/lib/filter-players";
+import { formatReturnInfo, formatInjuryDuration, getLeistungsdatenUrl } from "@/lib/format";
 import type { MinutesValuePlayer, InjuryMap } from "@/app/types";
 
 type SortKey = "value" | "mins" | "games" | "ga" | "pen" | "miss";
@@ -99,7 +101,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
   if (player.nationalityFlagUrl) {
     nationalityDisplay = <>
       <span className="opacity-40">·</span>
-      <img src={player.nationalityFlagUrl} alt={player.nationality} title={player.nationality} className="w-4 h-3 object-contain shrink-0" />
+      <NationalityFlag url={player.nationalityFlagUrl} name={player.nationality} />
       <span className="hidden md:inline">{player.nationality}</span>
     </>;
   } else if (player.nationality) {
@@ -154,17 +156,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
         </div>
 
         <div className="relative shrink-0">
-          {player.imageUrl ? (
-            <img
-              src={player.imageUrl}
-              alt={player.name}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover bg-elevated border border-border-subtle"
-            />
-          ) : (
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-sm sm:text-base font-bold bg-elevated text-text-muted border border-border-subtle">
-              {player.name.charAt(0)}
-            </div>
-          )}
+          <PlayerAvatar imageUrl={player.imageUrl} name={player.name} className="w-9 h-9 sm:w-10 sm:h-10 border border-border-subtle" />
           {statusBadge}
           {injuryBadge}
         </div>
@@ -178,7 +170,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
               {player.name}
             </Link>
             <a
-              href={`https://www.transfermarkt.com${player.profileUrl.replace(PROFIL_RE, "/leistungsdaten/")}`}
+              href={getLeistungsdatenUrl(player.profileUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="shrink-0 opacity-40 hover:opacity-100 transition-opacity text-text-muted"
@@ -284,37 +276,6 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
   );
 }
 
-const ROW_HEIGHT = 110;
-const GAP = 8;
-
-function VirtualPlayerList({ items, injuryMap, ctx }: { items: MinutesValuePlayer[]; injuryMap?: InjuryMap; ctx: CardContext }) {
-  const listRef = useRef<HTMLDivElement>(null);
-  const virtualizer = useWindowVirtualizer({
-    count: items.length,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: 10,
-    gap: GAP,
-    scrollMargin: listRef.current?.offsetTop ?? 0,
-  });
-
-  return (
-    <div ref={listRef}>
-      <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
-        {virtualizer.getVirtualItems().map((virtualRow) => (
-          <div
-            key={items[virtualRow.index].playerId}
-            data-index={virtualRow.index}
-            ref={virtualizer.measureElement}
-            className="absolute left-0 w-full"
-            style={{ top: virtualRow.start - (virtualizer.options.scrollMargin || 0) }}
-          >
-            <PlayerCard player={items[virtualRow.index]} index={virtualRow.index} injuryMap={injuryMap} ctx={ctx} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function parseSortKey(v: string | null): SortKey {
   if (v === "value" || v === "mins" || v === "games" || v === "ga" || v === "pen" || v === "miss") return v;
@@ -416,20 +377,9 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
     }));
   }, [rawPlayers, includeIntl]);
 
-  const leagueOptions = useMemo(
-    () => [{ value: "all", label: "All leagues" }, ...Array.from(new Set(players.map((p) => p.league).filter(Boolean))).sort().map((l) => ({ value: l, label: l }))],
-    [players]
-  );
-
-  const nationalityOptions = useMemo(
-    () => [{ value: "all", label: "All nationalities" }, ...Array.from(new Set(players.map((p) => p.nationality).filter(Boolean))).sort().map((n) => ({ value: n, label: n }))],
-    [players]
-  );
-
-  const clubOptions = useMemo(
-    () => [{ value: "all", label: "All clubs" }, ...Array.from(new Set(players.map((p) => p.club).filter(Boolean))).sort().map((c) => ({ value: c, label: c }))],
-    [players]
-  );
+  const leagueOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.league, "All leagues"), [players]);
+  const nationalityOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.nationality, "All nationalities"), [players]);
+  const clubOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.club, "All clubs"), [players]);
 
   const contractYearOptions = useMemo(() => {
     const years = Array.from(new Set(players.map((p) => contractExpiryYear(p.contractExpiry)).filter((y): y is number => y !== null))).sort((a, b) => a - b);
@@ -684,7 +634,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           </div>
 
           <div className={isFiltering ? "animate-filter-dim" : ""} onAnimationEnd={() => setIsFiltering(false)}>
-            <VirtualPlayerList items={sortedPlayers} injuryMap={injuryMap} ctx={{ sortBy, showCaps: minCaps !== null || maxCaps !== null, includePen, showContract: contractYear !== null, formWindow, formGA: (p) => getFormGA(p, formWindow, includePen).total }} />
+            <VirtualList items={sortedPlayers} estimateSize={110} gap={8} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <PlayerCard player={p} index={i} injuryMap={injuryMap} ctx={{ sortBy, showCaps: minCaps !== null || maxCaps !== null, includePen, showContract: contractYear !== null, formWindow, formGA: (pl) => getFormGA(pl, formWindow, includePen).total }} />} />
           </div>
         </section>
     </>

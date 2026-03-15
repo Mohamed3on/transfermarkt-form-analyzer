@@ -7,13 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { InjuredPlayer } from "@/app/types";
-import { getLeagueLogoUrl, getLeagueUrl } from "@/lib/leagues";
-import { formatReturnInfo, formatInjuryDuration, formatMarketValue } from "@/lib/format";
+import { LeagueBadge } from "@/components/LeagueBadge";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { RankBadge } from "@/components/RankBadge";
+import { formatReturnInfo, formatInjuryDuration, formatMarketValue, formatValueStr } from "@/lib/format";
 import { useProgressiveFetch } from "@/lib/use-progressive-fetch";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { Combobox } from "@/components/Combobox";
 import { InfoTip } from "@/app/components/InfoTip";
-import { filterPlayersByLeagueAndClub } from "@/lib/filter-players";
+import { filterPlayersByLeagueAndClub, uniqueFilterOptions } from "@/lib/filter-players";
 
 interface TeamInjuryGroup {
   club: string;
@@ -49,40 +51,10 @@ async function fetchLeagueInjured(code: string): Promise<InjuredPlayer[]> {
   return (data.players || []) as InjuredPlayer[];
 }
 
-function formatValue(value: string): string {
-  return value || "-";
-}
-
-function getLeagueStyle(league: string): { bg: string; text: string } {
-  const styles: Record<string, { bg: string; text: string }> = {
-    Bundesliga: { bg: "bg-red-600", text: "text-white" },
-    "Premier League": { bg: "bg-purple-900", text: "text-white" },
-    "La Liga": { bg: "bg-orange-500", text: "text-white" },
-    "Serie A": { bg: "bg-blue-700", text: "text-white" },
-    "Ligue 1": { bg: "bg-yellow-400", text: "text-black" },
-  };
-  return styles[league] || { bg: "bg-gray-600", text: "text-white" };
-}
 
 
-
-function RankBadge({ rank }: { rank: number }) {
-  return (
-    <div
-      className={cn(
-        "w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm shrink-0",
-        rank <= 3
-          ? "bg-accent-hot text-background"
-          : "bg-elevated text-text-muted"
-      )}
-    >
-      {rank}
-    </div>
-  );
-}
 
 function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: number; index?: number }) {
-  const leagueStyle = getLeagueStyle(player.league);
   const returnInfo = formatReturnInfo(player.returnDate);
 
   return (
@@ -94,16 +66,7 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
         <div className="flex items-start gap-3 sm:gap-4">
           <RankBadge rank={rank} />
 
-          {/* Player Image */}
-          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-lg overflow-hidden shrink-0 bg-elevated">
-            {player.imageUrl && !player.imageUrl.includes("data:image") ? (
-              <img src={player.imageUrl} alt={player.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-xl sm:text-2xl text-text-muted">
-                ?
-              </div>
-            )}
-          </div>
+          <PlayerAvatar imageUrl={player.imageUrl} name="?" className="w-11 h-11 sm:w-14 sm:h-14 shrink-0" />
 
           {/* Player Info */}
           <div className="flex-1 min-w-0">
@@ -122,7 +85,7 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
                 </p>
               </div>
               <span className="text-sm sm:text-lg font-medium shrink-0 text-accent-hot font-value">
-                {formatValue(player.marketValue)}
+                {formatValueStr(player.marketValue)}
               </span>
             </div>
 
@@ -134,12 +97,7 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
               <span className="text-xs sm:text-sm text-text-secondary">
                 {player.club}
               </span>
-              <a href={getLeagueUrl(player.league)} target="_blank" rel="noopener noreferrer">
-                <Badge className={cn("text-[10px] sm:text-xs flex items-center gap-1 hover:opacity-80 transition-opacity", leagueStyle.bg, leagueStyle.text)}>
-                  {getLeagueLogoUrl(player.league) && <img src={getLeagueLogoUrl(player.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
-                  {player.league}
-                </Badge>
-              </a>
+              <LeagueBadge league={player.league} />
             </div>
 
             {/* Injury Info */}
@@ -176,8 +134,6 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
 }
 
 function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank: number; index?: number }) {
-  const leagueStyle = getLeagueStyle(team.league);
-
   return (
     <Card
       className="overflow-hidden hover-lift animate-slide-up"
@@ -203,12 +159,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                 <h3 className="font-bold text-sm sm:text-base text-text-primary">
                   {team.club}
                 </h3>
-                <a href={getLeagueUrl(team.league)} target="_blank" rel="noopener noreferrer">
-                  <Badge className={cn("mt-0.5 text-[10px] sm:text-xs inline-flex items-center gap-1 w-fit hover:opacity-80 transition-opacity", leagueStyle.bg, leagueStyle.text)}>
-                    {getLeagueLogoUrl(team.league) && <img src={getLeagueLogoUrl(team.league)} alt="" className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px" />}
-                    {team.league}
-                  </Badge>
-                </a>
+                <LeagueBadge league={team.league} />
               </div>
               <div className="text-right shrink-0">
                 <div className="text-sm sm:text-lg font-medium text-accent-hot font-value">
@@ -235,11 +186,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 py-2 first:pt-0 last:pb-0"
               >
-                {player.imageUrl && !player.imageUrl.includes("data:image") ? (
-                  <img src={player.imageUrl} alt={player.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-elevated shrink-0 flex items-center justify-center text-[10px] text-text-muted">?</div>
-                )}
+                <PlayerAvatar imageUrl={player.imageUrl} name="?" className="w-8 h-8 rounded-full shrink-0 text-[10px]" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-xs font-semibold text-text-primary truncate">{player.name}</span>
@@ -269,11 +216,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 px-3 py-2 hover:bg-card-hover transition-colors duration-150 odd:bg-elevated/40"
               >
-                {player.imageUrl && !player.imageUrl.includes("data:image") ? (
-                  <img src={player.imageUrl} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-elevated shrink-0 flex items-center justify-center text-[10px] text-text-muted">?</div>
-                )}
+                <PlayerAvatar imageUrl={player.imageUrl} name="?" className="w-7 h-7 rounded-full shrink-0 text-[10px]" />
                 <span className="text-sm font-medium text-text-primary w-36 lg:w-44 truncate shrink-0">{player.name}</span>
                 <span className="text-xs text-text-secondary flex-1 truncate">
                   {player.injury}{dur && <span className="text-text-muted"> · out {dur}</span>}
@@ -326,7 +269,7 @@ function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; ra
                 className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] sm:text-xs hover:bg-card-hover transition-colors duration-150 bg-elevated border border-border-subtle"
               >
                 {player.imageUrl && !player.imageUrl.includes("data:image") && (
-                  <img src={player.imageUrl} alt={player.name} className="w-4 h-4 sm:w-5 sm:h-5 rounded-full object-cover" />
+                  <PlayerAvatar imageUrl={player.imageUrl} name={player.name} className="w-4 h-4 sm:w-5 sm:h-5 rounded-full" />
                 )}
                 <span className="text-text-primary">{player.name}</span>
                 <span className="text-text-secondary">{player.club}</span>
@@ -434,8 +377,8 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
     return [...initialData.players, ...extraResults.flat()].sort((a, b) => b.marketValueNum - a.marketValueNum);
   }, [initialData.players, extraResults]);
 
-  const leagueOptions = useMemo(() => [{ value: "all", label: "All leagues" }, ...Array.from(new Set(allPlayers.map((p) => p.league).filter(Boolean))).sort().map((l) => ({ value: l, label: l }))], [allPlayers]);
-  const clubOptions = useMemo(() => [{ value: "all", label: "All clubs" }, ...Array.from(new Set(allPlayers.map((p) => p.club).filter(Boolean))).sort().map((c) => ({ value: c, label: c }))], [allPlayers]);
+  const leagueOptions = useMemo(() => uniqueFilterOptions(allPlayers, (p) => p.league, "All leagues"), [allPlayers]);
+  const clubOptions = useMemo(() => uniqueFilterOptions(allPlayers, (p) => p.club, "All clubs"), [allPlayers]);
 
   const players = useMemo(
     () => filterPlayersByLeagueAndClub(allPlayers, leagueFilter, clubFilter),

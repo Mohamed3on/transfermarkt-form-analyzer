@@ -1,5 +1,10 @@
 export const TOP_5_LEAGUES = ["Premier League", "LaLiga", "Bundesliga", "Serie A", "Ligue 1"];
 
+/** Build sorted Combobox options from a list of items, with an "All ..." default. */
+export function uniqueFilterOptions<T>(items: T[], accessor: (item: T) => string | undefined, allLabel: string) {
+  return [{ value: "all", label: allLabel }, ...Array.from(new Set(items.map(accessor).filter(Boolean))).sort().map((v) => ({ value: v!, label: v! }))];
+}
+
 export function filterPlayersByLeagueAndClub<T extends { league: string; club: string }>(
   players: T[],
   leagueFilter: string,

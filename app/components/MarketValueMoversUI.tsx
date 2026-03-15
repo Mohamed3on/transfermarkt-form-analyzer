@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatMarketValue } from "@/lib/format";
 import { InfoTip } from "@/app/components/InfoTip";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import type { MarketValueMover, MarketValueMoversResult } from "@/app/types";
 
 type Variant = "losers" | "winners";
@@ -42,19 +43,6 @@ function formatPeriodLabel(date: string): string {
   return month === "01" ? `Jan ${year}` : `Jul ${year}`;
 }
 
-function PlayerImage({ player, size = "md" }: { player: MarketValueMover; size?: "sm" | "md" }) {
-  const cls = size === "sm" ? "w-8 h-8 sm:w-10 sm:h-10" : "w-12 h-12 sm:w-16 sm:h-16";
-  const textCls = size === "sm" ? "text-sm" : "text-xl sm:text-2xl";
-  return (
-    <div className={cn(cls, "rounded-lg overflow-hidden shrink-0 bg-elevated")}>
-      {player.imageUrl && !player.imageUrl.includes("data:image") ? (
-        <img src={player.imageUrl} alt={player.name} className="w-full h-full object-cover" />
-      ) : (
-        <div className={cn("w-full h-full flex items-center justify-center text-text-muted", textCls)}>?</div>
-      )}
-    </div>
-  );
-}
 
 function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMover[]; variant: Variant }) {
   const cfg = VARIANT_CONFIG[variant];
@@ -66,7 +54,7 @@ function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMov
     <Card className="overflow-hidden">
       <CardContent className="p-0">
         <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
-          <PlayerImage player={latest} />
+          <PlayerAvatar imageUrl={latest.imageUrl} name={latest.name || "?"} size="lg" className="shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <a
@@ -145,7 +133,7 @@ function PeriodPlayerRow({ player, isRepeat, variant }: { player: MarketValueMov
         isRepeat && cn(cfg.highlightBg, "-mx-2 px-2 sm:-mx-3 sm:px-3 rounded")
       )}
     >
-      <PlayerImage player={player} size="sm" />
+      <PlayerAvatar imageUrl={player.imageUrl} name={player.name || "?"} size="sm" className="shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <a

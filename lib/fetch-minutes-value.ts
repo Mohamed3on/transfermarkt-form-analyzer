@@ -36,6 +36,8 @@ export function toPlayerStats(p: MinutesValuePlayer): PlayerStats {
     minutes: p.minutes,
     isNewSigning: p.isNewSigning,
     isOnLoan: p.isOnLoan,
+    nationality: p.nationality,
+    nationalityFlagUrl: p.nationalityFlagUrl,
   };
 }
 

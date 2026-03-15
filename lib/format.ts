@@ -37,3 +37,19 @@ export function formatInjuryDuration(sinceStr: string): string | null {
   const months = Math.round(days / 30);
   return months === 1 ? "1 mo" : `${months} mos`;
 }
+
+export function getLeistungsdatenUrl(profileUrl: string): string {
+  const now = new Date();
+  const season = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+  return `https://www.transfermarkt.com${profileUrl.replace(PROFIL_RE, "/leistungsdaten/")}/saison/${season}/plus/1`;
+}
+
+export function formatValueStr(value: string): string {
+  return value || "-";
+}
+
+export function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
