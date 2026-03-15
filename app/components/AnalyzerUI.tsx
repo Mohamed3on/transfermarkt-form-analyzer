@@ -69,7 +69,7 @@ function AggregatedTeamCard({
 
   return (
     <Card
-      className={`overflow-hidden hover-lift animate-slide-up ${
+      className={`p-3 sm:p-4 hover-lift animate-slide-up ${
         isLeader
           ? isTop
             ? "bg-gradient-to-br from-[var(--accent-hot-glow)] to-[var(--bg-elevated)] border-accent-hot shadow-[0_0_30px_var(--accent-hot-glow)]"
@@ -80,107 +80,86 @@ function AggregatedTeamCard({
       }`}
       style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
     >
-      <div className="flex items-stretch">
-        {/* Main content */}
-        <div className="flex-1 min-w-0 p-3 sm:p-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            {team.logoUrl && (
-              <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 bg-card">
-                <Image
-                  src={team.logoUrl}
-                  alt={team.name}
-                  width={40}
-                  height={40}
-                  sizes="(max-width: 640px) 32px, 40px"
-                  className="object-contain w-8 h-8 sm:w-10 sm:h-10"
-                  unoptimized
-                />
-              </div>
+      <div className="flex items-center gap-3 sm:gap-4">
+        {team.logoUrl && (
+          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 bg-card">
+            <Image
+              src={team.logoUrl}
+              alt={team.name}
+              width={40}
+              height={40}
+              sizes="(max-width: 640px) 32px, 40px"
+              className="object-contain w-8 h-8 sm:w-10 sm:h-10"
+              unoptimized
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="font-pixel text-base sm:text-lg truncate text-text-primary">
+            {team.clubUrl ? (
+              <a
+                href={`https://www.transfermarkt.com${team.clubUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`hover:underline transition-colors ${isTop ? "text-accent-hot" : "text-accent-cold"}`}
+              >
+                {team.name}
+              </a>
+            ) : (
+              team.name
             )}
-            <div className="flex-1 min-w-0">
-              <div className="font-pixel text-base sm:text-lg truncate text-text-primary">
-                {team.clubUrl ? (
-                  <a
-                    href={`https://www.transfermarkt.com${team.clubUrl}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`hover:underline transition-colors ${isTop ? "text-accent-hot" : "text-accent-cold"}`}
-                  >
-                    {team.name}
-                  </a>
-                ) : (
-                  team.name
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-text-secondary">
-                {getLeagueUrl(team.league) ? (
-                  <a href={getLeagueUrl(team.league)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline shrink-0">
-                    {getLeagueLogoUrl(team.league) && <img src={getLeagueLogoUrl(team.league)} alt="" width={16} height={16} className="w-4 h-4 object-contain shrink-0 rounded-sm bg-white/90 p-px" />}
-                    {team.league}
-                  </a>
-                ) : (
-                  team.league
-                )}
-                {team.leaguePosition > 0 && (
-                  <span className="font-value text-text-muted">· {formatOrdinal(team.leaguePosition)}</span>
-                )}
-              </div>
-            </div>
-            <Badge
-              variant="outline"
-              className={`shrink-0 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${isTop ? "bg-accent-hot-glow text-accent-hot border-accent-hot" : "bg-accent-cold-glow text-accent-cold border-accent-cold"}`}
-            >
-              <span className="font-value">{team.count}</span>&nbsp;{team.count === 1 ? "category" : "categories"} led
-            </Badge>
           </div>
-
-          {/* What they led */}
-          <div className="mt-3 space-y-1">
-            {grouped.map(({ category, periodValues }) => (
-              <div key={category} className="text-xs sm:text-sm text-text-muted">
-                <span className={`font-semibold ${isTop ? "text-accent-hot" : "text-accent-cold"}`}>{category}</span>
-                <span className="text-text-secondary"> · {periodValues.map(({ period, value }) => (
-                  <span key={period}>{period !== periodValues[0].period && ", "}<span className="font-value">{formatStatValue(category, value)}</span> <span className="text-text-muted">in last {period}</span></span>
-                ))}</span>
-              </div>
-            ))}
+          <div className="flex items-center flex-wrap gap-1.5 text-xs sm:text-sm text-text-secondary">
+            {getLeagueUrl(team.league) ? (
+              <a href={getLeagueUrl(team.league)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline shrink-0">
+                {getLeagueLogoUrl(team.league) && <img src={getLeagueLogoUrl(team.league)} alt="" width={16} height={16} className="w-4 h-4 object-contain shrink-0 rounded-sm bg-white/90 p-px" />}
+                {team.league}
+              </a>
+            ) : (
+              team.league
+            )}
+            {team.leaguePosition > 0 && (
+              <span className="font-value text-text-muted">· {formatOrdinal(team.leaguePosition)}</span>
+            )}
+            {deltaPts != null && (
+              <a href="/expected-position" className={`inline-flex items-center gap-0.5 font-value text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full transition-all duration-150 hover:scale-105 hover:brightness-125 ${deltaPts > 0 ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}>
+                {deltaPts > 0 ? "+" : ""}{deltaPts} points gap <span className="text-[8px] opacity-60">→</span>
+              </a>
+            )}
           </div>
+        </div>
+        <Badge
+          variant="outline"
+          className={`shrink-0 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${isTop ? "bg-accent-hot-glow text-accent-hot border-accent-hot" : "bg-accent-cold-glow text-accent-cold border-accent-cold"}`}
+        >
+          <span className="font-value">{team.count}</span>&nbsp;{team.count === 1 ? "category" : "categories"} led
+        </Badge>
+      </div>
 
-          {/* Manager info */}
-          {showManager && team.clubId && (
-            <div className="mt-3 pt-2 sm:pt-3 text-xs sm:text-sm border-t border-t-border-subtle">
-              {managerLoading ? (
-                <ManagerSkeleton />
-              ) : manager ? (
-                <ManagerSection manager={manager} />
-              ) : (
-                <span className="text-text-muted">Manager data unavailable</span>
-              )}
-            </div>
+      {/* What they led */}
+      <div className="mt-3 space-y-1">
+        {grouped.map(({ category, periodValues }) => (
+          <div key={category} className="text-xs sm:text-sm text-text-muted">
+            <span className={`font-semibold ${isTop ? "text-accent-hot" : "text-accent-cold"}`}>{category}</span>
+            <span className="text-text-secondary"> · {periodValues.map(({ period, value }) => (
+              <span key={period}>{period !== periodValues[0].period && ", "}<span className="font-value">{formatStatValue(category, value)}</span> <span className="text-text-muted">in last {period}</span></span>
+            ))}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Manager info */}
+      {showManager && team.clubId && (
+        <div className="mt-3 pt-2 sm:pt-3 text-xs sm:text-sm border-t border-t-border-subtle">
+          {managerLoading ? (
+            <ManagerSkeleton />
+          ) : manager ? (
+            <ManagerSection manager={manager} />
+          ) : (
+            <span className="text-text-muted">Manager data unavailable</span>
           )}
         </div>
-
-        {/* Delta strip */}
-        {deltaPts != null && (
-          <a
-            href="/expected-position"
-            className={`w-16 sm:w-20 flex flex-col items-center justify-center shrink-0 border-l transition-opacity hover:opacity-80 ${deltaPts > 0 ? "border-l-green-600/20 bg-green-600/[0.06]" : "border-l-red-600/20 bg-red-600/[0.06]"}`}
-          >
-            <span
-              className={`text-xl sm:text-2xl font-pixel ${deltaPts > 0 ? "text-green-600" : "text-red-600"}`}
-            >
-              {deltaPts > 0 ? `+${deltaPts}` : deltaPts}
-            </span>
-            <span
-              className={`text-[8px] sm:text-[9px] uppercase tracking-wider mt-0.5 text-center leading-tight ${deltaPts > 0 ? "text-green-600/60" : "text-red-600/60"}`}
-            >
-              points
-              <br />
-              gap
-            </span>
-          </a>
-        )}
-      </div>
+      )}
     </Card>
   );
 }
