@@ -454,68 +454,70 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           </div>
 
           {/* Sort */}
-          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 mb-5">
-            <div className="flex items-center gap-2 w-max">
-              <InfoTip>
-                <p><strong>Value</strong> — market value (Transfermarkt estimate)</p>
-                <p className="mt-1"><strong>Mins</strong> — total minutes played this season</p>
-                <p className="mt-1"><strong>Games</strong> — total matches this season</p>
-                <p className="mt-1"><strong>G+A / npG+A</strong> — goals + assists. &ldquo;np&rdquo; means non-penalty (excl. penalty goals) for a truer picture of open-play output</p>
-                <p className="mt-1"><strong>Pen</strong> — penalty goals scored</p>
-                <p className="mt-1"><strong>Miss</strong> — penalties missed</p>
-              </InfoTip>
-              <ToggleGroup
-                type="single"
-                value={sortBy}
-                onValueChange={(value) => {
-                  setIsFiltering(true);
-                  if (!value) { update({ dir: sortAsc ? null : "asc" }); return; }
-                  update({ sort: value === "ga" ? null : value, dir: null, ...(value !== "ga" && { fw: null }) });
-                }}
-                className="rounded-lg overflow-hidden border border-border-subtle"
-              >
-                {(["value", "mins", "games", "ga", "pen", "miss"] as const).map((key) => (
-                  <ToggleGroupItem
-                    key={key}
-                    value={key}
-                    className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
-                  >
-                    {key === "ga" ? pointsLabel : BASE_SORT_LABELS[key]}
-                    {sortBy === key && (
-                      <span className="text-[10px]">{sortAsc ? "▲" : "▼"}</span>
-                    )}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-              {sortBy === "ga" && (
-                <>
-                  <ToggleGroup
-                    type="single"
-                    value={String(formWindow)}
-                    onValueChange={(v) => {
-                      if (!v) return;
-                      setIsFiltering(true);
-                      update({ fw: v === "season" ? null : v });
-                    }}
-                    className="rounded-lg overflow-hidden border border-border-subtle"
-                  >
-                    {(["season", 10, 5] as const).map((w) => (
-                      <ToggleGroupItem
-                        key={w}
-                        value={String(w)}
-                        className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
-                      >
-                        {w === "season" ? "Season" : `Last ${w}`}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                  <InfoTip>
-                    <p><strong>Season</strong> — full season totals</p>
-                    <p className="mt-1"><strong>Last 10 / Last 5</strong> — stats from only the player&apos;s most recent matches. Useful for spotting who&apos;s in form right now vs. their season average.</p>
-                  </InfoTip>
-                </>
-              )}
+          <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-center sm:gap-2 sm:overflow-x-auto">
+            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+              <div className="flex items-center gap-2 w-max">
+                <InfoTip>
+                  <p><strong>Value</strong> — market value (Transfermarkt estimate)</p>
+                  <p className="mt-1"><strong>Mins</strong> — total minutes played this season</p>
+                  <p className="mt-1"><strong>Games</strong> — total matches this season</p>
+                  <p className="mt-1"><strong>G+A / npG+A</strong> — goals + assists. &ldquo;np&rdquo; means non-penalty (excl. penalty goals) for a truer picture of open-play output</p>
+                  <p className="mt-1"><strong>Pen</strong> — penalty goals scored</p>
+                  <p className="mt-1"><strong>Miss</strong> — penalties missed</p>
+                </InfoTip>
+                <ToggleGroup
+                  type="single"
+                  value={sortBy}
+                  onValueChange={(value) => {
+                    setIsFiltering(true);
+                    if (!value) { update({ dir: sortAsc ? null : "asc" }); return; }
+                    update({ sort: value === "ga" ? null : value, dir: null, ...(value !== "ga" && { fw: null }) });
+                  }}
+                  className="rounded-lg overflow-hidden border border-border-subtle"
+                >
+                  {(["value", "mins", "games", "ga", "pen", "miss"] as const).map((key) => (
+                    <ToggleGroupItem
+                      key={key}
+                      value={key}
+                      className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                    >
+                      {key === "ga" ? pointsLabel : BASE_SORT_LABELS[key]}
+                      {sortBy === key && (
+                        <span className="text-[10px]">{sortAsc ? "▲" : "▼"}</span>
+                      )}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </div>
             </div>
+            {sortBy === "ga" && (
+              <div className="flex items-center gap-2">
+                <ToggleGroup
+                  type="single"
+                  value={String(formWindow)}
+                  onValueChange={(v) => {
+                    if (!v) return;
+                    setIsFiltering(true);
+                    update({ fw: v === "season" ? null : v });
+                  }}
+                  className="rounded-lg overflow-hidden border border-border-subtle"
+                >
+                  {(["season", 10, 5] as const).map((w) => (
+                    <ToggleGroupItem
+                      key={w}
+                      value={String(w)}
+                      className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                    >
+                      {w === "season" ? "Season" : `Last ${w}`}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+                <InfoTip>
+                  <p><strong>Season</strong> — full season totals</p>
+                  <p className="mt-1"><strong>Last 10 / Last 5</strong> — stats from only the player&apos;s most recent matches. Useful for spotting who&apos;s in form right now vs. their season average.</p>
+                </InfoTip>
+              </div>
+            )}
           </div>
 
           {/* Position */}
