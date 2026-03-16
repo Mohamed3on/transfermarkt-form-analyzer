@@ -238,9 +238,11 @@ function RecentMatchCard({
           <div className="min-w-0">
             <p className="truncate text-sm text-text-primary">{fixtureLabel}</p>
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-text-secondary">
-              {venueLabel && <span>{venueLabel}</span>}
+              {venueLabel && (
+                <span className={match.venue === "home" ? "text-amber-400/80" : "text-sky-400/80"}>{venueLabel}</span>
+              )}
               {venueLabel && <span className="opacity-40">·</span>}
-              <span className="font-value">{match.minutes}&apos;</span>
+              <span className={`font-value ${match.minutes >= 70 ? "text-emerald-400/90" : match.minutes >= 45 ? "text-text-primary" : "text-text-muted"}`}>{match.minutes}&apos;</span>
               {positionLabel && <><span className="opacity-40">·</span><span>{positionLabel}</span></>}
             </div>
           </div>

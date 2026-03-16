@@ -2,8 +2,7 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import type { InjuredPlayer, MarketValueMover, MinutesValuePlayer, PlayerStats } from "@/app/types";
 import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
-import { applyStatsToggles, getMinutesValueDataWithRawGames, toPlayerStats } from "@/lib/fetch-minutes-value";
-import { derivePositionStats } from "@/lib/fetch-player-minutes";
+import { applyStatsToggles, getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
 import { getFormStats, missedPct } from "@/lib/filter-players";
 import { extractClubIdFromLogoUrl, formatMarketValue } from "@/lib/format";
 import { getInjuredPlayers } from "@/lib/injured";
@@ -245,8 +244,8 @@ function sortUnderperformers(players: PlayerStats[]): PlayerStats[] {
 }
 
 async function computePlayerDetailData(playerId: string): Promise<PlayerDetailData | null> {
-  const [{ players, rawGames }, injuredData, winners, losers] = await Promise.all([
-    getMinutesValueDataWithRawGames(playerId),
+  const [players, injuredData, winners, losers] = await Promise.all([
+    getMinutesValueData(),
     getInjuredPlayers(),
     findRepeatWinners(),
     findRepeatLosers(),
@@ -254,10 +253,6 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
 
   const player = findTargetPlayer(players, playerId);
   if (!player) return null;
-
-  if (rawGames?.length) {
-    player.positionStats = derivePositionStats(rawGames);
-  }
 
   const clubId = extractClubIdFromLogoUrl(player.clubLogoUrl);
   const playerBroadPosition = getBroadPositionGroup(effectivePosition(player));

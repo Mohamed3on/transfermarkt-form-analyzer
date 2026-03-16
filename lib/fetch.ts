@@ -6,13 +6,16 @@ const HEADERS = {
 
 const MAX_RETRIES = 5;
 const BASE_DELAY = 1000;
-const MAX_CONCURRENT = 4;
+let maxConcurrent = 4;
+
+/** Override the concurrency limit (e.g. for batch scripts with their own backoff). */
+export function setMaxConcurrent(n: number) { maxConcurrent = n; }
 
 let active = 0;
 const queue: (() => void)[] = [];
 
 async function acquireSlot() {
-  while (active >= MAX_CONCURRENT) {
+  while (active >= maxConcurrent) {
     await new Promise<void>((resolve) => queue.push(resolve));
   }
   active++;
