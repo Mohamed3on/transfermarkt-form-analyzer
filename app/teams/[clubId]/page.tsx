@@ -149,7 +149,7 @@ export default async function TeamDetailPage({
     : null;
 
   return (
-    <div className="full-bleed pb-12 sm:pb-16">
+    <div className="full-bleed pt-6 pb-12 sm:pt-8 sm:pb-16">
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-4">
         <Link
           href="/expected-position"
@@ -286,7 +286,7 @@ export default async function TeamDetailPage({
               </div>
             </div>
 
-            <div className={`grid gap-x-8 gap-y-5 ${teamForm ? "grid-cols-3" : "grid-cols-1"}`}>
+            <div className={`grid gap-x-8 gap-y-5 ${teamForm ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1"}`}>
               {teamForm && (
                 <HeroMetric
                   label="League position"

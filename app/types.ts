@@ -198,6 +198,27 @@ export interface MinutesValuePlayer {
   nationalityFlagUrl?: string;
   leagueLogoUrl?: string;
   recentForm?: RecentGameStats[];
+  rawGames?: CeapiGame[];
+}
+
+export interface CeapiGame {
+  gameInformation: {
+    gameId?: string;
+    seasonId: number;
+    competitionTypeId: number;
+    competitionId: string;
+    gameDay?: number;
+    date?: { dateTimeUTC?: string };
+  };
+  clubsInformation?: {
+    club?: { venue?: "home" | "away"; goalsTotal?: number | null; opponentGoalsTotal?: number | null };
+    opponent?: { clubId?: string };
+  };
+  statistics: {
+    generalStatistics: { positionId?: number | null; participationState?: string | null };
+    goalStatistics: { goalsScoredTotal?: number | null; assists?: number | null; penaltyShooterGoalsScored?: number | null; penaltyShooterMisses?: number | null };
+    playingTimeStatistics: { playedMinutes?: number | null };
+  };
 }
 
 export type InjuryMap = Record<string, { injury: string; returnDate: string; injurySince: string }>;
@@ -273,4 +294,5 @@ export interface PlayerStatsResult {
   marketValue: number;
   marketValueDisplay: string;
   age: number;
+  rawGames?: CeapiGame[];
 }

@@ -2,7 +2,8 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import type { InjuredPlayer, MarketValueMover, MinutesValuePlayer, PlayerStats } from "@/app/types";
 import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
-import { applyStatsToggles, getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
+import { applyStatsToggles, getMinutesValueDataWithRawGames, toPlayerStats } from "@/lib/fetch-minutes-value";
+import { derivePositionStats } from "@/lib/fetch-player-minutes";
 import { getFormStats, missedPct } from "@/lib/filter-players";
 import { extractClubIdFromLogoUrl, formatMarketValue } from "@/lib/format";
 import { getInjuredPlayers } from "@/lib/injured";
@@ -93,14 +94,6 @@ export interface SubgroupRanking {
   marketValueRank: number;
   minutesRank: number;
   total: number;
-}
-
-export interface PositionBreakdown {
-  position: string;
-  minutes: number;
-  goals: number;
-  assists: number;
-  appearances: number;
 }
 
 export interface PlayerDetailData {
@@ -252,8 +245,8 @@ function sortUnderperformers(players: PlayerStats[]): PlayerStats[] {
 }
 
 async function computePlayerDetailData(playerId: string): Promise<PlayerDetailData | null> {
-  const [players, injuredData, winners, losers] = await Promise.all([
-    getMinutesValueData(),
+  const [{ players, rawGames }, injuredData, winners, losers] = await Promise.all([
+    getMinutesValueDataWithRawGames(playerId),
     getInjuredPlayers(),
     findRepeatWinners(),
     findRepeatLosers(),
@@ -261,6 +254,10 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
 
   const player = findTargetPlayer(players, playerId);
   if (!player) return null;
+
+  if (rawGames?.length) {
+    player.positionStats = derivePositionStats(rawGames);
+  }
 
   const clubId = extractClubIdFromLogoUrl(player.clubLogoUrl);
   const playerBroadPosition = getBroadPositionGroup(effectivePosition(player));
@@ -401,7 +398,7 @@ export const getPlayerDetailData = cache((playerId: string) =>
   unstable_cache(
     () => computePlayerDetailData(playerId),
     [`player-detail-${playerId}`],
-    { revalidate: 86400, tags: ["form-analysis", "injured"] },
+    { revalidate: false, tags: ["form-analysis", "injured"] },
   )(),
 );
 

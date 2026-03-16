@@ -24,6 +24,8 @@ import { DetailDeck } from "@/components/DetailDeck";
 import { HeroMetric } from "@/components/HeroMetric";
 import { SectionPanel } from "@/components/SectionPanel";
 import type { MinutesValuePlayer, PlayerStats, RecentGameStats } from "@/app/types";
+import { getMinutesValueData } from "@/lib/fetch-minutes-value";
+import { POSITION_NAMES } from "@/lib/fetch-player-minutes";
 
 const RANKING_METRICS: Array<{
   overallKey: keyof PlayerRankings;
@@ -201,6 +203,7 @@ function RecentMatchCard({
     .filter(Boolean)
     .join(" · ");
   const venueLabel = match.venue === "away" ? "Away" : match.venue === "home" ? "Home" : null;
+  const positionLabel = match.positionId ? POSITION_NAMES[match.positionId] : null;
 
   return (
     <div className="hover-lift flex flex-col justify-between rounded-2xl border border-border-subtle bg-[linear-gradient(180deg,rgba(22,27,34,0.98),rgba(13,17,23,0.96))] p-3.5">
@@ -238,7 +241,7 @@ function RecentMatchCard({
               {venueLabel && <span>{venueLabel}</span>}
               {venueLabel && <span className="opacity-40">·</span>}
               <span className="font-value">{match.minutes}&apos;</span>
-              <span>played</span>
+              {positionLabel && <><span className="opacity-40">·</span><span>{positionLabel}</span></>}
             </div>
           </div>
         </div>
@@ -439,6 +442,13 @@ export async function generateMetadata({
   });
 }
 
+export const revalidate = false;
+
+export async function generateStaticParams() {
+  const players = await getMinutesValueData();
+  return players.map((p) => ({ playerId: p.playerId }));
+}
+
 export default async function PlayerDetailPage({
   params,
 }: {
@@ -495,7 +505,7 @@ export default async function PlayerDetailPage({
   const injuryDuration = injury ? formatInjuryDuration(injury.injurySince) : null;
 
   return (
-    <div className="full-bleed pb-12 sm:pb-16">
+    <div className="full-bleed pt-6 pb-12 sm:pt-8 sm:pb-16">
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-4">
       <Link
         href="/players"

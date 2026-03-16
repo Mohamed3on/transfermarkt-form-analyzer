@@ -161,9 +161,21 @@ export async function fetchMinutesValueRaw(): Promise<MinutesValuePlayer[]> {
   return players;
 }
 
-/** Reads pre-built JSON data committed to the repo. */
+/** Reads pre-built JSON data committed to the repo (rawGames stripped for client safety). */
 export async function getMinutesValueData(): Promise<MinutesValuePlayer[]> {
+  const { players } = await getMinutesValueDataWithRawGames();
+  return players;
+}
+
+/** Single read: returns stripped players + rawGames for one player. */
+export async function getMinutesValueDataWithRawGames(playerId?: string): Promise<{
+  players: MinutesValuePlayer[];
+  rawGames: MinutesValuePlayer["rawGames"];
+}> {
   const filePath = join(process.cwd(), "data", "minutes-value.json");
   const raw = await readFile(filePath, "utf-8");
-  return JSON.parse(raw) as MinutesValuePlayer[];
+  const data = JSON.parse(raw) as MinutesValuePlayer[];
+  const rawGames = playerId ? data.find((p) => p.playerId === playerId)?.rawGames : undefined;
+  for (const p of data) delete p.rawGames;
+  return { players: data, rawGames };
 }

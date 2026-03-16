@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PlayerDetailLoading() {
   return (
-    <div className="full-bleed pb-12 sm:pb-16">
+    <div className="full-bleed pt-6 pb-12 sm:pt-8 sm:pb-16">
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-4">
         <Skeleton className="mb-4 h-5 w-36" />
 
