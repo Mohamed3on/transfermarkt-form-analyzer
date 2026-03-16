@@ -14,7 +14,7 @@ import { ExternalLink } from "lucide-react";
 import { InfoTip } from "@/app/components/InfoTip";
 import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
-import { filterPlayersByLeagueAndClub, filterTop5, getFormMinutes, uniqueFilterOptions, TOP_5_LEAGUES } from "@/lib/filter-players";
+import { filterPlayersByLeagueAndClub, getFormMinutes, uniqueFilterOptions, TOP_5_LEAGUES } from "@/lib/filter-players";
 import { formatReturnInfo, formatInjuryDuration, getLeistungsdatenUrl } from "@/lib/format";
 import type { MinutesValuePlayer, InjuryMap } from "@/app/types";
 
@@ -334,7 +334,6 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
   const positionFilter = params.get("pos") || "";
   const activeCategory = getPositionCategory(positionFilter);
   const specificPosition = activeCategory && !POSITION_CATEGORIES[positionFilter] ? positionFilter : null;
-  const top5Only = leagueFilter === "top5";
   const signingFilter = parseSigningFilter(params.get("signing"));
   const includePen = params.get("pen") === "1";
   const includeIntl = params.get("intl") === "1";
@@ -378,9 +377,11 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
   }, [rawPlayers, includeIntl]);
 
   const leagueGroups = useMemo(() => {
-    const allLeagues = Array.from(new Set(players.map((p) => p.league).filter(Boolean))).sort();
-    const top5 = allLeagues.filter((l) => TOP_5_LEAGUES.includes(l));
-    const other = allLeagues.filter((l) => !TOP_5_LEAGUES.includes(l));
+    const counts = new Map<string, number>();
+    for (const p of players) if (p.league) counts.set(p.league, (counts.get(p.league) ?? 0) + 1);
+    const byCount = (a: string, b: string) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0);
+    const top5 = [...counts.keys()].filter((l) => TOP_5_LEAGUES.includes(l)).sort(byCount);
+    const other = [...counts.keys()].filter((l) => !TOP_5_LEAGUES.includes(l)).sort(byCount);
     return [
       { options: [{ value: "all", label: "All leagues" }, { value: "top5", label: "Top 5 leagues" }] },
       ...(top5.length ? [{ heading: "Top 5", options: top5.map((l) => ({ value: l, label: l })) }] : []),
@@ -399,18 +400,16 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
 
   const signingCounts = useMemo(() => {
     let base = filterPlayersByLeagueAndClub(players, leagueFilter, clubFilter);
-    if (top5Only) base = filterTop5(base);
     if (nationalityFilter !== "all") base = base.filter((p) => p.nationality === nationalityFilter);
     if (positionFilter) base = base.filter((p) => matchesPositionFilter(p, positionFilter));
     return {
       newSignings: base.filter((p) => p.isNewSigning).length,
       loans: base.filter((p) => p.isOnLoan).length,
     };
-  }, [players, leagueFilter, clubFilter, top5Only, nationalityFilter, positionFilter]);
+  }, [players, leagueFilter, clubFilter, nationalityFilter, positionFilter]);
 
   const sortedPlayers = useMemo(() => {
     let list = filterPlayersByLeagueAndClub(players, leagueFilter, clubFilter);
-    if (top5Only) list = filterTop5(list);
     if (nationalityFilter !== "all") list = list.filter((p) => p.nationality === nationalityFilter);
     if (positionFilter !== "all") list = list.filter((p) => matchesPositionFilter(p, positionFilter));
     if (signingFilter === "transfer") list = list.filter((p) => p.isNewSigning);
@@ -440,7 +439,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
       }
       return sortAsc ? -diff : diff;
     });
-  }, [players, sortBy, sortAsc, leagueFilter, clubFilter, nationalityFilter, positionFilter, top5Only, signingFilter, includePen, excludeCurrentIntl, minCaps, maxCaps, minAge, maxAge, contractYear, formWindow]);
+  }, [players, sortBy, sortAsc, leagueFilter, clubFilter, nationalityFilter, positionFilter, signingFilter, includePen, excludeCurrentIntl, minCaps, maxCaps, minAge, maxAge, contractYear, formWindow]);
 
   return (
     <>
