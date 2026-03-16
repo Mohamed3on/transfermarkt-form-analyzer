@@ -66,7 +66,7 @@ function currentSeasonId(): number {
 interface CeapiGame {
   gameInformation: { seasonId: number; competitionTypeId: number; competitionId: string; date?: { dateTimeUTC?: string } };
   statistics: {
-    generalStatistics: { positionId?: number | null };
+    generalStatistics: { positionId?: number | null; participationState?: string | null };
     goalStatistics: { goalsScoredTotal?: number | null; assists?: number | null; penaltyShooterGoalsScored?: number | null; penaltyShooterMisses?: number | null };
     playingTimeStatistics: { playedMinutes?: number | null };
   };
@@ -95,12 +95,17 @@ interface AggregatedStats {
   league: string;
   recentForm: RecentGameStats[];
   playedPosition: string;
+  gamesMissed: number;
 }
+
+/** States that count as "missed" (injury, suspension, absence — but not "not in squad") */
+const MISSED_STATES = new Set(["injured", "absent", "suspended"]);
 
 function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
   const seasonId = currentSeasonId();
   let goals = 0, assists = 0, minutes = 0, appearances = 0, penaltyGoals = 0, penaltyMisses = 0;
   let intlGoals = 0, intlAssists = 0, intlMinutes = 0, intlAppearances = 0, intlPenaltyGoals = 0;
+  let gamesMissed = 0;
   let league = "";
   const recentDomestic: RecentGameStats[] = [];
   const minutesByPosition: Record<number, number> = {};
@@ -109,6 +114,8 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
     const gs = g.statistics.goalStatistics;
     const pts = g.statistics.playingTimeStatistics;
     const mins = pts.playedMinutes ?? 0;
+    const state = g.statistics.generalStatistics.participationState ?? "";
+    if (MISSED_STATES.has(state)) gamesMissed++;
     const posId = g.statistics.generalStatistics.positionId;
     const isIntl = g.gameInformation.competitionTypeId === 11;
     if (isIntl) {
@@ -153,7 +160,7 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
       playedPosition = POSITION_NAMES[Number(id)] ?? "";
     }
   }
-  return { goals, assists, minutes, appearances, penaltyGoals, penaltyMisses, intlGoals, intlAssists, intlMinutes, intlAppearances, intlPenaltyGoals, league, recentForm, playedPosition };
+  return { goals, assists, minutes, appearances, penaltyGoals, penaltyMisses, intlGoals, intlAssists, intlMinutes, intlAppearances, intlPenaltyGoals, league, recentForm, playedPosition, gamesMissed };
 }
 
 /** Raw fetch — no caching. Used by the offline refresh script. */
@@ -199,12 +206,6 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const ntLabel = capsUl.find(".data-header__label").first().text().trim().toLowerCase();
   const isCurrentIntl = isSeniorTeam && ntLabel.includes("current international");
 
-  // Count games missed: all bg_rot_20 rows (injury, national team, suspension, etc.) except "Not in squad"
-  const gamesMissed = $("tr.bg_rot_20").filter((_, el) => {
-    const reason = $(el).find("td[colspan]").text().trim();
-    return reason !== "Not in squad";
-  }).length;
-
   // Parse contract expiry from club info header
   const contractLabel = clubInfo.find(".data-header__label:contains('Contract expires:')");
   const contractExpiry = contractLabel.find(".data-header__content").text().trim() || undefined;
@@ -221,7 +222,7 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const age = ageMatch ? parseInt(ageMatch[1]) : 0;
 
   // Parse stats + league from ceapi
-  const shared = { club, clubLogoUrl, intlCareerCaps, isCurrentIntl, isNewSigning, isOnLoan, contractExpiry, gamesMissed, nationalityFlagUrl, leagueLogoUrl, marketValue, marketValueDisplay, age };
+  const shared = { club, clubLogoUrl, intlCareerCaps, isCurrentIntl, isNewSigning, isOnLoan, contractExpiry, nationalityFlagUrl, leagueLogoUrl, marketValue, marketValueDisplay, age };
 
   if (!ceapiRes.ok) {
     return { ...ZERO_STATS, ...shared };
