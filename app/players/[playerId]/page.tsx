@@ -13,20 +13,18 @@ import {
 } from "lucide-react";
 import { createPageMetadata } from "@/lib/metadata";
 import { formatInjuryDuration, formatReturnInfo, getLeistungsdatenUrl, getPlayerDetailHref, ordinal } from "@/lib/format";
-import { formatTrendLabel, getPlayerDetailData, seasonNpga, type PlayerRankings } from "@/lib/player-detail";
+import { getPlayerDetailData, seasonNpga, type PlayerRankings } from "@/lib/player-detail";
 import { getPlayerRecentMatches } from "@/lib/player-recent-matches";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { PlayerSubtitle } from "@/components/PlayerSubtitle";
-import { ClubLogo } from "@/components/ClubLogo";
 import { ComparisonItem } from "@/components/ComparisonItem";
 import { DetailDeck } from "@/components/DetailDeck";
 import { HeroMetric } from "@/components/HeroMetric";
 import { SectionPanel } from "@/components/SectionPanel";
 import type { MinutesValuePlayer, PlayerStats, RecentGameStats } from "@/app/types";
-import { getMinutesValueData } from "@/lib/fetch-minutes-value";
 import { POSITION_NAMES } from "@/lib/fetch-player-minutes";
 
 function rankColor(rank: number, total: number): string {
@@ -179,14 +177,12 @@ function MinutesBenchmarkPanel({
 
 function ComparisonCard({
   title,
-  accentClass,
   emptyLabel,
   players,
   positive,
   benchmarkUrl,
 }: {
   title: string;
-  accentClass: string;
   emptyLabel: string;
   players: PlayerStats[];
   positive: boolean;
@@ -475,13 +471,6 @@ export async function generateMetadata({
       "player form stats",
     ],
   });
-}
-
-export const revalidate = false;
-
-export async function generateStaticParams() {
-  const players = await getMinutesValueData();
-  return players.map((p) => ({ playerId: p.playerId }));
 }
 
 export default async function PlayerDetailPage({
@@ -873,7 +862,6 @@ export default async function PlayerDetailPage({
         <section className="grid gap-4 lg:grid-cols-2">
           <ComparisonCard
             title="Pricier peers he's beating"
-            accentClass="text-accent-hot"
             emptyLabel="No pricier comparable players are behind him on the current value model."
             players={underperformers}
             positive
@@ -881,7 +869,6 @@ export default async function PlayerDetailPage({
           />
           <ComparisonCard
             title="Cheaper peers ahead of him"
-            accentClass="text-accent-cold-soft"
             emptyLabel="No cheaper comparable players are ahead of him on the current value model."
             players={outperformers}
             positive={false}

@@ -260,6 +260,11 @@ function sortUnderperformers(players: PlayerStats[]): PlayerStats[] {
   );
 }
 
+function stripRecentForm(p: MinutesValuePlayer): MinutesValuePlayer {
+  const { recentForm, ...rest } = p;
+  return rest;
+}
+
 async function computePlayerDetailData(playerId: string): Promise<PlayerDetailData | null> {
   const [players, injuredData, winners, losers] = await Promise.all([
     getMinutesValueData(),
@@ -394,11 +399,14 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
       discoveryThreshold: MIN_COMPARISON_COUNT,
     },
     trend: buildTrend(player.playerId, winners, losers),
-    outperformers,
-    underperformers,
-    clubmates,
-    topClubmatesByNpga,
-    minutesBenchmark: { playingLess, playingMore },
+    outperformers: outperformers.slice(0, 6),
+    underperformers: underperformers.slice(0, 6),
+    clubmates: clubmates.map(stripRecentForm),
+    topClubmatesByNpga: topClubmatesByNpga.map(stripRecentForm),
+    minutesBenchmark: {
+      playingLess: playingLess.slice(0, 10).map(stripRecentForm),
+      playingMore: playingMore.slice(0, 10).map(stripRecentForm),
+    },
     subgroupRankings,
     penaltyRank: (player.penaltyGoals ?? 0) > 0
       ? (() => {
@@ -413,7 +421,7 @@ export const getPlayerDetailData = cache((playerId: string) =>
   unstable_cache(
     () => computePlayerDetailData(playerId),
     [`player-detail-${playerId}`],
-    { revalidate: false, tags: ["form-analysis", "injured"] },
+    { revalidate: 86400, tags: ["form-analysis", "injured"] },
   )(),
 );
 
