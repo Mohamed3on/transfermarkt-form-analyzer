@@ -253,23 +253,23 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
       </div>
 
       {/* Mobile stat tray */}
-      <div className="sm:hidden mt-2 bg-elevated rounded-lg px-2.5 py-1.5 flex items-baseline gap-2.5 flex-wrap text-xs font-value text-text-secondary">
+      <div className="sm:hidden mt-2 bg-elevated rounded-lg px-2.5 py-1.5 flex items-baseline gap-x-2.5 gap-y-1 flex-wrap text-xs font-value text-text-secondary">
         {recentGA && (
-          <span className="text-base text-accent-hot">{recentGA.total} <span className="text-[10px] text-accent-hot/60">last {formWindow} games</span></span>
+          <span className="text-sm text-accent-hot">{recentGA.total} <span className="text-[10px] text-accent-hot/60">L{formWindow}</span></span>
         )}
         <span className={`text-sm ${!recentGA ? "text-accent-hot" : ""}`}>{seasonGA.total} <span className="text-[10px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
         <span className="text-sm text-accent-blue">{player.marketValueDisplay}</span>
         <span>{player.age}y</span>
-        <span>{player.totalMatches} games</span>
+        <span>{player.totalMatches} <span className="text-text-muted">gm</span></span>
         <span>{displayMinutes.toLocaleString()}&apos;</span>
         {showCaps && (player.intlCareerCaps ?? 0) > 0 && (
-          <span>{player.intlCareerCaps} intl caps</span>
+          <span>{player.intlCareerCaps} <span className="text-text-muted">caps</span></span>
         )}
         {showContract && expiryYear && (
-          <span>expires {expiryYear}</span>
+          <span><span className="text-text-muted">exp</span> {expiryYear}</span>
         )}
         {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
-          <span>{penGoals}/{penAttempts} pen</span>
+          <span>{penGoals}/{penAttempts} <span className="text-text-muted">pen</span></span>
         )}
       </div>
     </div>
