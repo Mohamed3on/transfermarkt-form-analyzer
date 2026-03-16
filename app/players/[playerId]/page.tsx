@@ -517,7 +517,10 @@ export default async function PlayerDetailPage({
   const { playerId } = await params;
   const data = await getPlayerDetailData(playerId);
 
-  if (!data) redirect(`https://www.transfermarkt.com/x/profil/spieler/${playerId}`);
+  if (!data) {
+    if (/^\d+$/.test(playerId)) redirect(`https://www.transfermarkt.com/x/profil/spieler/${playerId}`);
+    notFound();
+  }
 
   const {
     player,

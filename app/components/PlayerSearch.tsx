@@ -38,9 +38,16 @@ export function PlayerSearch() {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
     fetch("/api/players/search")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Search index returned ${r.status}`);
+        return r.json();
+      })
       .then(setPlayers)
-      .catch(() => {});
+      .catch((err) => {
+        console.error("[PlayerSearch] Failed to load search index:", err);
+        fetchedRef.current = false;
+        setPlayers([]);
+      });
   }, []);
 
   // Cmd+K / Ctrl+K
