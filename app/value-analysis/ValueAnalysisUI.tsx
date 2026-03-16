@@ -264,20 +264,32 @@ function DiscoveryListCard({ player, index = 0, top5, variant, pointsLabel = "G+
           <div className="text-xs text-text-secondary">mins</div>
         </div>
       </>}
-      mobileStats={<>
-        {player.comparisonCount > 0 && (
-          <div className="text-xs font-medium font-value mb-0.5" style={{ color: countColor }}>{player.comparisonCount} {countLabel}</div>
-        )}
-        <div className="text-xs font-medium font-value" style={{ color: valueColor }}>{player.marketValueDisplay}</div>
-        <div className="text-xs tabular-nums text-text-primary">{player.points} G+A</div>
-      </>}
+      mobileStats={<></>}
       footer={<>
-        <span className="tabular-nums text-text-secondary">{player.goals}G</span>
-        <span className="tabular-nums text-text-secondary">{player.assists}A</span>
-        <span className="tabular-nums text-text-secondary">{player.matches} games</span>
-        <span className="sm:hidden tabular-nums text-text-secondary">{player.age}y</span>
-        <span className="sm:hidden ml-auto tabular-nums text-accent-blue">{player.minutes?.toLocaleString() || "—"}&apos;</span>
-        <LeagueBadge league={player.league} variant="inline" />
+        {/* Mobile: two-row footer using full width */}
+        <div className="sm:hidden w-full flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            {player.comparisonCount > 0 && (
+              <span className="font-value font-medium" style={{ color: countColor }}>{player.comparisonCount} {countLabel}</span>
+            )}
+            <span className="ml-auto font-value font-medium" style={{ color: valueColor }}>{player.marketValueDisplay}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-value text-text-primary">{player.points} {pointsLabel}</span>
+            <span className="tabular-nums text-text-secondary">{player.goals}G</span>
+            <span className="tabular-nums text-text-secondary">{player.assists}A</span>
+            <span className="tabular-nums text-text-secondary">{player.matches} games</span>
+            <span className="tabular-nums text-text-secondary">{player.age}y</span>
+            <span className="ml-auto tabular-nums text-accent-blue">{player.minutes?.toLocaleString() || "—"}&apos;</span>
+          </div>
+        </div>
+        {/* Desktop: inline items */}
+        <div className="hidden sm:contents">
+          <span className="tabular-nums text-text-secondary">{player.goals}G</span>
+          <span className="tabular-nums text-text-secondary">{player.assists}A</span>
+          <span className="tabular-nums text-text-secondary">{player.matches} games</span>
+          <LeagueBadge league={player.league} variant="inline" />
+        </div>
       </>}
     />
   );
@@ -287,7 +299,6 @@ interface DiscoveryFilters {
   league: string;
   club: string;
   nationality: string;
-  top5Only: boolean;
 }
 
 function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChange, filters, onFilterChange, pointsLabel = "G+A" }: {
@@ -297,24 +308,35 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
   filters: DiscoveryFilters; onFilterChange: (patch: Partial<DiscoveryFilters>) => void;
   pointsLabel?: string;
 }) {
-  const { league: leagueFilter, club: clubFilter, nationality: nationalityFilter, top5Only } = filters;
+  const { league: leagueFilter, club: clubFilter, nationality: nationalityFilter } = filters;
   const isOverpriced = variant === "overpriced";
   const accentColor = isOverpriced ? "var(--accent-cold-soft)" : "var(--accent-green)";
+  const isTop5 = leagueFilter === "top5";
 
-  const leagueOptions = useMemo(() => uniqueFilterOptions(candidates, (p) => p.league, "All leagues"), [candidates]);
+  const leagueGroups = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of candidates) if (p.league) counts.set(p.league, (counts.get(p.league) ?? 0) + 1);
+    const byCount = (a: string, b: string) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0);
+    const top5 = [...counts.keys()].filter((l) => TOP_5_LEAGUES.includes(l)).sort(byCount);
+    const other = [...counts.keys()].filter((l) => !TOP_5_LEAGUES.includes(l)).sort(byCount);
+    return [
+      { options: [{ value: "all", label: "All leagues" }, { value: "top5", label: "Top 5 leagues" }] },
+      ...(top5.length ? [{ heading: "Top 5", options: top5.map((l) => ({ value: l, label: l })) }] : []),
+      ...(other.length ? [{ heading: "Other", options: other.map((l) => ({ value: l, label: l })) }] : []),
+    ];
+  }, [candidates]);
   const clubOptions = useMemo(() => uniqueFilterOptions(candidates, (p) => p.club, "All clubs"), [candidates]);
   const nationalityOptions = useMemo(() => uniqueFilterOptions(candidates, (p) => p.nationality, "All nationalities"), [candidates]);
 
   const top5Players = useMemo(
-    () => top5Only ? allPlayers.filter((p) => TOP_5_LEAGUES.includes(p.league)) : [],
-    [allPlayers, top5Only]
+    () => isTop5 ? allPlayers.filter((p) => TOP_5_LEAGUES.includes(p.league)) : [],
+    [allPlayers, isTop5]
   );
 
   const filteredCandidates = useMemo(() => {
     let filtered = filterPlayersByLeagueAndClub(candidates, leagueFilter, clubFilter);
     if (nationalityFilter !== "all") filtered = filtered.filter((p) => p.nationality === nationalityFilter);
-    if (top5Only) {
-      filtered = filtered.filter((p) => TOP_5_LEAGUES.includes(p.league));
+    if (isTop5) {
       filtered = filtered.map((player) => ({
         ...player,
         comparisonCount: countComparisons(player, top5Players, !isOverpriced),
@@ -326,7 +348,7 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
     if (sortBy === "ga-desc") return sorted.sort((a, b) => b.points - a.points);
     if (sortBy === "ga-asc") return sorted.sort((a, b) => a.points - b.points);
     return sorted.sort((a, b) => b.comparisonCount - a.comparisonCount);
-  }, [candidates, top5Players, leagueFilter, clubFilter, nationalityFilter, sortBy, top5Only, isOverpriced]);
+  }, [candidates, top5Players, leagueFilter, clubFilter, nationalityFilter, sortBy, isTop5, isOverpriced]);
 
   const isValueActive = sortBy === "value-asc" || sortBy === "value-desc";
   const isGaActive = sortBy === "ga-asc" || sortBy === "ga-desc";
@@ -380,12 +402,9 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
         <div className="hidden sm:block w-px h-6 bg-border-subtle" />
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium uppercase tracking-wider text-text-muted">Filter</span>
-          <Combobox value={leagueFilter} onChange={(v) => onFilterChange({ league: v || "all" })} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
+          <Combobox value={leagueFilter} onChange={(v) => onFilterChange({ league: v || "all" })} groups={leagueGroups} placeholder="All leagues" searchPlaceholder="Search leagues..." />
           <Combobox value={clubFilter || "all"} onChange={(v) => onFilterChange({ club: v === "all" ? "" : v })} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
           <Combobox value={nationalityFilter} onChange={(v) => onFilterChange({ nationality: v || "all" })} options={nationalityOptions} placeholder="All nationalities" searchPlaceholder="Search nationalities..." />
-          <FilterButton active={top5Only} onClick={() => onFilterChange({ top5Only: !top5Only })}>
-            Top 5 only
-          </FilterButton>
         </div>
       </div>
       {filteredCandidates.length === 0 && (
@@ -397,7 +416,7 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
       {filteredCandidates.length > 0 && (
         <div className="space-y-3">
           {filteredCandidates.map((player, index) => (
-            <DiscoveryListCard key={player.playerId} player={player} index={index} top5={top5Only} variant={variant} pointsLabel={pointsLabel} />
+            <DiscoveryListCard key={player.playerId} player={player} index={index} top5={isTop5} variant={variant} pointsLabel={pointsLabel} />
           ))}
         </div>
       )}
@@ -545,7 +564,6 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
   const underClubFilter = params.get("uClub") || "";
   const underNatFilter = params.get("uNat") || "all";
   const underSortBy = parseDiscoverySort(params.get("uSort"));
-  const discoveryTop5Only = params.get("dTop5") === "1";
   const benchTop5Only = params.get("bTop5") === "1";
 
   // ── Overperformer state ──
@@ -597,8 +615,8 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
   );
 
   // ── Discovery tab counts (adjusted for top-5 filter) ──
-  const underTabCount = discoveryTop5Only ? underCandidates.filter((p) => TOP_5_LEAGUES.includes(p.league)).length : underCandidates.length;
-  const overTabCount = discoveryTop5Only ? overCandidates.filter((p) => TOP_5_LEAGUES.includes(p.league)).length : overCandidates.length;
+  const underTabCount = underCandidates.length;
+  const overTabCount = overCandidates.length;
 
   // ── Minutes player selection ──
   const minsSelected = useMemo(() => {
@@ -845,12 +863,11 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                     allPlayers={initialAllPlayers}
                     sortBy={underSortBy}
                     onSortChange={(value) => update({ uSort: value === "count" ? null : value })}
-                    filters={{ league: underLeagueFilter, club: underClubFilter, nationality: underNatFilter, top5Only: discoveryTop5Only }}
+                    filters={{ league: underLeagueFilter, club: underClubFilter, nationality: underNatFilter }}
                     onFilterChange={(f) => update({
                       ...(f.league !== undefined && { uLeague: f.league === "all" ? null : f.league }),
                       ...(f.club !== undefined && { uClub: f.club || null }),
                       ...(f.nationality !== undefined && { uNat: f.nationality === "all" ? null : f.nationality }),
-                      ...(f.top5Only !== undefined && { dTop5: f.top5Only ? "1" : null }),
                     })}
                     pointsLabel={pointsLabel}
                   />
@@ -862,12 +879,11 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                     allPlayers={initialAllPlayers}
                     sortBy={overSortBy}
                     onSortChange={(value) => update({ oSort: value === "count" ? null : value })}
-                    filters={{ league: overLeagueFilter, club: overClubFilter, nationality: overNatFilter, top5Only: discoveryTop5Only }}
+                    filters={{ league: overLeagueFilter, club: overClubFilter, nationality: overNatFilter }}
                     onFilterChange={(f) => update({
                       ...(f.league !== undefined && { oLeague: f.league === "all" ? null : f.league }),
                       ...(f.club !== undefined && { oClub: f.club || null }),
                       ...(f.nationality !== undefined && { oNat: f.nationality === "all" ? null : f.nationality }),
-                      ...(f.top5Only !== undefined && { dTop5: f.top5Only ? "1" : null }),
                     })}
                     pointsLabel={pointsLabel}
                   />
