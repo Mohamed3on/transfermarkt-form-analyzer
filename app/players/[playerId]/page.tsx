@@ -1,0 +1,919 @@
+import { Suspense } from "react";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  ShieldAlert,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
+import { createPageMetadata } from "@/lib/metadata";
+import { formatInjuryDuration, formatReturnInfo, getLeistungsdatenUrl, getPlayerDetailHref, ordinal } from "@/lib/format";
+import { formatTrendLabel, getPlayerDetailData, seasonNpga, type PlayerRankings } from "@/lib/player-detail";
+import { getPlayerRecentMatches } from "@/lib/player-recent-matches";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { LeagueBadge } from "@/components/LeagueBadge";
+import { PlayerSubtitle } from "@/components/PlayerSubtitle";
+import { ClubLogo } from "@/components/ClubLogo";
+import { PlayerDetailDeck } from "./PlayerDetailDeck";
+import type { MinutesValuePlayer, PlayerStats, RecentGameStats } from "@/app/types";
+
+const RANKING_METRICS: Array<{
+  overallKey: keyof PlayerRankings;
+  leagueKey: keyof PlayerRankings;
+  clubKey: keyof PlayerRankings;
+  positionKey: keyof PlayerRankings;
+  label: string;
+  accentClass: string;
+  sortKey: string | null;
+}> = [
+  { overallKey: "marketValueOverall", leagueKey: "marketValueLeague", clubKey: "marketValueClub", positionKey: "marketValuePosition", label: "Market value", accentClass: "text-accent-gold", sortKey: "value" },
+  { overallKey: "npgaOverall", leagueKey: "npgaLeague", clubKey: "npgaClub", positionKey: "npgaPosition", label: "npG+A", accentClass: "text-accent-hot", sortKey: null },
+  { overallKey: "pointsOverall", leagueKey: "pointsLeague", clubKey: "pointsClub", positionKey: "pointsPosition", label: "G+A", accentClass: "text-emerald-400", sortKey: null },
+  { overallKey: "minutesOverall", leagueKey: "minutesLeague", clubKey: "minutesClub", positionKey: "minutesPosition", label: "Minutes", accentClass: "text-accent-blue", sortKey: "mins" },
+  { overallKey: "goalsOverall", leagueKey: "goalsLeague", clubKey: "goalsClub", positionKey: "goalsPosition", label: "Goals", accentClass: "text-text-primary", sortKey: null },
+  { overallKey: "assistsOverall", leagueKey: "assistsLeague", clubKey: "assistsClub", positionKey: "assistsPosition", label: "Assists", accentClass: "text-text-primary", sortKey: null },
+];
+
+function formatShortDate(value: string): string {
+  if (!value) return "Unknown";
+  const date = new Date(`${value}T12:00:00Z`);
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
+function summaryLine({
+  league,
+  club,
+  rankings,
+  pricierPlayersBeatenByTarget,
+  cheaperPlayersBeatingTarget,
+}: {
+  league: string;
+  club: string;
+  rankings: PlayerRankings;
+  pricierPlayersBeatenByTarget: number;
+  cheaperPlayersBeatingTarget: number;
+}) {
+  const comparisonText =
+    pricierPlayersBeatenByTarget > 0
+      ? `beats ${pricierPlayersBeatenByTarget} pricier comparable players`
+      : cheaperPlayersBeatingTarget > 0
+      ? `is beaten by ${cheaperPlayersBeatingTarget} cheaper comparable players`
+      : "has a clean value-comparison profile right now";
+
+  return `${ordinal(rankings.npgaOverall)} for npG+A in the tracked pool, ${ordinal(rankings.npgaLeague)} in ${league}, and ${ordinal(rankings.npgaClub)} at ${club}. ${comparisonText}.`;
+}
+
+function HeroMetric({
+  label,
+  value,
+  subline,
+  accentClass,
+}: {
+  label: string;
+  value: string;
+  subline: string;
+  accentClass: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">{label}</p>
+      <p className={`mt-1.5 truncate text-2xl font-value leading-none lg:text-xl xl:text-2xl ${accentClass}`}>{value}</p>
+      <p className="mt-1.5 text-xs text-text-secondary">{subline}</p>
+    </div>
+  );
+}
+
+function SignalBadge({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className: string;
+}) {
+  return <Badge className={`rounded-full border px-3 py-1 text-xs ${className}`}>{children}</Badge>;
+}
+
+function MinutesBenchmarkPanel({
+  title,
+  players,
+  benchmarkUrl,
+  emptyLabel,
+  accentClass,
+}: {
+  title: string;
+  players: MinutesValuePlayer[];
+  benchmarkUrl: string;
+  emptyLabel: string;
+  accentClass: string;
+}) {
+  return (
+    <SectionPanel
+      title={`${title} (${players.length})`}
+      aside={
+        <Link href={benchmarkUrl} className="text-xs text-text-secondary transition-colors hover:text-text-primary">
+          Full benchmark →
+        </Link>
+      }
+    >
+      <div className="space-y-2">
+        {players.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border-subtle bg-elevated px-4 py-6 text-sm text-text-secondary">
+            {emptyLabel}
+          </div>
+        ) : (
+          players.slice(0, 6).map((p) => (
+            <Link
+              key={p.playerId}
+              href={getPlayerDetailHref(p.playerId)}
+              className="flex items-center gap-3 rounded-xl border border-border-subtle bg-elevated p-2.5 transition-colors hover:border-border-medium hover:bg-card-hover"
+            >
+              <PlayerAvatar imageUrl={p.imageUrl} name={p.name} size="sm" className="border border-border-subtle" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-text-primary">{p.name}</p>
+                <p className="mt-0.5 text-xs text-text-secondary">{p.club} · {p.marketValueDisplay}</p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className={`font-value text-sm ${accentClass}`}>{p.minutes.toLocaleString()}&apos;</p>
+              </div>
+            </Link>
+          ))
+        )}
+      </div>
+    </SectionPanel>
+  );
+}
+
+function SectionPanel({
+  title,
+  aside,
+  className = "",
+  children,
+}: {
+  title: string;
+  aside?: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={className}>
+      <div className="flex items-baseline justify-between gap-4">
+        <h3 className="text-sm font-medium text-text-secondary">{title}</h3>
+        {aside}
+      </div>
+      <div className="mt-3">{children}</div>
+    </section>
+  );
+}
+
+
+function ComparisonItem({
+  player,
+  positive,
+}: {
+  player: PlayerStats;
+  positive: boolean;
+}) {
+  return (
+    <Link
+      href={getPlayerDetailHref(player.playerId)}
+      className="group flex items-center gap-3 rounded-2xl border border-border-subtle bg-elevated p-3 transition-transform duration-200 hover:-translate-y-px hover:border-border-medium hover:bg-card-hover motion-reduce:transform-none"
+    >
+      <PlayerAvatar imageUrl={player.imageUrl} name={player.name} size="sm" className="border border-border-subtle" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-text-primary">{player.name}</p>
+        <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-text-secondary">
+          {player.clubLogoUrl && <ClubLogo src={player.clubLogoUrl} />}
+          <span className="truncate">{player.club}</span>
+          <span className="shrink-0 opacity-40">·</span>
+          <span className="shrink-0">{player.marketValueDisplay}</span>
+        </p>
+      </div>
+      <div className="shrink-0 text-right">
+        <p className={`text-sm font-value ${positive ? "text-accent-hot" : "text-accent-cold-soft"}`}>{player.points} <span className="text-[10px] text-text-muted">npG+A</span></p>
+        <p className="text-[11px] text-text-muted">{player.minutes?.toLocaleString() || "0"}&apos;</p>
+      </div>
+    </Link>
+  );
+}
+
+function ComparisonCard({
+  title,
+  accentClass,
+  emptyLabel,
+  players,
+  positive,
+  benchmarkUrl,
+}: {
+  title: string;
+  accentClass: string;
+  emptyLabel: string;
+  players: PlayerStats[];
+  positive: boolean;
+  benchmarkUrl: string;
+}) {
+  return (
+    <SectionPanel
+      title={title}
+      aside={
+        <Link href={benchmarkUrl} className="text-xs text-text-secondary transition-colors hover:text-text-primary">
+          See full benchmark →
+        </Link>
+      }
+    >
+      <div className="space-y-3">
+        {players.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border-subtle bg-elevated px-4 py-6 text-sm text-text-secondary">
+            {emptyLabel}
+          </div>
+        ) : (
+          players.slice(0, 6).map((player) => (
+            <ComparisonItem key={player.playerId} player={player} positive={positive} />
+          ))
+        )}
+      </div>
+    </SectionPanel>
+  );
+}
+
+function RecentMatchCard({
+  match,
+}: {
+  match: RecentGameStats;
+}) {
+  const hasScore = match.teamGoals !== undefined && match.opponentGoals !== undefined;
+  const resultLabel = hasScore
+    ? match.teamGoals! > match.opponentGoals!
+      ? "W"
+      : match.teamGoals! < match.opponentGoals!
+      ? "L"
+      : "D"
+    : null;
+  const resultTone =
+    resultLabel === "W"
+      ? "border-accent-hot-border bg-accent-hot-glow text-accent-hot"
+      : resultLabel === "L"
+      ? "border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft"
+      : "border-border-subtle bg-card text-text-secondary";
+  const fixtureLabel = match.opponentName
+    ? match.venue === "away"
+      ? `at ${match.opponentName}`
+      : `vs ${match.opponentName}`
+    : "Opponent unavailable";
+  const contextLabel = [match.competitionName || match.competitionId, match.gameDay ? `MD ${match.gameDay}` : null]
+    .filter(Boolean)
+    .join(" · ");
+  const venueLabel = match.venue === "away" ? "Away" : match.venue === "home" ? "Home" : null;
+
+  return (
+    <div className="hover-lift flex flex-col justify-between rounded-2xl border border-border-subtle bg-[linear-gradient(180deg,rgba(22,27,34,0.98),rgba(13,17,23,0.96))] p-3.5">
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">{formatShortDate(match.date)}</p>
+            {contextLabel && <p className="mt-0.5 text-[11px] text-text-secondary">{contextLabel}</p>}
+          </div>
+          {hasScore && (
+            <div className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-value ${resultTone}`}>
+              <span>{resultLabel}</span>
+              <span>
+                {match.teamGoals}:{match.opponentGoals}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-3 flex items-center gap-2.5">
+          {match.opponentLogoUrl ? (
+            <img
+              src={match.opponentLogoUrl}
+              alt={match.opponentName || ""}
+              className="h-7 w-7 shrink-0 rounded-lg bg-white object-contain p-0.5"
+            />
+          ) : (
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border-subtle bg-black/20 text-[10px] text-text-muted">
+              ?
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="truncate text-sm text-text-primary">{fixtureLabel}</p>
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-text-secondary">
+              {venueLabel && <span>{venueLabel}</span>}
+              {venueLabel && <span className="opacity-40">·</span>}
+              <span className="font-value">{match.minutes}&apos;</span>
+              <span>played</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <div className="grid grid-cols-2 gap-1.5">
+          <div className="rounded-lg border border-border-subtle/80 bg-black/20 px-2 py-1.5 text-center">
+            <p className="text-[9px] uppercase tracking-[0.16em] text-text-muted">Goals</p>
+            <p className="mt-0.5 font-value text-base">
+              {(() => {
+                const pens = match.penaltyGoals ?? 0;
+                const openPlay = match.goals - pens;
+                if (match.goals === 0) return <span className="text-text-muted">0</span>;
+                return (
+                  <>
+                    {openPlay > 0 && <span className="text-emerald-400">{openPlay}</span>}
+                    {pens > 0 && (
+                      <span className="text-amber-400">
+                        {openPlay > 0 ? "+" : ""}{pens}P
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border-subtle/80 bg-black/20 px-2 py-1.5 text-center">
+            <p className="text-[9px] uppercase tracking-[0.16em] text-text-muted">Assists</p>
+            <p className={`mt-0.5 font-value text-base ${match.assists > 0 ? "text-emerald-400" : "text-text-muted"}`}>{match.assists}</p>
+          </div>
+        </div>
+
+        {match.matchReportUrl && (
+          <a
+            href={match.matchReportUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-[11px] text-text-secondary transition-colors hover:text-text-primary"
+          >
+            Match report
+            <ArrowUpRight className="h-3 w-3" />
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RecentMatchesSkeleton() {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex flex-col justify-between rounded-2xl border border-border-subtle bg-[linear-gradient(180deg,rgba(22,27,34,0.98),rgba(13,17,23,0.96))] p-3.5 animate-pulse">
+          <div>
+            <div className="h-3 w-16 rounded bg-border-subtle" />
+            <div className="mt-3 flex items-center gap-2.5">
+              <div className="h-7 w-7 rounded-lg bg-border-subtle" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3.5 w-24 rounded bg-border-subtle" />
+                <div className="h-3 w-16 rounded bg-border-subtle" />
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-1.5">
+            {Array.from({ length: 2 }).map((_, j) => (
+              <div key={j} className="rounded-lg border border-border-subtle/80 bg-black/20 px-2 py-1.5 text-center">
+                <div className="mx-auto h-2 w-8 rounded bg-border-subtle" />
+                <div className="mx-auto mt-2 h-4 w-4 rounded bg-border-subtle" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function RecentMatchesAsync({
+  playerId,
+  fallbackMatches,
+}: {
+  playerId: string;
+  fallbackMatches: RecentGameStats[];
+}) {
+  const recentMatches = await getPlayerRecentMatches(playerId, fallbackMatches);
+
+  if (!recentMatches || recentMatches.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border-subtle bg-black/20 px-4 py-6 text-sm text-text-secondary">
+        No recent match log is stored for this player.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      {recentMatches.map((match) => (
+        <RecentMatchCard
+          key={match.gameId || `${match.date}-${match.minutes}-${match.goals}-${match.assists}`}
+          match={match}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ClubContextItem({
+  player,
+  highlighted,
+  rank,
+}: {
+  player: MinutesValuePlayer;
+  highlighted: boolean;
+  rank: number;
+}) {
+  const npga = seasonNpga(player);
+
+  return (
+    <Link
+      href={getPlayerDetailHref(player.playerId)}
+      className={`hover-lift flex h-full flex-col justify-between gap-3 rounded-2xl border p-4 transition-colors ${
+        highlighted
+          ? "border-accent-blue/25 bg-[linear-gradient(180deg,rgba(88,166,255,0.12),rgba(13,17,23,0.95))]"
+          : "border-border-subtle bg-[linear-gradient(180deg,rgba(22,27,34,0.92),rgba(13,17,23,0.95))] hover:border-border-medium hover:bg-card-hover"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-value ${
+            highlighted ? "bg-accent-blue/20 text-accent-blue" : "bg-black/20 text-text-muted"
+          }`}
+        >
+          {rank}
+        </div>
+        <PlayerAvatar
+          imageUrl={player.imageUrl}
+          name={player.name}
+          size="sm"
+          className="border border-border-subtle"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm text-text-primary">{player.name}</p>
+          <p className="mt-0.5 truncate text-[11px] font-value text-text-secondary">
+            {player.marketValueDisplay}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div
+          className={`rounded-xl border px-2.5 py-2 ${
+            highlighted
+              ? "border-accent-blue/20 bg-accent-blue/10"
+              : "border-border-subtle/80 bg-black/20"
+          }`}
+        >
+          <p className="text-[10px] uppercase tracking-[0.16em] text-text-muted">npG+A</p>
+          <p className="mt-0.5 text-lg font-value text-accent-hot">{npga}</p>
+        </div>
+        <div className="rounded-xl border border-border-subtle/80 bg-black/20 px-2.5 py-2">
+          <p className="text-[10px] uppercase tracking-[0.16em] text-text-muted">Minutes</p>
+          <p className="mt-0.5 text-lg font-value text-text-primary">{player.minutes.toLocaleString()}</p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ playerId: string }>;
+}) {
+  const { playerId } = await params;
+  const data = await getPlayerDetailData(playerId);
+
+  if (!data) {
+    return createPageMetadata({
+      title: "Player Report",
+      description: "Detailed player report with rankings, form, and value comparisons.",
+      path: `/players/${playerId}`,
+    });
+  }
+
+  return createPageMetadata({
+    title: `${data.player.name} Report`,
+    description: `${data.player.name} at ${data.player.club}: rankings, form, minutes, and comparable-player analysis from SquadStat's tracked dataset.`,
+    path: `/players/${data.player.playerId}`,
+    keywords: [
+      data.player.name,
+      data.player.club,
+      data.player.league,
+      "player report",
+      "football player rankings",
+      "player form stats",
+    ],
+  });
+}
+
+export default async function PlayerDetailPage({
+  params,
+}: {
+  params: Promise<{ playerId: string }>;
+}) {
+  const { playerId } = await params;
+  const data = await getPlayerDetailData(playerId);
+
+  if (!data) redirect(`https://www.transfermarkt.com/x/profil/spieler/${playerId}`);
+
+  const {
+    player,
+    injury,
+    rankings,
+    signalSummary,
+    trend,
+    form,
+    outperformers,
+    underperformers,
+    clubmates,
+    topClubmatesByNpga,
+    minutesBenchmark,
+    subgroupRankings,
+    positionLabel,
+    positionPeerCount,
+    penaltyRank,
+  } = data;
+  const fallbackMatchCount = player.recentForm?.length ?? 0;
+  const injuryReturn = injury ? formatReturnInfo(injury.returnDate) : null;
+  const injuryDuration = injury ? formatInjuryDuration(injury.injurySince) : null;
+
+  return (
+    <div className="full-bleed pb-12 sm:pb-16">
+      <div className="mx-auto max-w-screen-2xl px-3 sm:px-4">
+      <Link
+        href="/players"
+        className="mb-4 inline-flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to player explorer
+      </Link>
+
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-border-subtle bg-[radial-gradient(circle_at_top_left,rgba(88,166,255,0.16),transparent_38%),radial-gradient(circle_at_80%_12%,rgba(0,255,135,0.14),transparent_30%),linear-gradient(180deg,var(--bg-card),var(--bg-elevated))] p-5 animate-blur-in motion-reduce:animate-none sm:p-7 lg:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(88,166,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(88,166,255,0.05)_1px,transparent_1px)] bg-[size:64px_64px]" />
+
+        <div className="relative grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
+          <div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <PlayerAvatar
+                imageUrl={player.imageUrl}
+                name={player.name}
+                size="lg"
+                className="h-24 w-24 rounded-[1.5rem] border border-border-medium sm:h-28 sm:w-28"
+              />
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <LeagueBadge league={player.league} />
+                  {player.isOnLoan && (
+                    <SignalBadge className="border-accent-gold/25 bg-accent-gold/10 text-accent-gold">
+                      On loan
+                    </SignalBadge>
+                  )}
+                  {!player.isOnLoan && player.isNewSigning && (
+                    <SignalBadge className="border-accent-blue/25 bg-accent-blue/10 text-accent-blue">
+                      New signing
+                    </SignalBadge>
+                  )}
+                  {player.isCurrentIntl && (
+                    <SignalBadge className="border-emerald-500/25 bg-emerald-500/10 text-emerald-400">
+                      Current international
+                    </SignalBadge>
+                  )}
+                  {trend && (
+                    <SignalBadge
+                      className={
+                        trend.type === "winner"
+                          ? "border-accent-hot-border bg-accent-hot-glow text-accent-hot"
+                          : "border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft"
+                      }
+                    >
+                      {trend.type === "winner" ? <TrendingUp className="mr-1 h-3.5 w-3.5" /> : <TrendingDown className="mr-1 h-3.5 w-3.5" />}
+                      {trend.type === "winner" ? "Repeat riser" : "Repeat faller"}
+                    </SignalBadge>
+                  )}
+                </div>
+
+                <h1 className="mt-4 text-3xl font-pixel leading-tight text-text-primary sm:text-4xl">
+                  {player.name}
+                </h1>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-text-secondary">
+                  <PlayerSubtitle
+                    position={player.position}
+                    playedPosition={player.playedPosition}
+                    club={player.club}
+                    clubLogoUrl={player.clubLogoUrl}
+                    age={player.age}
+                    nationalityFlagUrl={player.nationalityFlagUrl}
+                    nationality={player.nationality}
+                  />
+                </div>
+
+                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-text-secondary sm:text-base">
+                  {summaryLine({
+                    league: player.league,
+                    club: player.club,
+                    rankings,
+                    pricierPlayersBeatenByTarget: signalSummary.pricierPlayersBeatenByTarget,
+                    cheaperPlayersBeatingTarget: signalSummary.cheaperPlayersBeatingTarget,
+                  })}
+                </p>
+
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <Button asChild>
+                    <Link href={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}`}>
+                      Compare on value
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="border-border-medium bg-elevated text-text-primary hover:bg-card-hover">
+                    <a href={getLeistungsdatenUrl(player.profileUrl)} target="_blank" rel="noopener noreferrer">
+                      Transfermarkt profile
+                      <ArrowUpRight className="ml-2 h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+            <HeroMetric
+              label="Value"
+              value={player.marketValueDisplay}
+              subline={`#${rankings.marketValueOverall} overall · #${rankings.marketValuePosition} ${positionLabel.toLowerCase()}`}
+              accentClass="text-accent-gold"
+            />
+            <HeroMetric
+              label="npG+A"
+              value={String(form.seasonNpga)}
+              subline={`#${rankings.npgaOverall} overall · #${rankings.npgaPosition} ${positionLabel.toLowerCase()}`}
+              accentClass="text-accent-hot"
+            />
+            <HeroMetric
+              label="G+A"
+              value={String(form.seasonGa)}
+              subline={`${form.seasonGoals}G · ${form.seasonAssists}A`}
+              accentClass="text-emerald-400"
+            />
+            <HeroMetric
+              label="Minutes"
+              value={`${player.minutes.toLocaleString()}'`}
+              subline={`${signalSummary.availablePct}% avail · #${rankings.minutesPosition} ${positionLabel.toLowerCase()}`}
+              accentClass="text-accent-blue"
+            />
+          </div>
+
+          <div className="col-span-full flex flex-wrap gap-2.5">
+            {signalSummary.discoveryStatus === "bargain" && (
+              <SignalBadge className="border-accent-hot-border bg-accent-hot-glow text-accent-hot">
+                <Sparkles className="mr-1 h-3.5 w-3.5" />
+                Outperforming {signalSummary.pricierPlayersBeatenByTarget} pricier peers
+              </SignalBadge>
+            )}
+            {signalSummary.discoveryStatus === "overpriced" && (
+              <SignalBadge className={signalSummary.pricierPlayersBeatenByTarget === 0
+                ? "border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft"
+                : "border-border-subtle bg-card-hover text-text-secondary"
+              }>
+                {signalSummary.cheaperPlayersBeatingTarget} cheaper peers with more output
+              </SignalBadge>
+            )}
+            {injury && (
+              <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
+                <ShieldAlert className="mr-1 h-3.5 w-3.5" />
+                {injury.injury}
+                {injuryDuration ? ` · out ${injuryDuration}` : ""}
+                {injuryReturn ? ` · ${injuryReturn.label}` : ""}
+              </SignalBadge>
+            )}
+            {player.contractExpiry && (
+              <SignalBadge className="border-border-subtle bg-card-hover text-text-secondary">
+                Contract until {player.contractExpiry}
+              </SignalBadge>
+            )}
+            {trend && (
+              <Link href="/biggest-movers">
+                <SignalBadge className="border-border-subtle bg-card-hover text-text-secondary transition-colors hover:text-text-primary">
+                  {trend.appearances.length} repeat {trend.type === "winner" ? "rises" : "drops"}
+                </SignalBadge>
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <PlayerDetailDeck>
+        <div className="space-y-8">
+          <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[1.06fr_0.94fr]">
+            <SectionPanel title="Rankings">
+              <div className="overflow-hidden rounded-xl border border-border-subtle">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
+                      <th className="px-3 py-2 text-left font-normal">Metric</th>
+                      <th className="px-3 py-2 text-right font-normal">Overall</th>
+                      <th className="px-3 py-2 text-right font-normal">League</th>
+                      <th className="px-3 py-2 text-right font-normal">Club</th>
+                      <th className="px-3 py-2 text-right font-normal">{positionLabel} ({positionPeerCount})</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {RANKING_METRICS.map((m) => (
+                      <tr key={m.label} className="border-b border-border-subtle/50 last:border-0">
+                        <td className="px-3 py-2.5">
+                          <Link
+                            href={`/players${m.sortKey ? `?sort=${m.sortKey}` : ""}`}
+                            className="text-text-secondary transition-colors hover:text-text-primary hover:underline"
+                          >
+                            {m.label}
+                          </Link>
+                        </td>
+                        <td className={`px-3 py-2.5 text-right font-value ${m.accentClass}`}>#{rankings[m.overallKey]}</td>
+                        <td className="px-3 py-2.5 text-right font-value text-text-primary">#{rankings[m.leagueKey]}</td>
+                        <td className="px-3 py-2.5 text-right font-value text-text-primary">#{rankings[m.clubKey]}</td>
+                        <td className="px-3 py-2.5 text-right font-value text-text-secondary">#{rankings[m.positionKey]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {subgroupRankings.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {subgroupRankings.map((group) => (
+                    <div key={group.label} className="overflow-hidden rounded-xl border border-border-subtle">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
+                            <th className="px-3 py-2 text-left font-normal">{group.label} ({group.total})</th>
+                            <th className="px-3 py-2 text-right font-normal">npG+A</th>
+                            <th className="px-3 py-2 text-right font-normal">Value</th>
+                            <th className="px-3 py-2 text-right font-normal">Minutes</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="px-3 py-2.5 text-text-secondary">Rank</td>
+                            <td className="px-3 py-2.5 text-right font-value text-accent-hot">#{group.npgaRank}</td>
+                            <td className="px-3 py-2.5 text-right font-value text-accent-gold">#{group.marketValueRank}</td>
+                            <td className="px-3 py-2.5 text-right font-value text-accent-blue">#{group.minutesRank}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SectionPanel>
+
+            <SectionPanel title="Season">
+              <div className="overflow-hidden rounded-xl border border-border-subtle">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
+                      <th className="px-3 py-2 text-left font-normal">Period</th>
+                      <th className="px-3 py-2 text-right font-normal">npG+A</th>
+                      <th className="px-3 py-2 text-right font-normal">G</th>
+                      <th className="px-3 py-2 text-right font-normal">A</th>
+                      <th className="px-3 py-2 text-right font-normal">Mins</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border-subtle/50">
+                      <td className="px-3 py-2.5 text-text-secondary">Season</td>
+                      <td className="px-3 py-2.5 text-right font-value text-accent-hot">{form.seasonNpga}</td>
+                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.seasonGoals}</td>
+                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.seasonAssists}</td>
+                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.seasonMinutes.toLocaleString()}</td>
+                    </tr>
+                    <tr className="border-b border-border-subtle/50">
+                      <td className="px-3 py-2.5 text-text-secondary">Last 5</td>
+                      <td className="px-3 py-2.5 text-right font-value text-accent-hot">{form.last5Npga}</td>
+                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last5Goals}</td>
+                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last5Assists}</td>
+                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last5Minutes.toLocaleString()}</td>
+                    </tr>
+                    <tr className="border-b border-border-subtle/50">
+                      <td className="px-3 py-2.5 text-text-secondary">Last 10</td>
+                      <td className="px-3 py-2.5 text-right font-value text-accent-hot">{form.last10Npga}</td>
+                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last10Goals}</td>
+                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last10Assists}</td>
+                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last10Minutes.toLocaleString()}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              {form.penaltyAttempts > 0 && (
+                <Link href="/players?sort=pen" className="mt-2.5 block text-sm text-text-secondary transition-colors hover:text-text-primary">
+                  Penalties: <span className="font-value text-text-primary">{form.penaltyGoals}/{form.penaltyAttempts}</span> scored
+                  {form.penaltyConversion !== null && <> (<span className="font-value text-text-primary">{form.penaltyConversion}%</span>)</>}
+                  {penaltyRank && <> · <span className="font-value text-text-primary">#{penaltyRank.rank}</span> of {penaltyRank.total} takers</>}
+                </Link>
+              )}
+            </SectionPanel>
+          </section>
+
+          <SectionPanel
+
+            title="Latest matches"
+            aside={
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-[11px] text-text-muted">
+                  <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />Open play</span>
+                  <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-amber-400" />Penalty</span>
+                </div>
+                <div className="rounded-full border border-border-subtle bg-black/20 px-3 py-1.5 text-xs text-text-secondary">
+                  <span className="font-value text-text-primary">{fallbackMatchCount}</span> matches stored
+                </div>
+              </div>
+            }
+          >
+            <Suspense fallback={<RecentMatchesSkeleton />}>
+              <RecentMatchesAsync playerId={player.playerId} fallbackMatches={player.recentForm ?? []} />
+            </Suspense>
+          </SectionPanel>
+        </div>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <ComparisonCard
+            title="Pricier peers he's beating"
+            accentClass="text-accent-hot"
+            emptyLabel="No pricier comparable players are behind him on the current value model."
+            players={underperformers}
+            positive
+            benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=underdelivering`}
+          />
+          <ComparisonCard
+            title="Cheaper peers ahead of him"
+            accentClass="text-accent-cold-soft"
+            emptyLabel="No cheaper comparable players are ahead of him on the current value model."
+            players={outperformers}
+            positive={false}
+            benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=better-value`}
+          />
+        </section>
+
+        {/* Minutes tab */}
+        <section className="grid gap-4 lg:grid-cols-2">
+          <MinutesBenchmarkPanel
+            title="Playing less"
+            players={minutesBenchmark.playingLess}
+            benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=less`}
+            emptyLabel="No same-or-higher value players are playing fewer minutes."
+            accentClass="text-accent-cold-soft"
+          />
+          <MinutesBenchmarkPanel
+            title="Playing more"
+            players={minutesBenchmark.playingMore}
+            benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=more`}
+            emptyLabel="No same-or-higher value players are playing more minutes."
+            accentClass="text-accent-hot"
+          />
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-[0.34fr_0.66fr]">
+          <SectionPanel
+
+            title="Standing within the club"
+          >
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <div className="rounded-[1.35rem] border border-border-subtle bg-black/20 p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">Tracked clubmates</p>
+                <p className="mt-2 text-2xl font-value text-text-primary">{clubmates.length}</p>
+                <p className="mt-1 text-sm text-text-secondary">players currently in the stored club sample</p>
+              </div>
+              <div className="rounded-[1.35rem] border border-border-subtle bg-black/20 p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">Club npG+A rank</p>
+                <p className="mt-2 text-2xl font-value text-accent-gold">#{rankings.npgaClub}</p>
+                <p className="mt-1 text-sm text-text-secondary">inside {player.club}&apos;s tracked stack</p>
+              </div>
+              <div className="rounded-[1.35rem] border border-border-subtle bg-black/20 p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">Market value rank</p>
+                <p className="mt-2 text-2xl font-value text-text-primary">#{rankings.marketValueClub}</p>
+                <p className="mt-1 text-sm text-text-secondary">within the same club sample</p>
+              </div>
+            </div>
+          </SectionPanel>
+
+          <SectionPanel
+
+            title={`Top performers at ${player.club}`}
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              {topClubmatesByNpga.map((clubmate, index) => (
+                <ClubContextItem
+                  key={clubmate.playerId}
+                  player={clubmate}
+                  rank={index + 1}
+                  highlighted={clubmate.playerId === player.playerId}
+                />
+              ))}
+            </div>
+          </SectionPanel>
+        </section>
+      </PlayerDetailDeck>
+      </div>
+    </div>
+  );
+}

@@ -44,6 +44,14 @@ export function getLeistungsdatenUrl(profileUrl: string): string {
   return `https://www.transfermarkt.com${profileUrl.replace(PROFIL_RE, "/leistungsdaten/")}/saison/${season}/plus/1`;
 }
 
+export function getPlayerDetailHref(playerId: string): string {
+  return `/players/${playerId}`;
+}
+
+export function getPlayerIdFromProfileUrl(profileUrl: string): string | null {
+  return profileUrl.match(/\/spieler\/(\d+)/)?.[1] ?? null;
+}
+
 export function formatValueStr(value: string): string {
   return value || "-";
 }

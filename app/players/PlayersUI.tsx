@@ -16,7 +16,7 @@ import { InfoTip } from "@/app/components/InfoTip";
 import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { filterPlayersByLeagueAndClub, getFormMinutes, uniqueFilterOptions } from "@/lib/filter-players";
-import { formatReturnInfo, formatInjuryDuration, getLeistungsdatenUrl } from "@/lib/format";
+import { formatReturnInfo, formatInjuryDuration, getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
 import type { MinutesValuePlayer, InjuryMap } from "@/app/types";
 
 type SortKey = "value" | "mins" | "games" | "ga" | "pen" | "miss";
@@ -96,7 +96,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
   const recentGA = isRecent ? getFormGA(player, formWindow, includePen) : null;
   const displayMinutes = isRecent ? getFormMinutes(player, formWindow) : player.minutes;
   const injuryInfo = injuryMap?.[player.playerId];
-  const benchmarkHref = `/value-analysis?${new URLSearchParams({ id: player.playerId, name: player.name })}`;
+  const detailHref = getPlayerDetailHref(player.playerId);
 
   let nationalityDisplay: ReactNode = null;
   if (player.nationalityFlagUrl) {
@@ -165,7 +165,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <Link
-              href={benchmarkHref}
+              href={detailHref}
               className="font-semibold text-sm hover:underline truncate transition-colors text-left text-text-primary"
             >
               {player.name}

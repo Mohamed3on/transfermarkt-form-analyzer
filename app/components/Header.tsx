@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Menu, HelpCircle } from "lucide-react";
+import { PlayerSearch } from "./PlayerSearch";
 
 const PAGE_CACHE_MAP: Record<string, { tags?: string[]; workflow?: boolean }> = {
   "/form": { tags: ["form-analysis"] },
@@ -70,7 +71,7 @@ function SpinnerIcon({ className }: { className?: string }) {
 }
 
 const navItems = [
-  { href: "/", label: "Home" },
+  { href: "/", label: "Home", desktopHidden: true },
   { href: "/form", label: "Recent Form" },
   { href: "/expected-position", label: "Value vs Table" },
   { href: "/players", label: "Players" },
@@ -118,8 +119,8 @@ export function Header() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-1 lg:flex">
-          {navItems.map(({ href, label }) => {
+        <nav className="hidden items-center gap-1 xl:flex">
+          {navItems.filter((i) => !("desktopHidden" in i && i.desktopHidden)).map(({ href, label }) => {
             const isActive = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
             return (
               isActive ? (
@@ -150,11 +151,12 @@ export function Header() {
 
         {/* Right side */}
         <div className="flex items-center gap-2 sm:gap-3">
+          <PlayerSearch />
           <Button
             asChild
             variant="ghost"
             size="sm"
-            className="hidden h-auto p-2 text-text-muted hover:text-text-primary lg:inline-flex"
+            className="hidden h-auto p-2 text-text-muted hover:text-text-primary xl:inline-flex"
           >
             <Link href="/how-it-works" aria-label="How it works">
               <HelpCircle className="h-4 w-4" />
@@ -166,17 +168,17 @@ export function Header() {
             aria-label={isRevalidating ? "Refreshing data" : "Refresh data"}
             variant={isRevalidating ? "secondary" : "default"}
             size="sm"
-            className="h-auto p-2 lg:px-4 lg:py-2"
+            className="h-auto p-2 xl:px-4 xl:py-2"
           >
             {isRevalidating ? (
               <>
                 <SpinnerIcon className="h-4 w-4" />
-                <span className="hidden lg:inline">Refreshing Data…</span>
+                <span className="hidden xl:inline">Refreshing Data…</span>
               </>
             ) : (
               <>
                 <RefreshIcon className="h-4 w-4" />
-                <span className="hidden lg:inline">Refresh Data</span>
+                <span className="hidden xl:inline">Refresh Data</span>
               </>
             )}
           </Button>
@@ -187,7 +189,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 text-text-primary lg:hidden"
+                className="h-9 w-9 p-0 text-text-primary xl:hidden"
                 aria-label="Open menu"
               >
                 <Menu className="h-5 w-5" />

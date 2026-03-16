@@ -20,7 +20,7 @@ import { applyStatsToggles, getMinutesValueData, toPlayerStats } from "@/lib/fet
 import { findValueCandidates } from "@/lib/value-analysis";
 import { getInjuredPlayers } from "@/lib/injured";
 import { missedPct, getFormMinutes, getFormNpga } from "@/lib/filter-players";
-import { formatMarketValue } from "@/lib/format";
+import { formatMarketValue, getPlayerDetailHref, getPlayerIdFromProfileUrl } from "@/lib/format";
 import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { getManagerInfo } from "@/lib/fetch-manager";
 import type { AggregatedTeam, ManagerInfo, MarketValueMover, MinutesValuePlayer } from "@/app/types";
@@ -70,6 +70,7 @@ interface SnapshotItem {
   secondaryImageUrl?: string;
   imageContain?: boolean;
   profileUrl?: string;
+  playerId?: string;
   manager?: ManagerInfo;
   tone?: SnapshotTone;
 }
@@ -194,7 +195,11 @@ function SnapshotItemRow({
         </div>
         <div className="min-w-0 flex-1">
           <p className={`text-[11px] uppercase tracking-[0.12em] ${toneStyles ? toneStyles.label : "text-text-muted"}`}>{item.label}</p>
-          {item.profileUrl ? (
+          {item.playerId ? (
+            <Link href={getPlayerDetailHref(item.playerId)} className={`truncate font-semibold leading-tight text-text-primary hover:underline ${!isHero ? "mt-0.5 text-sm" : ""} block`}>
+              {item.value}
+            </Link>
+          ) : item.profileUrl ? (
             <a href={item.profileUrl.startsWith("http") ? item.profileUrl : `https://www.transfermarkt.com${item.profileUrl}`} target="_blank" rel="noopener noreferrer" className={`truncate font-semibold leading-tight text-text-primary hover:underline ${!isHero ? "mt-0.5 text-sm" : ""} block`}>
               {item.value}
             </a>
@@ -292,7 +297,7 @@ function teamItem(
 }
 
 function playerItem(
-  player: { name: string; imageUrl: string; clubLogoUrl: string; profileUrl: string },
+  player: { name: string; imageUrl: string; clubLogoUrl: string; profileUrl: string; playerId?: string },
   label: string,
   href: string,
   detail: string,
@@ -301,7 +306,10 @@ function playerItem(
   return {
     label, value: player.name, detail, href,
     imageUrl: player.imageUrl, secondaryImageUrl: player.clubLogoUrl,
-    profileUrl: player.profileUrl, metrics: opts?.metrics, tone: opts?.tone,
+    profileUrl: player.profileUrl,
+    playerId: player.playerId || getPlayerIdFromProfileUrl(player.profileUrl) || undefined,
+    metrics: opts?.metrics,
+    tone: opts?.tone,
   };
 }
 
@@ -869,6 +877,7 @@ export default async function Home() {
         href: `/biggest-movers?tab=${tab}`,
         imageUrl: latest.imageUrl,
         secondaryImageUrl: latest.clubLogoUrl,
+        playerId: latest.playerId,
         profileUrl: latest.profileUrl,
         tone,
       });

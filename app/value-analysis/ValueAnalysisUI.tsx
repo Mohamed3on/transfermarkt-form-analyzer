@@ -18,7 +18,7 @@ import { LeagueBadge } from "@/components/LeagueBadge";
 import { VirtualList } from "@/components/VirtualList";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES, missedPct, uniqueFilterOptions } from "@/lib/filter-players";
 import { countComparisons, MIN_COMPARISON_COUNT } from "@/lib/value-analysis";
-import { formatReturnInfo, formatInjuryDuration, formatMarketValue, getLeistungsdatenUrl } from "@/lib/format";
+import { formatReturnInfo, formatInjuryDuration, formatMarketValue, getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
 import { normalizeForSearch } from "@/lib/normalize";
 import { effectivePosition, strictlyOutperforms, canBeUnderperformerAgainst, canBeOutperformerAgainst } from "@/lib/positions";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
@@ -36,12 +36,6 @@ type DiscoveryTab = "overpriced" | "bargains";
 type DiscoveryCandidate = PlayerStats & { comparisonCount: number };
 
 const EMPTY_MV: MinutesValuePlayer[] = [];
-
-function getPlayerBenchmarkHref(id: string, name: string, top5?: boolean): string {
-  const p = new URLSearchParams({ id, name });
-  if (top5) p.set("bTop5", "1");
-  return `/value-analysis?${p.toString()}`;
-}
 
 
 function computeBenchmark(players: PlayerStats[], id: string, name: string) {
@@ -85,7 +79,7 @@ function TargetPlayerCard({ player, minutes }: { player: PlayerStats; minutes?: 
     <BenchmarkCard
       name={player.name}
       imageUrl={player.imageUrl}
-      href={getLeistungsdatenUrl(player.profileUrl)}
+      href={getPlayerDetailHref(player.playerId)}
       subtitle={<PlayerSubtitle {...player} />}
       desktopStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} games</span><span className="text-text-secondary">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.matches} games</span><span className="text-text-secondary">Age {player.age}</span></>}
@@ -154,8 +148,8 @@ function PlayerCard({ index = 0, theme, name, imageUrl, profileUrl, nameElement,
   );
 }
 
-function ComparisonCard({ player, targetPlayer, index = 0, variant, top5 }: {
-  player: PlayerStats; targetPlayer: PlayerStats; index?: number; variant: ComparisonCardVariant; top5?: boolean;
+function ComparisonCard({ player, targetPlayer, index = 0, variant }: {
+  player: PlayerStats; targetPlayer: PlayerStats; index?: number; variant: ComparisonCardVariant;
 }) {
   const theme = CARD_THEMES[variant === "underperformer" ? "cold" : "hot"];
   const mutedColor = variant === "underperformer" ? "var(--accent-cold-muted)" : "var(--accent-hot-muted)";
@@ -182,7 +176,7 @@ function ComparisonCard({ player, targetPlayer, index = 0, variant, top5 }: {
       imageUrl={player.imageUrl}
       profileUrl={leistungsdatenUrl}
       nameElement={
-        <Link href={getPlayerBenchmarkHref(player.playerId, player.name, top5)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors text-text-primary">
+        <Link href={getPlayerDetailHref(player.playerId)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors text-text-primary">
           {player.name}
         </Link>
       }
@@ -218,8 +212,8 @@ function ComparisonCard({ player, targetPlayer, index = 0, variant, top5 }: {
 
 
 
-function DiscoveryListCard({ player, index = 0, top5, variant, pointsLabel = "G+A" }: {
-  player: DiscoveryCandidate; index?: number; top5?: boolean; variant: DiscoveryTab; pointsLabel?: string;
+function DiscoveryListCard({ player, index = 0, variant, pointsLabel = "G+A" }: {
+  player: DiscoveryCandidate; index?: number; variant: DiscoveryTab; pointsLabel?: string;
 }) {
   const isOverpriced = variant === "overpriced";
   const theme = isOverpriced ? CARD_THEMES.cold : CARD_THEMES.green;
@@ -235,7 +229,7 @@ function DiscoveryListCard({ player, index = 0, top5, variant, pointsLabel = "G+
       imageUrl={player.imageUrl}
       profileUrl={getLeistungsdatenUrl(player.profileUrl)}
       nameElement={
-        <Link href={getPlayerBenchmarkHref(player.playerId, player.name, top5)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors text-text-primary">
+        <Link href={getPlayerDetailHref(player.playerId)} className="font-semibold text-sm sm:text-base hover:underline truncate transition-colors text-text-primary">
           {player.name}
         </Link>
       }
@@ -405,7 +399,7 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
       {filteredCandidates.length > 0 && (
         <div className="space-y-3">
           {filteredCandidates.map((player, index) => (
-            <DiscoveryListCard key={player.playerId} player={player} index={index} top5={isTop5} variant={variant} pointsLabel={pointsLabel} />
+            <DiscoveryListCard key={player.playerId} player={player} index={index} variant={variant} pointsLabel={pointsLabel} />
           ))}
         </div>
       )}
@@ -422,7 +416,7 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
     <BenchmarkCard
       name={player.name}
       imageUrl={player.imageUrl}
-      href={getLeistungsdatenUrl(player.profileUrl)}
+      href={getPlayerDetailHref(player.playerId)}
       subtitle={<PlayerSubtitle {...player} />}
       desktopStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.totalMatches} games</span><span className="text-text-secondary">Age {player.age}</span></>}
       mobileStats={<><span className="tabular-nums">{player.goals}G</span><span className="tabular-nums">{player.assists}A</span><span className="tabular-nums">{player.totalMatches} games</span><span className="text-text-secondary">Age {player.age}</span></>}
@@ -788,7 +782,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                     ) : (
                       <div className="space-y-3">
                         {filteredUnderperformers.map((player, index) => (
-                          <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="underperformer" index={index} top5={benchTop5Only} />
+                          <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="underperformer" index={index} />
                         ))}
                       </div>
                     )}
@@ -814,7 +808,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                     ) : (
                       <div className="space-y-3">
                         {filteredOutperformers.map((player, index) => (
-                          <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="outperformer" index={index} top5={benchTop5Only} />
+                          <ComparisonCard key={player.playerId} player={player} targetPlayer={gaData!.targetPlayer} variant="outperformer" index={index} />
                         ))}
                       </div>
                     )}

@@ -25,6 +25,38 @@ const DEFENSIVE_POSITIONS = new Set<string>([
   "Right Wing-Back",
 ]);
 
+export type BroadPositionGroup = "forwards" | "midfielders" | "defenders";
+
+const BROAD_POSITION_MAP: Record<string, BroadPositionGroup> = {
+  "Centre-Forward": "forwards",
+  "Left Winger": "forwards",
+  "Right Winger": "forwards",
+  "Second Striker": "forwards",
+  "Attacking Midfield": "midfielders",
+  "Central Midfield": "midfielders",
+  "Defensive Midfield": "midfielders",
+  "Left Wing-Back": "defenders",
+  "Right Wing-Back": "defenders",
+  "Left-Back": "defenders",
+  "Right-Back": "defenders",
+  "Centre-Back": "defenders",
+  "Goalkeeper": "defenders",
+};
+
+export function getBroadPositionGroup(position: string): BroadPositionGroup {
+  return BROAD_POSITION_MAP[position] ?? "midfielders";
+}
+
+const BROAD_POSITION_LABELS: Record<BroadPositionGroup, string> = {
+  forwards: "Forwards",
+  midfielders: "Midfielders",
+  defenders: "Defenders",
+};
+
+export function getBroadPositionLabel(position: string): string {
+  return BROAD_POSITION_LABELS[getBroadPositionGroup(position)];
+}
+
 /** Effective position — prefers the most-played position this season over the registered position. */
 export function effectivePosition(p: { playedPosition?: string; position: string }): string {
   return p.playedPosition || p.position;

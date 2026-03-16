@@ -37,7 +37,7 @@ const CEAPI_HEADERS = {
 };
 
 /** Domestic league competition ID → display name */
-const LEAGUE_NAMES: Record<string, string> = {
+export const LEAGUE_NAMES: Record<string, string> = {
   GB1: "Premier League",
   ES1: "LaLiga",
   L1: "Bundesliga",
@@ -64,7 +64,18 @@ function currentSeasonId(): number {
 }
 
 interface CeapiGame {
-  gameInformation: { seasonId: number; competitionTypeId: number; competitionId: string; date?: { dateTimeUTC?: string } };
+  gameInformation: {
+    gameId?: string;
+    seasonId: number;
+    competitionTypeId: number;
+    competitionId: string;
+    gameDay?: number;
+    date?: { dateTimeUTC?: string };
+  };
+  clubsInformation?: {
+    club?: { venue?: "home" | "away"; goalsTotal?: number | null; opponentGoalsTotal?: number | null };
+    opponent?: { clubId?: string };
+  };
   statistics: {
     generalStatistics: { positionId?: number | null; participationState?: string | null };
     goalStatistics: { goalsScoredTotal?: number | null; assists?: number | null; penaltyShooterGoalsScored?: number | null; penaltyShooterMisses?: number | null };
@@ -136,8 +147,22 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
       if (mins > 0) {
         appearances++;
         recentDomestic.push({
-          goals: gls, assists: ast, penaltyGoals: pGoals, minutes: mins,
+          goals: gls,
+          assists: ast,
+          penaltyGoals: pGoals,
+          minutes: mins,
           date: g.gameInformation.date?.dateTimeUTC?.slice(0, 10) ?? "",
+          gameId: g.gameInformation.gameId,
+          gameDay: g.gameInformation.gameDay,
+          competitionId: g.gameInformation.competitionId,
+          competitionName: LEAGUE_NAMES[g.gameInformation.competitionId],
+          venue: g.clubsInformation?.club?.venue,
+          teamGoals: g.clubsInformation?.club?.goalsTotal ?? undefined,
+          opponentGoals: g.clubsInformation?.club?.opponentGoalsTotal ?? undefined,
+          opponentClubId: g.clubsInformation?.opponent?.clubId,
+          matchReportUrl: g.gameInformation.gameId
+            ? `${BASE_URL}/spielbericht/index/spielbericht/${g.gameInformation.gameId}`
+            : undefined,
         });
       }
       if (!league && g.gameInformation.competitionTypeId === 1) {

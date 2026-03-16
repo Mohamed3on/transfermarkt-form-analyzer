@@ -228,6 +228,17 @@ export interface RecentGameStats {
   penaltyGoals: number;
   minutes: number;
   date: string;
+  gameId?: string;
+  gameDay?: number;
+  competitionId?: string;
+  competitionName?: string;
+  venue?: "home" | "away";
+  teamGoals?: number;
+  opponentGoals?: number;
+  opponentClubId?: string;
+  opponentName?: string;
+  opponentLogoUrl?: string;
+  matchReportUrl?: string;
 }
 
 export interface PlayerStatsResult {
