@@ -33,14 +33,14 @@ function rankColor(rank: number, total: number): string {
   if (pct <= 0.05) return "text-emerald-400";
   if (pct <= 0.15) return "text-sky-400";
   if (pct <= 0.40) return "text-text-primary";
-  return "text-text-muted";
+  return "text-text-secondary";
 }
 
 function RankBadge({ rank, total, className }: { rank: number; total: number; className?: string }) {
   return (
     <span className={`font-value ${rankColor(rank, total)} ${className ?? ""}`}>
       {rank === 1 && <Crown className="mr-0.5 inline h-3 w-3" />}
-      {rank > 1 && rank <= 3 && <Medal className="mr-0.5 inline h-3 w-3 opacity-60" />}
+      {rank > 1 && rank <= 3 && <Medal className="mr-0.5 inline h-3 w-3" />}
       #{rank}
     </span>
   );
@@ -282,10 +282,10 @@ function RecentMatchCard({
             </p>
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-text-secondary">
               {venueLabel && (
-                <span className={match.venue === "home" ? "text-amber-400/80" : "text-sky-400/80"}>{venueLabel}</span>
+                <span className={match.venue === "home" ? "text-amber-400" : "text-sky-400"}>{venueLabel}</span>
               )}
               {venueLabel && <span className="opacity-40">·</span>}
-              <span className={`font-value ${match.minutes >= 70 ? "text-emerald-400/90" : match.minutes >= 45 ? "text-text-primary" : "text-text-muted"}`}>{match.minutes}&apos;</span>
+              <span className={`font-value ${match.minutes >= 70 ? "text-emerald-400" : match.minutes >= 45 ? "text-text-primary" : "text-text-secondary"}`}>{match.minutes}&apos;</span>
               {positionLabel && <><span className="opacity-40">·</span><span>{positionLabel}</span></>}
             </div>
           </div>

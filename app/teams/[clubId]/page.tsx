@@ -387,12 +387,12 @@ export default async function TeamDetailPage({
                           const fromBottom = totalTeams - r + 1;
                           const isTop = r <= 3;
                           const isBottom = fromBottom <= 3;
-                          const color = isTop ? "text-emerald-400" : isBottom ? "text-red-400/70" : "text-text-muted";
+                          const color = isTop ? "text-emerald-400" : isBottom ? "text-red-400" : "text-text-secondary";
                           const label = r === 1 ? "best" : fromBottom === 1 ? "worst" : isTop ? ordinal(r) : isBottom ? `${ordinal(fromBottom)} worst` : `#${r}`;
                           return (
-                            <span className={`ml-1.5 text-[10px] ${color}`}>
+                            <span className={`ml-1.5 text-[11px] ${color}`}>
                               {r === 1 && <Crown className="mr-0.5 inline h-2.5 w-2.5" />}
-                              {isTop && r > 1 && <Medal className="mr-0.5 inline h-2.5 w-2.5 opacity-60" />}
+                              {isTop && r > 1 && <Medal className="mr-0.5 inline h-2.5 w-2.5" />}
                               {isBottom && <TriangleAlert className="mr-0.5 inline h-2.5 w-2.5" />}
                               {label}
                             </span>
