@@ -253,23 +253,23 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
       </div>
 
       {/* Mobile stat tray */}
-      <div className="sm:hidden mt-2 bg-elevated rounded-lg px-2.5 py-1.5 flex items-baseline gap-x-2.5 gap-y-1 flex-wrap text-xs font-value text-text-secondary">
+      <div className="sm:hidden mt-2 bg-elevated rounded-lg px-2.5 py-2 flex items-baseline gap-x-2.5 gap-y-1 flex-wrap font-value">
         {recentGA && (
-          <span className="text-sm text-accent-hot">{recentGA.total} <span className="text-[10px] text-accent-hot/60">L{formWindow}</span></span>
+          <span className="text-sm text-accent-hot">{recentGA.total} <span className="text-[11px] text-accent-hot/60">last {formWindow}</span></span>
         )}
-        <span className={`text-sm ${!recentGA ? "text-accent-hot" : ""}`}>{seasonGA.total} <span className="text-[10px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
+        <span className={`text-sm ${!recentGA ? "text-accent-hot" : ""}`}>{seasonGA.total} <span className="text-[11px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
         <span className="text-sm text-accent-blue">{player.marketValueDisplay}</span>
-        <span>{player.age}y</span>
-        {!recentGA && <span>{player.totalMatches} games</span>}
-        <span>{displayMinutes.toLocaleString()}&apos;</span>
+        <span className="text-xs text-text-muted">{player.age}y</span>
+        {!recentGA && <span className="text-xs text-text-muted">{player.totalMatches} games</span>}
+        <span className="text-xs text-text-muted">{displayMinutes.toLocaleString()}&apos;</span>
         {showCaps && (player.intlCareerCaps ?? 0) > 0 && (
-          <span>{player.intlCareerCaps} <span className="text-text-muted">caps</span></span>
+          <span className="text-xs text-text-muted">{player.intlCareerCaps} caps</span>
         )}
         {showContract && expiryYear && (
-          <span><span className="text-text-muted">exp</span> {expiryYear}</span>
+          <span className="text-xs text-text-muted">exp {expiryYear}</span>
         )}
         {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
-          <span>{penGoals}/{penAttempts} <span className="text-text-muted">pen</span></span>
+          <span className="text-xs text-text-muted">{penGoals}/{penAttempts} pen</span>
         )}
       </div>
     </div>
