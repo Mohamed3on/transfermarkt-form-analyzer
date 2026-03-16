@@ -11,7 +11,9 @@ export function filterPlayersByLeagueAndClub<T extends { league: string; club: s
   clubFilter: string
 ): T[] {
   return players.filter((player) => {
-    if (leagueFilter !== "all" && player.league !== leagueFilter) return false;
+    if (leagueFilter === "top5") {
+      if (!TOP_5_LEAGUES.includes(player.league)) return false;
+    } else if (leagueFilter !== "all" && player.league !== leagueFilter) return false;
     if (clubFilter !== "all" && clubFilter && player.club !== clubFilter) return false;
     return true;
   });

@@ -14,7 +14,7 @@ import { ExternalLink } from "lucide-react";
 import { InfoTip } from "@/app/components/InfoTip";
 import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
-import { filterPlayersByLeagueAndClub, filterTop5, getFormMinutes, uniqueFilterOptions } from "@/lib/filter-players";
+import { filterPlayersByLeagueAndClub, getFormMinutes, uniqueFilterOptions, TOP_5_LEAGUES } from "@/lib/filter-players";
 import { formatReturnInfo, formatInjuryDuration, getLeistungsdatenUrl } from "@/lib/format";
 import type { MinutesValuePlayer, InjuryMap } from "@/app/types";
 
@@ -203,47 +203,47 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
           </div>
           <div className="w-px h-7 bg-border-subtle" />
           <div className="text-right">
-            <div className="text-sm font-bold tabular-nums text-text-primary">
+            <div className="text-sm font-value text-text-primary">
               {displayMinutes.toLocaleString()}&apos;
             </div>
           </div>
           {showCaps && (
             <div className="text-right">
-              <div className="text-sm font-bold tabular-nums text-text-primary">{player.intlCareerCaps ?? 0}</div>
+              <div className="text-sm font-value text-text-primary">{player.intlCareerCaps ?? 0}</div>
               <div className="text-xs text-text-secondary">intl caps</div>
             </div>
           )}
           {showContract && expiryYear && (
             <div className="text-right">
-              <div className="text-sm font-bold tabular-nums text-text-primary">{expiryYear}</div>
+              <div className="text-sm font-value text-text-primary">{expiryYear}</div>
               <div className="text-xs text-text-secondary">expires</div>
             </div>
           )}
           {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
-            <div className="text-right min-w-[3rem]">
-              <div className="text-sm font-bold tabular-nums text-text-primary">{penGoals}/{penAttempts}</div>
+            <div className="text-right min-w-12">
+              <div className="text-sm font-value text-text-primary">{penGoals}/{penAttempts}</div>
               <div className="text-xs text-text-secondary">pen conv. {Math.round(penGoals / penAttempts * 100)}%</div>
             </div>
           )}
           {sortBy === "miss" && (
             <div className="text-right">
-              <div className="text-sm font-bold tabular-nums text-text-primary">{penMisses}</div>
+              <div className="text-sm font-value text-text-primary">{penMisses}</div>
               <div className="text-xs text-text-secondary">missed</div>
             </div>
           )}
           <div className="w-px h-7 bg-border-subtle" />
           <div className="flex items-center gap-2.5 text-right">
             <div>
-              <div className="text-sm font-bold tabular-nums text-text-primary">{player.totalMatches}</div>
+              <div className="text-sm font-value text-text-primary">{player.totalMatches}</div>
               <div className="text-xs text-text-secondary">games</div>
             </div>
             <div>
-              <div className="text-sm font-bold tabular-nums text-text-primary">{seasonGA.total}</div>
+              <div className="text-sm font-value text-text-primary">{seasonGA.total}</div>
               <div className="text-xs tabular-nums text-text-secondary">{seasonGA.goals}G {seasonGA.assists}A</div>
             </div>
             {recentGA && (
               <div>
-                <div className="text-sm font-bold tabular-nums text-accent-hot">{recentGA.total}</div>
+                <div className="text-sm font-value text-accent-hot">{recentGA.total}</div>
                 <div className="text-xs tabular-nums text-accent-hot/50">{recentGA.goals}G {recentGA.assists}A</div>
               </div>
             )}
@@ -253,23 +253,23 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
       </div>
 
       {/* Mobile stat tray */}
-      <div className="sm:hidden mt-2 bg-elevated rounded-lg px-2.5 py-1.5 flex items-baseline gap-2.5 flex-wrap text-xs font-value text-text-secondary">
+      <div className="sm:hidden mt-2 bg-elevated rounded-lg px-2.5 py-2 flex items-baseline gap-x-2.5 gap-y-1 flex-wrap font-value">
         {recentGA && (
-          <span className="text-base text-accent-hot">{recentGA.total} <span className="text-[10px] text-accent-hot/60">last {formWindow} games</span></span>
+          <span className="text-sm text-accent-hot">{recentGA.total} <span className="text-[11px] text-accent-hot/60">last {formWindow}</span></span>
         )}
-        <span className={recentGA ? "text-sm" : "text-base text-accent-hot"}>{seasonGA.total} <span className="text-[10px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
+        <span className={`text-sm ${!recentGA ? "text-accent-hot" : ""}`}>{seasonGA.total} <span className="text-[11px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
         <span className="text-sm text-accent-blue">{player.marketValueDisplay}</span>
-        <span>{player.age}y</span>
-        <span>{player.totalMatches} games</span>
-        <span>{displayMinutes.toLocaleString()}&apos;</span>
+        <span className="text-xs text-text-muted">{player.age}y</span>
+        {!recentGA && <span className="text-xs text-text-muted">{player.totalMatches} games</span>}
+        <span className="text-xs text-text-muted">{displayMinutes.toLocaleString()}&apos;</span>
         {showCaps && (player.intlCareerCaps ?? 0) > 0 && (
-          <span>{player.intlCareerCaps} intl caps</span>
+          <span className="text-xs text-text-muted">{player.intlCareerCaps} caps</span>
         )}
         {showContract && expiryYear && (
-          <span>expires {expiryYear}</span>
+          <span className="text-xs text-text-muted">exp {expiryYear}</span>
         )}
         {(sortBy === "pen" || sortBy === "miss" || includePen) && penAttempts > 0 && (
-          <span>{penGoals}/{penAttempts} pen</span>
+          <span className="text-xs text-text-muted">{penGoals}/{penAttempts} pen</span>
         )}
       </div>
     </div>
@@ -328,13 +328,12 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
   const sortBy = parseSortKey(params.get("sort"));
   const sortAsc = params.get("dir") === "asc";
   const formWindow = parseFormWindow(params.get("fw"));
-  const leagueFilter = params.get("league") || "all";
+  const leagueFilter = params.get("league") || (params.get("top5") === "1" ? "top5" : "all");
   const clubFilter = params.get("club") || "all";
   const nationalityFilter = params.get("nat") || "all";
   const positionFilter = params.get("pos") || "";
   const activeCategory = getPositionCategory(positionFilter);
   const specificPosition = activeCategory && !POSITION_CATEGORIES[positionFilter] ? positionFilter : null;
-  const top5Only = params.get("top5") === "1";
   const signingFilter = parseSigningFilter(params.get("signing"));
   const includePen = params.get("pen") === "1";
   const includeIntl = params.get("intl") === "1";
@@ -377,7 +376,18 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
     }));
   }, [rawPlayers, includeIntl]);
 
-  const leagueOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.league, "All leagues"), [players]);
+  const leagueGroups = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of players) if (p.league) counts.set(p.league, (counts.get(p.league) ?? 0) + 1);
+    const byCount = (a: string, b: string) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0);
+    const top5 = [...counts.keys()].filter((l) => TOP_5_LEAGUES.includes(l)).sort(byCount);
+    const other = [...counts.keys()].filter((l) => !TOP_5_LEAGUES.includes(l)).sort(byCount);
+    return [
+      { options: [{ value: "all", label: "All leagues" }, { value: "top5", label: "Top 5 leagues" }] },
+      ...(top5.length ? [{ heading: "Top 5", options: top5.map((l) => ({ value: l, label: l })) }] : []),
+      ...(other.length ? [{ heading: "Other", options: other.map((l) => ({ value: l, label: l })) }] : []),
+    ];
+  }, [players]);
   const nationalityOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.nationality, "All nationalities"), [players]);
   const clubOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.club, "All clubs"), [players]);
 
@@ -390,18 +400,16 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
 
   const signingCounts = useMemo(() => {
     let base = filterPlayersByLeagueAndClub(players, leagueFilter, clubFilter);
-    if (top5Only) base = filterTop5(base);
     if (nationalityFilter !== "all") base = base.filter((p) => p.nationality === nationalityFilter);
     if (positionFilter) base = base.filter((p) => matchesPositionFilter(p, positionFilter));
     return {
       newSignings: base.filter((p) => p.isNewSigning).length,
       loans: base.filter((p) => p.isOnLoan).length,
     };
-  }, [players, leagueFilter, clubFilter, top5Only, nationalityFilter, positionFilter]);
+  }, [players, leagueFilter, clubFilter, nationalityFilter, positionFilter]);
 
   const sortedPlayers = useMemo(() => {
     let list = filterPlayersByLeagueAndClub(players, leagueFilter, clubFilter);
-    if (top5Only) list = filterTop5(list);
     if (nationalityFilter !== "all") list = list.filter((p) => p.nationality === nationalityFilter);
     if (positionFilter !== "all") list = list.filter((p) => matchesPositionFilter(p, positionFilter));
     if (signingFilter === "transfer") list = list.filter((p) => p.isNewSigning);
@@ -431,7 +439,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
       }
       return sortAsc ? -diff : diff;
     });
-  }, [players, sortBy, sortAsc, leagueFilter, clubFilter, nationalityFilter, positionFilter, top5Only, signingFilter, includePen, excludeCurrentIntl, minCaps, maxCaps, minAge, maxAge, contractYear, formWindow]);
+  }, [players, sortBy, sortAsc, leagueFilter, clubFilter, nationalityFilter, positionFilter, signingFilter, includePen, excludeCurrentIntl, minCaps, maxCaps, minAge, maxAge, contractYear, formWindow]);
 
   return (
     <>
@@ -454,72 +462,74 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           </div>
 
           {/* Sort */}
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-5">
-            <div className="flex items-center gap-2 w-max">
-              <InfoTip>
-                <p><strong>Value</strong> — market value (Transfermarkt estimate)</p>
-                <p className="mt-1"><strong>Mins</strong> — total minutes played this season</p>
-                <p className="mt-1"><strong>Games</strong> — total matches this season</p>
-                <p className="mt-1"><strong>G+A / npG+A</strong> — goals + assists. &ldquo;np&rdquo; means non-penalty (excl. penalty goals) for a truer picture of open-play output</p>
-                <p className="mt-1"><strong>Pen</strong> — penalty goals scored</p>
-                <p className="mt-1"><strong>Miss</strong> — penalties missed</p>
-              </InfoTip>
-              <ToggleGroup
-                type="single"
-                value={sortBy}
-                onValueChange={(value) => {
-                  setIsFiltering(true);
-                  if (!value) { update({ dir: sortAsc ? null : "asc" }); return; }
-                  update({ sort: value === "ga" ? null : value, dir: null, ...(value !== "ga" && { fw: null }) });
-                }}
-                className="rounded-lg overflow-hidden border border-border-subtle"
-              >
-                {(["value", "mins", "games", "ga", "pen", "miss"] as const).map((key) => (
-                  <ToggleGroupItem
-                    key={key}
-                    value={key}
-                    className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
-                  >
-                    {key === "ga" ? pointsLabel : BASE_SORT_LABELS[key]}
-                    {sortBy === key && (
-                      <span className="text-[10px]">{sortAsc ? "▲" : "▼"}</span>
-                    )}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-              {sortBy === "ga" && (
-                <>
-                  <ToggleGroup
-                    type="single"
-                    value={String(formWindow)}
-                    onValueChange={(v) => {
-                      if (!v) return;
-                      setIsFiltering(true);
-                      update({ fw: v === "season" ? null : v });
-                    }}
-                    className="rounded-lg overflow-hidden border border-border-subtle"
-                  >
-                    {(["season", 10, 5] as const).map((w) => (
-                      <ToggleGroupItem
-                        key={w}
-                        value={String(w)}
-                        className="px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
-                      >
-                        {w === "season" ? "Season" : `Last ${w}`}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                  <InfoTip>
-                    <p><strong>Season</strong> — full season totals</p>
-                    <p className="mt-1"><strong>Last 10 / Last 5</strong> — stats from only the player&apos;s most recent matches. Useful for spotting who&apos;s in form right now vs. their season average.</p>
-                  </InfoTip>
-                </>
-              )}
+          <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-center sm:gap-2 sm:overflow-x-auto">
+            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+              <div className="flex items-center gap-2 w-max">
+                <InfoTip>
+                  <p><strong>Value</strong> — market value (Transfermarkt estimate)</p>
+                  <p className="mt-1"><strong>Mins</strong> — total minutes played this season</p>
+                  <p className="mt-1"><strong>Games</strong> — total matches this season</p>
+                  <p className="mt-1"><strong>G+A / npG+A</strong> — goals + assists. &ldquo;np&rdquo; means non-penalty (excl. penalty goals) for a truer picture of open-play output</p>
+                  <p className="mt-1"><strong>Pen</strong> — penalty goals scored</p>
+                  <p className="mt-1"><strong>Miss</strong> — penalties missed</p>
+                </InfoTip>
+                <ToggleGroup
+                  type="single"
+                  value={sortBy}
+                  onValueChange={(value) => {
+                    setIsFiltering(true);
+                    if (!value) { update({ dir: sortAsc ? null : "asc" }); return; }
+                    update({ sort: value === "ga" ? null : value, dir: null, ...(value !== "ga" && { fw: null }) });
+                  }}
+                  className="rounded-lg overflow-hidden border border-border-subtle"
+                >
+                  {(["value", "mins", "games", "ga", "pen", "miss"] as const).map((key) => (
+                    <ToggleGroupItem
+                      key={key}
+                      value={key}
+                      className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                    >
+                      {key === "ga" ? pointsLabel : BASE_SORT_LABELS[key]}
+                      {sortBy === key && (
+                        <span className="text-[10px]">{sortAsc ? "▲" : "▼"}</span>
+                      )}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </div>
             </div>
+            {sortBy === "ga" && (
+              <div className="flex items-center gap-2">
+                <ToggleGroup
+                  type="single"
+                  value={String(formWindow)}
+                  onValueChange={(v) => {
+                    if (!v) return;
+                    setIsFiltering(true);
+                    update({ fw: v === "season" ? null : v });
+                  }}
+                  className="rounded-lg overflow-hidden border border-border-subtle"
+                >
+                  {(["season", 10, 5] as const).map((w) => (
+                    <ToggleGroupItem
+                      key={w}
+                      value={String(w)}
+                      className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                    >
+                      {w === "season" ? "Season" : `Last ${w}`}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+                <InfoTip>
+                  <p><strong>Season</strong> — full season totals</p>
+                  <p className="mt-1"><strong>Last 10 / Last 5</strong> — stats from only the player&apos;s most recent matches. Useful for spotting who&apos;s in form right now vs. their season average.</p>
+                </InfoTip>
+              </div>
+            )}
           </div>
 
           {/* Position */}
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-5">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 mb-5">
             <div className="flex items-center gap-2 w-max">
               <ToggleGroup
                 type="single"
@@ -534,7 +544,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                   <ToggleGroupItem
                     key={key}
                     value={key}
-                    className="px-2.5 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                    className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
                   >
                     {label}
                   </ToggleGroupItem>
@@ -554,7 +564,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                     <ToggleGroupItem
                       key={p}
                       value={p}
-                      className="px-2.5 py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
+                      className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium rounded-none border-0 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
                     >
                       {POS_ABBREV[p] || p}
                     </ToggleGroupItem>
@@ -568,10 +578,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           <div className="flex flex-col gap-3 mb-5">
             {/* Primary filters */}
             <div className="flex flex-wrap items-center gap-2">
-              <Combobox value={leagueFilter} onChange={(v) => { setIsFiltering(true); update({ league: v === "all" ? null : v || null }); }} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
-              <FilterButton active={top5Only} onClick={() => fadeUpdate({ top5: top5Only ? null : "1" })}>
-                Top 5 leagues
-              </FilterButton>
+              <Combobox value={leagueFilter} onChange={(v) => { setIsFiltering(true); update({ league: v === "all" ? null : v || null, top5: null }); }} groups={leagueGroups} placeholder="All leagues" searchPlaceholder="Search leagues..." />
               <Combobox value={clubFilter} onChange={(v) => { setIsFiltering(true); update({ club: v === "all" ? null : v || null }); }} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
               <Combobox value={nationalityFilter} onChange={(v) => { setIsFiltering(true); update({ nat: v === "all" ? null : v || null }); }} options={nationalityOptions} placeholder="All nationalities" searchPlaceholder="Search nationalities..." />
             </div>
@@ -634,7 +641,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           </div>
 
           <div className={isFiltering ? "animate-filter-dim" : ""} onAnimationEnd={() => setIsFiltering(false)}>
-            <VirtualList items={sortedPlayers} estimateSize={110} gap={8} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <PlayerCard player={p} index={i} injuryMap={injuryMap} ctx={{ sortBy, showCaps: minCaps !== null || maxCaps !== null, includePen, showContract: contractYear !== null, formWindow, formGA: (pl) => getFormGA(pl, formWindow, includePen).total }} />} />
+            <VirtualList key={`${sortBy}-${formWindow}-${includePen}`} items={sortedPlayers} estimateSize={110} gap={8} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <PlayerCard player={p} index={i} injuryMap={injuryMap} ctx={{ sortBy, showCaps: minCaps !== null || maxCaps !== null, includePen, showContract: contractYear !== null, formWindow, formGA: (pl) => getFormGA(pl, formWindow, includePen).total }} />} />
           </div>
         </section>
     </>
