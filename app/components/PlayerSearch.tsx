@@ -57,7 +57,7 @@ export function PlayerSearch() {
         if (!r.ok) throw new Error(`Search index returned ${r.status}`);
         return r.json();
       })
-      .then(setIndex)
+      .then((data) => setIndex(Array.isArray(data) ? { players: data, teams: [] } : data))
       .catch((err) => {
         console.error("[PlayerSearch] Failed to load search index:", err);
         fetchedRef.current = false;
