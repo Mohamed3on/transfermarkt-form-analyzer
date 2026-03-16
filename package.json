@@ -10,7 +10,8 @@
     "refresh:minutes-value": "bun run scripts/refresh-minutes-value.ts",
     "refresh:biggest-movers": "bun run scripts/refresh-biggest-movers.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepare": "husky"
   },
   "dependencies": {
     "@playwright/test": "^1.58.2",
@@ -43,9 +44,14 @@
     "@types/react-dom": "^19",
     "eslint": "^9.39.2",
     "eslint-config-next": "^15.5.12",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "shadcn": "^3.8.5",
     "tailwindcss": "^4",
     "typescript": "5.9.3",
     "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": "eslint --max-warnings 0"
   }
 }
