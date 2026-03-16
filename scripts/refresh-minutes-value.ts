@@ -164,6 +164,7 @@ function mergeStats(players: MinutesValuePlayer[], cache: Cache): void {
     if (s.contractExpiry) p.contractExpiry = s.contractExpiry;
     if (s.playedPosition) p.playedPosition = s.playedPosition;
     if (s.recentForm?.length) p.recentForm = s.recentForm;
+    if (s.positionStats?.length) p.positionStats = s.positionStats;
     if (s.marketValue) { p.marketValue = s.marketValue; p.marketValueDisplay = s.marketValueDisplay; }
     if (s.age) p.age = s.age;
 
