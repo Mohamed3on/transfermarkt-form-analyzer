@@ -196,7 +196,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
             return (
               <Link
                 key={player.profileUrl || player.name}
-                href={detailHref || player.profileUrl}
+                href={detailHref || `https://www.transfermarkt.com${player.profileUrl}`}
                 target={detailHref ? undefined : "_blank"}
                 rel={detailHref ? undefined : "noopener noreferrer"}
                 className="flex items-center gap-2.5 py-2 first:pt-0 last:pb-0"
@@ -227,7 +227,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
             return (
               <Link
                 key={player.profileUrl || player.name}
-                href={detailHref || player.profileUrl}
+                href={detailHref || `https://www.transfermarkt.com${player.profileUrl}`}
                 target={detailHref ? undefined : "_blank"}
                 rel={detailHref ? undefined : "noopener noreferrer"}
                 className="flex items-center gap-3 px-3 py-2 hover:bg-card-hover transition-colors duration-150 odd:bg-elevated/40"
@@ -280,7 +280,7 @@ function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; ra
             return (
               <Link
                 key={player.profileUrl || player.name}
-                href={detailHref || player.profileUrl}
+                href={detailHref || `https://www.transfermarkt.com${player.profileUrl}`}
                 target={detailHref ? undefined : "_blank"}
                 rel={detailHref ? undefined : "noopener noreferrer"}
                 className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] sm:text-xs hover:bg-card-hover transition-colors duration-150 bg-elevated border border-border-subtle"

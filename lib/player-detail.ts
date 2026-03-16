@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import type { InjuredPlayer, MarketValueMover, MinutesValuePlayer, PlayerStats } from "@/app/types";
 import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { applyStatsToggles, getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
-import { getFormMinutes, getFormNpga, getFormStats, missedPct } from "@/lib/filter-players";
+import { getFormStats, missedPct } from "@/lib/filter-players";
 import { formatMarketValue } from "@/lib/format";
 import { getInjuredPlayers } from "@/lib/injured";
 import { normalizeForSearch } from "@/lib/normalize";
@@ -13,7 +13,6 @@ import {
   effectivePosition,
   getBroadPositionGroup,
   getBroadPositionLabel,
-  getPositionClass,
   strictlyOutperforms,
 } from "@/lib/positions";
 import { MIN_COMPARISON_COUNT, countComparisons } from "@/lib/value-analysis";
