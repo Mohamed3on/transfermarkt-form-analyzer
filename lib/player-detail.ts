@@ -262,10 +262,8 @@ function sortUnderperformers(players: PlayerStats[]): PlayerStats[] {
   );
 }
 
-function stripRecentForm(p: MinutesValuePlayer): MinutesValuePlayer {
-  const slim = { ...p };
-  delete slim.recentForm;
-  return slim;
+function stripRecentForm({ recentForm: _, ...rest }: MinutesValuePlayer): MinutesValuePlayer {
+  return rest;
 }
 
 async function computePlayerDetailData(playerId: string): Promise<PlayerDetailData | null> {
