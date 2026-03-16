@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -518,7 +518,28 @@ export default async function PlayerDetailPage({
   const data = await getPlayerDetailData(playerId);
 
   if (!data) {
-    if (/^\d+$/.test(playerId)) redirect(`https://www.transfermarkt.com/x/profil/spieler/${playerId}`);
+    if (/^\d+$/.test(playerId)) {
+      const url = `https://www.transfermarkt.com/x/profil/spieler/${playerId}`;
+      return (
+        <div className="mx-auto flex min-h-64 max-w-md flex-col items-center justify-center gap-4 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border-subtle bg-elevated">
+            <ArrowUpRight className="h-5 w-5 text-text-muted" />
+          </div>
+          <div>
+            <p className="text-lg font-pixel text-text-primary">Not in tracked dataset</p>
+            <p className="mt-1 text-sm text-text-secondary">Redirecting to Transfermarkt&hellip;</p>
+          </div>
+          <meta httpEquiv="refresh" content={`1;url=${url}`} />
+          <a href={url} className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-elevated px-4 py-2 text-sm text-text-primary transition-colors hover:bg-card-hover">
+            Go now
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </a>
+          <Link href="/players" className="text-xs text-text-muted transition-colors hover:text-text-secondary">
+            ← Back to player explorer
+          </Link>
+        </div>
+      );
+    }
     notFound();
   }
 
