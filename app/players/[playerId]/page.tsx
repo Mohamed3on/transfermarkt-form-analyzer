@@ -59,7 +59,7 @@ function GoalBreakdown({ goals, penaltyGoals }: { goals: number; penaltyGoals: n
 
 function RankCell({ rank, total }: { rank: number; total: number }) {
   return (
-    <td className="px-3 py-2.5 text-right">
+    <td className="px-3 py-2.5 text-right whitespace-nowrap">
       <RankBadge rank={rank} total={total} />
     </td>
   );
@@ -521,6 +521,7 @@ export default async function PlayerDetailPage({
     minutesBenchmark,
     subgroupRankings,
     positionLabel,
+    positionShortLabel,
     positionPeerCount,
     overallCount,
     leagueCount,
@@ -705,21 +706,25 @@ export default async function PlayerDetailPage({
         <div className="space-y-8">
           <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[1.06fr_0.94fr]">
             <SectionPanel title="Rankings">
-              <div className="overflow-hidden rounded-xl border border-border-subtle">
+              <div className="overflow-x-auto rounded-xl border border-border-subtle">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                      <th className="px-3 py-2 text-left font-normal">Metric</th>
+                      <th className="sticky left-0 bg-[var(--bg-card)] px-3 py-2 text-left font-normal">Metric</th>
                       <th className="px-3 py-2 text-right font-normal">Overall</th>
                       <th className="px-3 py-2 text-right font-normal">League</th>
-                      <th className="px-3 py-2 text-right font-normal">Club</th>
-                      <th className="px-3 py-2 text-right font-normal">{positionLabel} ({positionPeerCount})</th>
+                      <th className="hidden sm:table-cell px-3 py-2 text-right font-normal">Club</th>
+                      <th className="px-3 py-2 text-right font-normal whitespace-nowrap">
+                        <span className="sm:hidden">{positionShortLabel}</span>
+                        <span className="hidden sm:inline">{positionLabel}</span>
+                        {" "}({positionPeerCount})
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {RANKING_METRICS.map((m) => (
                       <tr key={m.label} className="border-b border-border-subtle/50 last:border-0">
-                        <td className="px-3 py-2.5">
+                        <td className="sticky left-0 bg-[var(--bg-card)] px-3 py-2.5 whitespace-nowrap">
                           <Link
                             href={`/players${m.sortKey ? `?sort=${m.sortKey}` : ""}`}
                             className="text-text-secondary transition-colors hover:text-text-primary hover:underline"
@@ -730,7 +735,9 @@ export default async function PlayerDetailPage({
                         <RankCell rank={rankings[m.overallKey]} total={overallCount} />
                         <RankCell rank={rankings[m.leagueKey]} total={leagueCount} />
                         <RankCell rank={rankings[m.clubKey]} total={clubCount} />
-                        <RankCell rank={rankings[m.positionKey]} total={positionPeerCount} />
+                        <td className="hidden sm:table-cell px-3 py-2.5 text-right">
+                          <RankBadge rank={rankings[m.positionKey]} total={positionPeerCount} />
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -765,7 +772,7 @@ export default async function PlayerDetailPage({
             </SectionPanel>
 
             <SectionPanel title="Season">
-              <div className="overflow-hidden rounded-xl border border-border-subtle">
+              <div className="overflow-x-auto rounded-xl border border-border-subtle">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
@@ -803,7 +810,7 @@ export default async function PlayerDetailPage({
                 </Link>
               )}
               {player.positionStats && player.positionStats.length > 1 && (
-                <div className="mt-4 overflow-hidden rounded-xl border border-border-subtle">
+                <div className="mt-4 overflow-x-auto rounded-xl border border-border-subtle">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
@@ -844,8 +851,8 @@ export default async function PlayerDetailPage({
             aside={
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 text-[11px] text-text-muted">
-                  <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />Open play</span>
-                  <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-amber-400" />Penalty</span>
+                  <span className="flex items-center gap-1 whitespace-nowrap"><span className="inline-block h-2 w-2 rounded-full bg-emerald-400" /><span className="hidden sm:inline">Open play</span><span className="sm:hidden">OP</span></span>
+                  <span className="flex items-center gap-1 whitespace-nowrap"><span className="inline-block h-2 w-2 rounded-full bg-amber-400" /><span className="hidden sm:inline">Penalty</span><span className="sm:hidden">Pen</span></span>
                 </div>
                 <div className="rounded-full border border-border-subtle bg-black/20 px-3 py-1.5 text-xs text-text-secondary">
                   <span className="font-value text-text-primary">{fallbackMatchCount}</span> matches stored

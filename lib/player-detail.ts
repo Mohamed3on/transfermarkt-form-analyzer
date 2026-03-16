@@ -13,6 +13,7 @@ import {
   effectivePosition,
   getBroadPositionGroup,
   getBroadPositionLabel,
+  getBroadPositionShortLabel,
   strictlyOutperforms,
 } from "@/lib/positions";
 import { MIN_COMPARISON_COUNT, countComparisons } from "@/lib/value-analysis";
@@ -112,6 +113,7 @@ export interface PlayerDetailData {
   clubId: string | null;
   rankings: PlayerRankings;
   positionLabel: string;
+  positionShortLabel: string;
   positionPeerCount: number;
   overallCount: number;
   leagueCount: number;
@@ -261,8 +263,9 @@ function sortUnderperformers(players: PlayerStats[]): PlayerStats[] {
 }
 
 function stripRecentForm(p: MinutesValuePlayer): MinutesValuePlayer {
-  const { recentForm, ...rest } = p;
-  return rest;
+  const slim = { ...p };
+  delete slim.recentForm;
+  return slim;
 }
 
 async function computePlayerDetailData(playerId: string): Promise<PlayerDetailData | null> {
@@ -279,6 +282,7 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
   const clubId = extractClubIdFromLogoUrl(player.clubLogoUrl);
   const playerBroadPosition = getBroadPositionGroup(effectivePosition(player));
   const positionLabel = getBroadPositionLabel(effectivePosition(player));
+  const positionShortLabel = getBroadPositionShortLabel(effectivePosition(player));
 
   // Single pass to build all player pools
   const clubmates: MinutesValuePlayer[] = [];
@@ -384,6 +388,7 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
     clubId,
     rankings: buildRankings(player, players, leaguePlayers, clubmates, positionPlayers),
     positionLabel,
+    positionShortLabel,
     positionPeerCount: positionPlayers.length,
     overallCount: players.length,
     leagueCount: leaguePlayers.length,

@@ -58,6 +58,17 @@ export function getBroadPositionLabel(position: string): string {
   return BROAD_POSITION_LABELS[getBroadPositionGroup(position)];
 }
 
+const BROAD_POSITION_SHORT: Record<BroadPositionGroup, string> = {
+  forwards: "FWD",
+  midfielders: "MID",
+  defenders: "DEF",
+  goalkeepers: "GK",
+};
+
+export function getBroadPositionShortLabel(position: string): string {
+  return BROAD_POSITION_SHORT[getBroadPositionGroup(position)];
+}
+
 /** Effective position — prefers the most-played position this season over the registered position. */
 export function effectivePosition(p: { playedPosition?: string; position: string }): string {
   return p.playedPosition || p.position;
