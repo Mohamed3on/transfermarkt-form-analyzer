@@ -264,32 +264,21 @@ function DiscoveryListCard({ player, index = 0, top5, variant, pointsLabel = "G+
           <div className="text-xs text-text-secondary">mins</div>
         </div>
       </>}
-      mobileStats={<></>}
+      mobileStats={<>
+        <div className="text-xs font-medium font-value" style={{ color: valueColor }}>{player.marketValueDisplay}</div>
+        <div className="text-xs font-value text-text-primary">{player.points} {pointsLabel}</div>
+      </>}
       footer={<>
-        {/* Mobile: full-width two-row footer with all stats */}
-        <div className="sm:hidden w-full flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            {player.comparisonCount > 0 && (
-              <span className="font-value font-medium" style={{ color: countColor }}>{player.comparisonCount} {countLabel}</span>
-            )}
-            <span className="ml-auto font-value font-medium" style={{ color: valueColor }}>{player.marketValueDisplay}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-value text-text-primary">{player.points} G+A</span>
-            <span className="tabular-nums text-text-secondary">{player.goals}G</span>
-            <span className="tabular-nums text-text-secondary">{player.assists}A</span>
-            <span className="tabular-nums text-text-secondary">{player.matches} games</span>
-            <span className="tabular-nums text-text-secondary">{player.age}y</span>
-            <span className="ml-auto tabular-nums text-accent-blue">{player.minutes?.toLocaleString() || "—"}&apos;</span>
-          </div>
-        </div>
-        {/* Desktop: single-row footer */}
-        <div className="hidden sm:contents">
-          <span className="tabular-nums text-text-secondary">{player.goals}G</span>
-          <span className="tabular-nums text-text-secondary">{player.assists}A</span>
-          <span className="tabular-nums text-text-secondary">{player.matches} games</span>
-          <LeagueBadge league={player.league} variant="inline" />
-        </div>
+        {/* Mobile footer: comparison count + breakdown stats */}
+        {player.comparisonCount > 0 && (
+          <span className="sm:hidden font-value font-medium text-xs" style={{ color: countColor }}>{player.comparisonCount} {countLabel}</span>
+        )}
+        <span className="tabular-nums text-text-secondary">{player.goals}G</span>
+        <span className="tabular-nums text-text-secondary">{player.assists}A</span>
+        <span className="tabular-nums text-text-secondary">{player.matches} games</span>
+        <span className="sm:hidden tabular-nums text-text-secondary">{player.age}y</span>
+        <span className="sm:hidden ml-auto tabular-nums text-accent-blue">{player.minutes?.toLocaleString() || "—"}&apos;</span>
+        <LeagueBadge league={player.league} variant="inline" />
       </>}
     />
   );
