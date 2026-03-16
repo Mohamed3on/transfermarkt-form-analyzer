@@ -14,6 +14,7 @@ import { formatReturnInfo, formatInjuryDuration, formatMarketValue, formatValueS
 import { useProgressiveFetch } from "@/lib/use-progressive-fetch";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { Combobox } from "@/components/Combobox";
+import { LeagueCombobox } from "@/components/LeagueCombobox";
 import { InfoTip } from "@/app/components/InfoTip";
 import { filterPlayersByLeagueAndClub, uniqueFilterOptions } from "@/lib/filter-players";
 
@@ -377,7 +378,6 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
     return [...initialData.players, ...extraResults.flat()].sort((a, b) => b.marketValueNum - a.marketValueNum);
   }, [initialData.players, extraResults]);
 
-  const leagueOptions = useMemo(() => uniqueFilterOptions(allPlayers, (p) => p.league, "All leagues"), [allPlayers]);
   const clubOptions = useMemo(() => uniqueFilterOptions(allPlayers, (p) => p.club, "All clubs"), [allPlayers]);
 
   const players = useMemo(
@@ -448,7 +448,7 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
-        <Combobox value={leagueFilter} onChange={(v) => update({ league: v === "all" ? null : v || null })} options={leagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
+        <LeagueCombobox players={allPlayers} value={leagueFilter} onChange={(v) => update({ league: v === "all" ? null : v || null })} />
         <Combobox value={clubFilter} onChange={(v) => update({ club: v === "all" ? null : v || null })} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
       </div>
 

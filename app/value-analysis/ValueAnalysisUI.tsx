@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react
 import Link from "next/link";
 import { PlayerAutocomplete } from "@/components/PlayerAutocomplete";
 import { Combobox } from "@/components/Combobox";
+import { LeagueCombobox } from "@/components/LeagueCombobox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ExternalLink } from "lucide-react";
@@ -313,18 +314,6 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
   const accentColor = isOverpriced ? "var(--accent-cold-soft)" : "var(--accent-green)";
   const isTop5 = leagueFilter === "top5";
 
-  const leagueGroups = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const p of candidates) if (p.league) counts.set(p.league, (counts.get(p.league) ?? 0) + 1);
-    const byCount = (a: string, b: string) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0);
-    const top5 = [...counts.keys()].filter((l) => TOP_5_LEAGUES.includes(l)).sort(byCount);
-    const other = [...counts.keys()].filter((l) => !TOP_5_LEAGUES.includes(l)).sort(byCount);
-    return [
-      { options: [{ value: "all", label: "All leagues" }, { value: "top5", label: "Top 5 leagues" }] },
-      ...(top5.length ? [{ heading: "Top 5", options: top5.map((l) => ({ value: l, label: l })) }] : []),
-      ...(other.length ? [{ heading: "Other", options: other.map((l) => ({ value: l, label: l })) }] : []),
-    ];
-  }, [candidates]);
   const clubOptions = useMemo(() => uniqueFilterOptions(candidates, (p) => p.club, "All clubs"), [candidates]);
   const nationalityOptions = useMemo(() => uniqueFilterOptions(candidates, (p) => p.nationality, "All nationalities"), [candidates]);
 
@@ -402,7 +391,7 @@ function DiscoverySection({ variant, candidates, allPlayers, sortBy, onSortChang
         <div className="hidden sm:block w-px h-6 bg-border-subtle" />
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium uppercase tracking-wider text-text-muted">Filter</span>
-          <Combobox value={leagueFilter} onChange={(v) => onFilterChange({ league: v || "all" })} groups={leagueGroups} placeholder="All leagues" searchPlaceholder="Search leagues..." />
+          <LeagueCombobox players={candidates} value={leagueFilter} onChange={(v) => onFilterChange({ league: v || "all" })} />
           <Combobox value={clubFilter || "all"} onChange={(v) => onFilterChange({ club: v === "all" ? "" : v })} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
           <Combobox value={nationalityFilter} onChange={(v) => onFilterChange({ nationality: v || "all" })} options={nationalityOptions} placeholder="All nationalities" searchPlaceholder="Search nationalities..." />
         </div>
@@ -638,7 +627,6 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
   }, [minsSelected, initialData]);
 
   // ── Minutes discovery list ──
-  const minsLeagueOptions = useMemo(() => uniqueFilterOptions(initialData, (p) => p.league, "All leagues"), [initialData]);
   const minsClubOptions = useMemo(() => uniqueFilterOptions(initialData, (p) => p.club, "All clubs"), [initialData]);
 
   const minsDiscoveryList = useMemo(() => {
@@ -977,7 +965,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
 
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4">
                   <span className="hidden sm:inline text-xs font-medium uppercase tracking-wider text-text-muted">Filter</span>
-                  <Combobox value={minsLeagueFilter} onChange={(v) => update({ mLeague: v === "all" ? null : v || null })} options={minsLeagueOptions} placeholder="All leagues" searchPlaceholder="Search leagues..." />
+                  <LeagueCombobox players={initialData} value={minsLeagueFilter} onChange={(v) => update({ mLeague: v === "all" ? null : v || null })} />
                   <Combobox value={minsClubFilter || "all"} onChange={(v) => update({ mClub: v === "all" ? null : v || null })} options={minsClubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
                   <FilterButton active={minsTop5Only} onClick={() => update({ mTop5: minsTop5Only ? null : "1" })}>
                     Top 5

@@ -5,6 +5,7 @@ import { VirtualList } from "@/components/VirtualList";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { NationalityFlag } from "@/components/NationalityFlag";
 import { Combobox } from "@/components/Combobox";
+import { LeagueCombobox } from "@/components/LeagueCombobox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { RangeFilter } from "@/components/RangeFilter";
@@ -14,7 +15,7 @@ import { ExternalLink } from "lucide-react";
 import { InfoTip } from "@/app/components/InfoTip";
 import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
-import { filterPlayersByLeagueAndClub, getFormMinutes, uniqueFilterOptions, TOP_5_LEAGUES } from "@/lib/filter-players";
+import { filterPlayersByLeagueAndClub, getFormMinutes, uniqueFilterOptions } from "@/lib/filter-players";
 import { formatReturnInfo, formatInjuryDuration, getLeistungsdatenUrl } from "@/lib/format";
 import type { MinutesValuePlayer, InjuryMap } from "@/app/types";
 
@@ -376,18 +377,6 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
     }));
   }, [rawPlayers, includeIntl]);
 
-  const leagueGroups = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const p of players) if (p.league) counts.set(p.league, (counts.get(p.league) ?? 0) + 1);
-    const byCount = (a: string, b: string) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0);
-    const top5 = [...counts.keys()].filter((l) => TOP_5_LEAGUES.includes(l)).sort(byCount);
-    const other = [...counts.keys()].filter((l) => !TOP_5_LEAGUES.includes(l)).sort(byCount);
-    return [
-      { options: [{ value: "all", label: "All leagues" }, { value: "top5", label: "Top 5 leagues" }] },
-      ...(top5.length ? [{ heading: "Top 5", options: top5.map((l) => ({ value: l, label: l })) }] : []),
-      ...(other.length ? [{ heading: "Other", options: other.map((l) => ({ value: l, label: l })) }] : []),
-    ];
-  }, [players]);
   const nationalityOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.nationality, "All nationalities"), [players]);
   const clubOptions = useMemo(() => uniqueFilterOptions(players, (p) => p.club, "All clubs"), [players]);
 
@@ -578,7 +567,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
           <div className="flex flex-col gap-3 mb-5">
             {/* Primary filters */}
             <div className="flex flex-wrap items-center gap-2">
-              <Combobox value={leagueFilter} onChange={(v) => { setIsFiltering(true); update({ league: v === "all" ? null : v || null, top5: null }); }} groups={leagueGroups} placeholder="All leagues" searchPlaceholder="Search leagues..." />
+              <LeagueCombobox players={players} value={leagueFilter} onChange={(v) => { setIsFiltering(true); update({ league: v === "all" ? null : v || null, top5: null }); }} />
               <Combobox value={clubFilter} onChange={(v) => { setIsFiltering(true); update({ club: v === "all" ? null : v || null }); }} options={clubOptions} placeholder="All clubs" searchPlaceholder="Search clubs..." />
               <Combobox value={nationalityFilter} onChange={(v) => { setIsFiltering(true); update({ nat: v === "all" ? null : v || null }); }} options={nationalityOptions} placeholder="All nationalities" searchPlaceholder="Search nationalities..." />
             </div>
