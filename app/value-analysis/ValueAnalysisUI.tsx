@@ -934,7 +934,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                           <p className="text-sm mt-1 text-text-muted">No higher-valued players have fewer minutes than {minsSelected.name}</p>
                         </div>
                       ) : (
-                        <VirtualList items={playingLess} estimateSize={130} gap={12} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <MvPlayerCard player={p} target={minsSelected} index={i} variant="less" onSelect={handleMvSelect} injuryMap={injuryMap} />} />
+                        <VirtualList key={minsSelected?.playerId} items={playingLess} estimateSize={130} gap={12} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <MvPlayerCard player={p} target={minsSelected} index={i} variant="less" onSelect={handleMvSelect} injuryMap={injuryMap} />} />
                       )}
                     </TabsContent>
                     <TabsContent value="more">
@@ -944,7 +944,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                           <p className="text-sm mt-1 text-text-muted">No higher-valued players have more minutes than {minsSelected.name}</p>
                         </div>
                       ) : (
-                        <VirtualList items={playingMore} estimateSize={130} gap={12} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <MvPlayerCard player={p} target={minsSelected} index={i} variant="more" onSelect={handleMvSelect} />} />
+                        <VirtualList key={minsSelected?.playerId} items={playingMore} estimateSize={130} gap={12} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <MvPlayerCard player={p} target={minsSelected} index={i} variant="more" onSelect={handleMvSelect} />} />
                       )}
                     </TabsContent>
                   </Tabs>
@@ -989,7 +989,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                   ))}
                 </div>
 
-                <VirtualList items={minsDiscoveryList} estimateSize={130} gap={12} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <MvPlayerCard player={p} index={i} variant="less" onSelect={handleMvSelect} injuryMap={injuryMap} />} />
+                <VirtualList key={`${minsLeagueFilter}-${minsClubFilter}-${minsTop5Only}-${maxMissedPct}`} items={minsDiscoveryList} estimateSize={130} gap={12} keyExtractor={(p) => p.playerId} renderItem={(p, i) => <MvPlayerCard player={p} index={i} variant="less" onSelect={handleMvSelect} injuryMap={injuryMap} />} />
               </section>
             )}
           </>
