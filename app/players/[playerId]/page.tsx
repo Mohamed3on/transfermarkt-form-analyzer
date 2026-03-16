@@ -862,14 +862,14 @@ export default async function PlayerDetailPage({
           <MinutesBenchmarkPanel
             title="Playing less"
             players={minutesBenchmark.playingLess}
-            benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=less`}
+            benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&mode=mins&tab=less`}
             emptyLabel="No same-or-higher value players are playing fewer minutes."
             accentClass="text-accent-cold-soft"
           />
           <MinutesBenchmarkPanel
             title="Playing more"
             players={minutesBenchmark.playingMore}
-            benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=more`}
+            benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&mode=mins&tab=more`}
             emptyLabel="No same-or-higher value players are playing more minutes."
             accentClass="text-accent-hot"
           />
