@@ -383,11 +383,16 @@ export default async function TeamDetailPage({
                       {recentForm.map(({ period, stats, ranks, totalTeams }) => {
                         const games = stats.wins + stats.draws + stats.losses;
                         const ppg = games > 0 ? (stats.points / games).toFixed(2) : "—";
-                        const rankLabel = (r: number) => (
-                          <span className={`ml-1 text-[10px] ${r <= 5 ? "text-emerald-400" : r > totalTeams - 5 ? "text-red-400" : "text-text-muted"}`}>
-                            #{r}
-                          </span>
-                        );
+                        const rankLabel = (r: number) => {
+                          const fromBottom = totalTeams - r + 1;
+                          const isTop = r <= 3;
+                          const isBottom = fromBottom <= 3;
+                          return (
+                            <span className={`ml-1 text-[10px] ${isTop ? "text-emerald-400" : isBottom ? "text-red-400" : "text-text-muted"}`}>
+                              {isBottom ? `↓${ordinal(fromBottom)}` : `#${r}`}
+                            </span>
+                          );
+                        };
                         return (
                           <tr key={period} className="border-b border-border-subtle/50 last:border-0">
                             <td className="px-3 py-2.5 text-text-secondary whitespace-nowrap">Last {period}</td>
