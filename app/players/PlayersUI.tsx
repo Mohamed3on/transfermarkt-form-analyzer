@@ -257,7 +257,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
         {recentGA && (
           <span className="text-base text-accent-hot">{recentGA.total} <span className="text-[10px] text-accent-hot/60">last {formWindow} games</span></span>
         )}
-        <span className={recentGA ? "text-sm" : "text-sm text-accent-hot"}>{seasonGA.total} <span className="text-[10px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
+        <span className={`text-sm ${!recentGA ? "text-accent-hot" : ""}`}>{seasonGA.total} <span className="text-[10px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
         <span className="text-sm text-accent-blue">{player.marketValueDisplay}</span>
         <span>{player.age}y</span>
         <span>{player.totalMatches} games</span>
