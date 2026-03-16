@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import type { TeamFormEntry } from "@/app/types";
 import { Card } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -9,7 +10,7 @@ import { InfoTip } from "@/app/components/InfoTip";
 import { LEAGUES, getLeagueLogoUrl } from "@/lib/leagues";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { RankBadge } from "@/components/RankBadge";
-import { formatValueStr, ordinal } from "@/lib/format";
+import { formatValueStr, getTeamDetailHref, ordinal } from "@/lib/format";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 
 export interface TeamFormResponse {
@@ -101,14 +102,12 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
 
             {/* Team Info */}
             <div className="flex-1 min-w-0">
-              <a
-                href={team.clubUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={getTeamDetailHref(team.clubId)}
                 className="font-semibold text-sm sm:text-base hover:underline block truncate text-text-primary"
               >
                 {team.name}
-              </a>
+              </Link>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <LeagueBadge league={team.league} />
                 {formLeader && (

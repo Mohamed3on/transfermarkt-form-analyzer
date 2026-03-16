@@ -19,7 +19,10 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { PlayerSubtitle } from "@/components/PlayerSubtitle";
 import { ClubLogo } from "@/components/ClubLogo";
-import { PlayerDetailDeck } from "./PlayerDetailDeck";
+import { ComparisonItem } from "@/components/ComparisonItem";
+import { DetailDeck } from "@/components/DetailDeck";
+import { HeroMetric } from "@/components/HeroMetric";
+import { SectionPanel } from "@/components/SectionPanel";
 import type { MinutesValuePlayer, PlayerStats, RecentGameStats } from "@/app/types";
 
 const RANKING_METRICS: Array<{
@@ -69,26 +72,6 @@ function summaryLine({
       : "has a clean value-comparison profile right now";
 
   return `${ordinal(rankings.npgaOverall)} for npG+A in the tracked pool, ${ordinal(rankings.npgaLeague)} in ${league}, and ${ordinal(rankings.npgaClub)} at ${club}. ${comparisonText}.`;
-}
-
-function HeroMetric({
-  label,
-  value,
-  subline,
-  accentClass,
-}: {
-  label: string;
-  value: string;
-  subline: string;
-  accentClass: string;
-}) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">{label}</p>
-      <p className={`mt-1.5 truncate text-2xl font-value leading-none lg:text-xl xl:text-2xl ${accentClass}`}>{value}</p>
-      <p className="mt-1.5 text-xs text-text-secondary">{subline}</p>
-    </div>
-  );
 }
 
 function SignalBadge({
@@ -148,59 +131,6 @@ function MinutesBenchmarkPanel({
         )}
       </div>
     </SectionPanel>
-  );
-}
-
-function SectionPanel({
-  title,
-  aside,
-  className = "",
-  children,
-}: {
-  title: string;
-  aside?: React.ReactNode;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className={className}>
-      <div className="flex items-baseline justify-between gap-4">
-        <h3 className="text-sm font-medium text-text-secondary">{title}</h3>
-        {aside}
-      </div>
-      <div className="mt-3">{children}</div>
-    </section>
-  );
-}
-
-
-function ComparisonItem({
-  player,
-  positive,
-}: {
-  player: PlayerStats;
-  positive: boolean;
-}) {
-  return (
-    <Link
-      href={getPlayerDetailHref(player.playerId)}
-      className="group flex items-center gap-3 rounded-2xl border border-border-subtle bg-elevated p-3 transition-transform duration-200 hover:-translate-y-px hover:border-border-medium hover:bg-card-hover motion-reduce:transform-none"
-    >
-      <PlayerAvatar imageUrl={player.imageUrl} name={player.name} size="sm" className="border border-border-subtle" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-text-primary">{player.name}</p>
-        <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-text-secondary">
-          {player.clubLogoUrl && <ClubLogo src={player.clubLogoUrl} />}
-          <span className="truncate">{player.club}</span>
-          <span className="shrink-0 opacity-40">·</span>
-          <span className="shrink-0">{player.marketValueDisplay}</span>
-        </p>
-      </div>
-      <div className="shrink-0 text-right">
-        <p className={`text-sm font-value ${positive ? "text-accent-hot" : "text-accent-cold-soft"}`}>{player.points} <span className="text-[10px] text-text-muted">npG+A</span></p>
-        <p className="text-[11px] text-text-muted">{player.minutes?.toLocaleString() || "0"}&apos;</p>
-      </div>
-    </Link>
   );
 }
 
@@ -629,6 +559,7 @@ export default async function PlayerDetailPage({
                     playedPosition={player.playedPosition}
                     club={player.club}
                     clubLogoUrl={player.clubLogoUrl}
+                    clubId={data.clubId ?? undefined}
                     age={player.age}
                     nationalityFlagUrl={player.nationalityFlagUrl}
                     nationality={player.nationality}
@@ -728,7 +659,12 @@ export default async function PlayerDetailPage({
         </div>
       </section>
 
-      <PlayerDetailDeck>
+      <DetailDeck sections={[
+        { value: "snapshot", label: "Snapshot" },
+        { value: "comparisons", label: "Market comps" },
+        { value: "minutes", label: "Minutes" },
+        { value: "club", label: "Club context" },
+      ]}>
         <div className="space-y-8">
           <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[1.06fr_0.94fr]">
             <SectionPanel title="Rankings">
@@ -835,6 +771,39 @@ export default async function PlayerDetailPage({
                   {penaltyRank && <> · <span className="font-value text-text-primary">#{penaltyRank.rank}</span> of {penaltyRank.total} takers</>}
                 </Link>
               )}
+              {player.positionStats && player.positionStats.length > 1 && (
+                <div className="mt-4 overflow-hidden rounded-xl border border-border-subtle">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
+                        <th className="px-3 py-2 text-left font-normal">Position</th>
+                        <th className="px-3 py-2 text-right font-normal">Apps</th>
+                        <th className="px-3 py-2 text-right font-normal">G</th>
+                        <th className="px-3 py-2 text-right font-normal">A</th>
+                        <th className="px-3 py-2 text-right font-normal">npG+A</th>
+                        <th className="px-3 py-2 text-right font-normal">Mins</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {player.positionStats.map((ps) => {
+                        const npga = ps.goals - (/* no penalty split per position */ 0) + ps.assists;
+                        const bestNpga = Math.max(...player.positionStats!.map((p) => p.goals + p.assists));
+                        const isBest = npga === bestNpga && player.positionStats!.length > 1;
+                        return (
+                          <tr key={ps.positionId} className="border-b border-border-subtle/50 last:border-0">
+                            <td className="px-3 py-2.5 text-text-secondary">{ps.position}</td>
+                            <td className="px-3 py-2.5 text-right font-value text-text-primary">{ps.appearances}</td>
+                            <td className="px-3 py-2.5 text-right font-value text-text-primary">{ps.goals}</td>
+                            <td className="px-3 py-2.5 text-right font-value text-text-primary">{ps.assists}</td>
+                            <td className={`px-3 py-2.5 text-right font-value ${isBest ? "text-accent-hot" : "text-text-primary"}`}>{npga}</td>
+                            <td className="px-3 py-2.5 text-right font-value text-text-primary">{ps.minutes.toLocaleString()}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </SectionPanel>
           </section>
 
@@ -936,7 +905,7 @@ export default async function PlayerDetailPage({
             </div>
           </SectionPanel>
         </section>
-      </PlayerDetailDeck>
+      </DetailDeck>
       </div>
     </div>
   );

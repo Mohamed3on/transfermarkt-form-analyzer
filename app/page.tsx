@@ -20,7 +20,7 @@ import { applyStatsToggles, getMinutesValueData, toPlayerStats } from "@/lib/fet
 import { findValueCandidates } from "@/lib/value-analysis";
 import { getInjuredPlayers } from "@/lib/injured";
 import { missedPct, getFormMinutes, getFormNpga } from "@/lib/filter-players";
-import { formatMarketValue, getPlayerDetailHref, getPlayerIdFromProfileUrl } from "@/lib/format";
+import { extractClubIdFromLogoUrl, formatMarketValue, getPlayerDetailHref, getPlayerIdFromProfileUrl, getTeamDetailHref } from "@/lib/format";
 import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { getManagerInfo } from "@/lib/fetch-manager";
 import type { AggregatedTeam, ManagerInfo, MarketValueMover, MinutesValuePlayer } from "@/app/types";
@@ -283,14 +283,15 @@ function pickWithTies<T>(
 }
 
 function teamItem(
-  team: { name: string; logoUrl: string },
+  team: { name: string; logoUrl: string; clubId?: string },
   label: string,
   href: string,
   detail: string,
   opts?: { metrics?: string[]; tone?: SnapshotTone; manager?: ManagerInfo },
 ): SnapshotItem {
   return {
-    label, value: team.name, detail, href,
+    label, value: team.name, detail,
+    href: team.clubId ? getTeamDetailHref(team.clubId) : href,
     imageUrl: team.logoUrl, imageContain: true,
     metrics: opts?.metrics, manager: opts?.manager, tone: opts?.tone,
   };
@@ -851,14 +852,17 @@ export default async function Home() {
       `${p.club} · ${p.marketValue}`,
       { metrics: [p.injury] },
     )),
-    ...mostAffectedInjuryTeams.map((team): SnapshotItem => ({
-      label: "Hardest hit club",
-      value: team.club,
-      detail: `${team.league} · ${formatMarketValue(team.totalValue)} lost · ${team.count} injured`,
-      href: "/injured?tab=teams",
-      imageUrl: team.clubLogoUrl,
-      imageContain: true,
-    })),
+    ...mostAffectedInjuryTeams.map((team): SnapshotItem => {
+      const cid = extractClubIdFromLogoUrl(team.clubLogoUrl);
+      return {
+        label: "Hardest hit club",
+        value: team.club,
+        detail: `${team.league} · ${formatMarketValue(team.totalValue)} lost · ${team.count} injured`,
+        href: cid ? getTeamDetailHref(cid) : "/injured?tab=teams",
+        imageUrl: team.clubLogoUrl,
+        imageContain: true,
+      };
+    }),
   ];
 
   const biggestMoversItems: SnapshotItem[] = [];

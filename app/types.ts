@@ -72,6 +72,7 @@ export interface AnalysisResult {
   analysis: PeriodAnalysis[];
   aggregatedTop: AggregatedTeam[];
   aggregatedBottom: AggregatedTeam[];
+  allTeamsPerPeriod?: { period: number; teams: TeamStats[] }[];
 }
 
 export interface ManagerTrivia {
@@ -193,6 +194,7 @@ export interface MinutesValuePlayer {
   isOnLoan?: boolean;
   contractExpiry?: string;
   gamesMissed?: number;
+  positionStats?: { positionId: number; position: string; minutes: number; goals: number; assists: number; appearances: number }[];
   nationalityFlagUrl?: string;
   leagueLogoUrl?: string;
   recentForm?: RecentGameStats[];
@@ -227,6 +229,7 @@ export interface RecentGameStats {
   assists: number;
   penaltyGoals: number;
   minutes: number;
+  positionId?: number;
   date: string;
   gameId?: string;
   gameDay?: number;
@@ -263,6 +266,7 @@ export interface PlayerStatsResult {
   playedPosition: string;
   contractExpiry?: string;
   gamesMissed: number;
+  positionStats?: { positionId: number; position: string; minutes: number; goals: number; assists: number; appearances: number }[];
   nationalityFlagUrl?: string;
   leagueLogoUrl?: string;
   recentForm?: RecentGameStats[];

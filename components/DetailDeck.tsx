@@ -4,27 +4,18 @@ import { Children, useMemo, useState, type ReactNode } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
-type SectionKey = "snapshot" | "comparisons" | "minutes" | "club";
-
-const SECTION_ORDER: SectionKey[] = ["snapshot", "comparisons", "minutes", "club"];
-
-interface PlayerDetailDeckProps {
+interface DetailDeckProps {
+  sections: { value: string; label: string }[];
   children: ReactNode;
 }
 
-export function PlayerDetailDeck({ children }: PlayerDetailDeckProps) {
-  const [active, setActive] = useState<SectionKey>("snapshot");
+export function DetailDeck({ sections, children }: DetailDeckProps) {
+  const keys = useMemo(() => sections.map((s) => s.value), [sections]);
+  const [active, setActive] = useState(keys[0]);
   const [direction, setDirection] = useState<1 | -1>(1);
-  const panels = useMemo(() => SECTION_ORDER.map((_, index) => Children.toArray(children)[index]), [children]);
+  const panels = useMemo(() => keys.map((_, index) => Children.toArray(children)[index]), [children, keys]);
 
-  const sections: { value: SectionKey; label: string }[] = [
-    { value: "snapshot", label: "Snapshot" },
-    { value: "comparisons", label: "Market comps" },
-    { value: "minutes", label: "Minutes" },
-    { value: "club", label: "Club context" },
-  ];
-
-  const activeIndex = SECTION_ORDER.indexOf(active);
+  const activeIndex = keys.indexOf(active);
 
   return (
     <section className="mt-8">
@@ -33,11 +24,10 @@ export function PlayerDetailDeck({ children }: PlayerDetailDeckProps) {
           <Tabs
             value={active}
             onValueChange={(nextValue) => {
-              const next = nextValue as SectionKey;
-              const nextIndex = SECTION_ORDER.indexOf(next);
-              if (nextIndex === -1 || next === active) return;
+              const nextIndex = keys.indexOf(nextValue);
+              if (nextIndex === -1 || nextValue === active) return;
               setDirection(nextIndex > activeIndex ? 1 : -1);
-              setActive(next);
+              setActive(nextValue);
             }}
           >
             <TabsList>

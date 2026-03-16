@@ -4,7 +4,7 @@ import type { InjuredPlayer, MarketValueMover, MinutesValuePlayer, PlayerStats }
 import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { applyStatsToggles, getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
 import { getFormStats, missedPct } from "@/lib/filter-players";
-import { formatMarketValue } from "@/lib/format";
+import { extractClubIdFromLogoUrl, formatMarketValue } from "@/lib/format";
 import { getInjuredPlayers } from "@/lib/injured";
 import { normalizeForSearch } from "@/lib/normalize";
 import {
@@ -18,7 +18,6 @@ import {
 import { MIN_COMPARISON_COUNT, countComparisons } from "@/lib/value-analysis";
 
 const PLAYER_ID_RE = /\/spieler\/(\d+)/;
-const CLUB_ID_RE = /\/(\d+)\.png/;
 
 export interface PlayerRankings {
   marketValueOverall: number;
@@ -96,6 +95,14 @@ export interface SubgroupRanking {
   total: number;
 }
 
+export interface PositionBreakdown {
+  position: string;
+  minutes: number;
+  goals: number;
+  assists: number;
+  appearances: number;
+}
+
 export interface PlayerDetailData {
   player: MinutesValuePlayer;
   playerStats: PlayerStats;
@@ -118,11 +125,6 @@ export interface PlayerDetailData {
 
 export function seasonNpga(p: MinutesValuePlayer): number {
   return p.goals - (p.penaltyGoals ?? 0) + p.assists;
-}
-
-function extractClubIdFromLogoUrl(url?: string): string | null {
-  if (!url) return null;
-  return url.match(CLUB_ID_RE)?.[1] ?? null;
 }
 
 function compareByMetric(

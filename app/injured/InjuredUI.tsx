@@ -11,7 +11,7 @@ import type { InjuredPlayer } from "@/app/types";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { RankBadge } from "@/components/RankBadge";
-import { formatReturnInfo, formatInjuryDuration, formatMarketValue, formatValueStr, getPlayerDetailHref, getPlayerIdFromProfileUrl } from "@/lib/format";
+import { extractClubIdFromLogoUrl, formatReturnInfo, formatInjuryDuration, formatMarketValue, formatValueStr, getPlayerDetailHref, getPlayerIdFromProfileUrl, getTeamDetailHref } from "@/lib/format";
 import { useProgressiveFetch } from "@/lib/use-progressive-fetch";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { Combobox } from "@/components/Combobox";
@@ -170,9 +170,18 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="font-bold text-sm sm:text-base text-text-primary">
-                  {team.club}
-                </h3>
+                {(() => {
+                  const teamClubId = extractClubIdFromLogoUrl(team.clubLogoUrl);
+                  return teamClubId ? (
+                    <Link href={getTeamDetailHref(teamClubId)} className="font-bold text-sm sm:text-base text-text-primary hover:underline block">
+                      {team.club}
+                    </Link>
+                  ) : (
+                    <h3 className="font-bold text-sm sm:text-base text-text-primary">
+                      {team.club}
+                    </h3>
+                  );
+                })()}
                 <LeagueBadge league={team.league} />
               </div>
               <div className="text-right shrink-0">
