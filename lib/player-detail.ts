@@ -44,6 +44,14 @@ export interface PlayerRankings {
   minutesLeague: number;
   minutesClub: number;
   minutesPosition: number;
+  form5Overall: number;
+  form5League: number;
+  form5Club: number;
+  form5Position: number;
+  form10Overall: number;
+  form10League: number;
+  form10Club: number;
+  form10Position: number;
 }
 
 export interface PlayerFormSummary {
@@ -57,10 +65,12 @@ export interface PlayerFormSummary {
   penaltyConversion: number | null;
   last5Npga: number;
   last5Goals: number;
+  last5PenaltyGoals: number;
   last5Assists: number;
   last5Minutes: number;
   last10Npga: number;
   last10Goals: number;
+  last10PenaltyGoals: number;
   last10Assists: number;
   last10Minutes: number;
 }
@@ -103,6 +113,9 @@ export interface PlayerDetailData {
   rankings: PlayerRankings;
   positionLabel: string;
   positionPeerCount: number;
+  overallCount: number;
+  leagueCount: number;
+  clubCount: number;
   form: PlayerFormSummary;
   signalSummary: PlayerSignalSummary;
   trend: PlayerTrend | null;
@@ -188,6 +201,8 @@ function buildRankings(
   const rank = (pool: MinutesValuePlayer[], metric: (p: MinutesValuePlayer) => number) =>
     compareByMetric(player.playerId, pool, metric);
 
+  const form5Npga = (p: MinutesValuePlayer) => getFormStats(p, 5).npga;
+  const form10Npga = (p: MinutesValuePlayer) => getFormStats(p, 10).npga;
   const metrics = [
     { prefix: "marketValue", fn: (p: MinutesValuePlayer) => p.marketValue },
     { prefix: "goals", fn: (p: MinutesValuePlayer) => p.goals },
@@ -195,6 +210,8 @@ function buildRankings(
     { prefix: "points", fn: totalPoints },
     { prefix: "npga", fn: seasonNpga },
     { prefix: "minutes", fn: (p: MinutesValuePlayer) => p.minutes },
+    { prefix: "form5", fn: form5Npga },
+    { prefix: "form10", fn: form10Npga },
   ] as const;
 
   const result: Record<string, number> = {};
@@ -224,8 +241,8 @@ function buildFormSummary(player: MinutesValuePlayer): PlayerFormSummary {
       const f5 = getFormStats(player, 5);
       const f10 = getFormStats(player, 10);
       return {
-        last5Npga: f5.npga, last5Goals: f5.goals, last5Assists: f5.assists, last5Minutes: f5.minutes,
-        last10Npga: f10.npga, last10Goals: f10.goals, last10Assists: f10.assists, last10Minutes: f10.minutes,
+        last5Npga: f5.npga, last5Goals: f5.goals, last5PenaltyGoals: f5.penaltyGoals, last5Assists: f5.assists, last5Minutes: f5.minutes,
+        last10Npga: f10.npga, last10Goals: f10.goals, last10PenaltyGoals: f10.penaltyGoals, last10Assists: f10.assists, last10Minutes: f10.minutes,
       };
     })(),
   };
@@ -363,6 +380,9 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
     rankings: buildRankings(player, players, leaguePlayers, clubmates, positionPlayers),
     positionLabel,
     positionPeerCount: positionPlayers.length,
+    overallCount: players.length,
+    leagueCount: leaguePlayers.length,
+    clubCount: clubmates.length,
     form: buildFormSummary(player),
     signalSummary: {
       availablePct: Math.max(0, 100 - Math.round(benchPct * 100)),

@@ -60,16 +60,17 @@ export function getFormAssists(player: { recentForm?: { assists: number }[] }, w
 export function getFormStats(
   player: { recentForm?: { goals: number; assists: number; penaltyGoals: number; minutes: number }[] },
   window: number,
-): { goals: number; assists: number; npga: number; minutes: number } {
+): { goals: number; assists: number; penaltyGoals: number; npga: number; minutes: number } {
   const games = (player.recentForm ?? []).slice(0, window);
-  let goals = 0, assists = 0, npga = 0, minutes = 0;
+  let goals = 0, assists = 0, penaltyGoals = 0, npga = 0, minutes = 0;
   for (const g of games) {
     goals += g.goals;
     assists += g.assists;
+    penaltyGoals += g.penaltyGoals ?? 0;
     npga += g.goals - (g.penaltyGoals ?? 0) + g.assists;
     minutes += g.minutes;
   }
-  return { goals, assists, npga, minutes };
+  return { goals, assists, penaltyGoals, npga, minutes };
 }
 
 /** Fraction of games missed (0–1). Players with 0 matches and 0 minutes are treated as 100% unavailable. */

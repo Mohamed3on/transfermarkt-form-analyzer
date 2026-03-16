@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   ArrowUpRight,
+  Crown,
+  Medal,
   ShieldAlert,
   Sparkles,
   TrendingDown,
@@ -27,21 +29,60 @@ import type { MinutesValuePlayer, PlayerStats, RecentGameStats } from "@/app/typ
 import { getMinutesValueData } from "@/lib/fetch-minutes-value";
 import { POSITION_NAMES } from "@/lib/fetch-player-minutes";
 
+function rankColor(rank: number, total: number): string {
+  const pct = rank / total;
+  if (rank <= 3) return "text-amber-400";
+  if (pct <= 0.05) return "text-emerald-400";
+  if (pct <= 0.15) return "text-sky-400";
+  if (pct <= 0.40) return "text-text-primary";
+  return "text-text-muted";
+}
+
+function RankBadge({ rank, total, className }: { rank: number; total: number; className?: string }) {
+  return (
+    <span className={`font-value ${rankColor(rank, total)} ${className ?? ""}`}>
+      {rank === 1 && <Crown className="mr-0.5 inline h-3 w-3" />}
+      {rank > 1 && rank <= 3 && <Medal className="mr-0.5 inline h-3 w-3 opacity-60" />}
+      #{rank}
+    </span>
+  );
+}
+
+function GoalBreakdown({ goals, penaltyGoals }: { goals: number; penaltyGoals: number }) {
+  const openPlay = goals - penaltyGoals;
+  if (goals === 0) return <span className="text-text-muted">0</span>;
+  return (
+    <>
+      {openPlay > 0 && <span className="text-emerald-400">{openPlay}</span>}
+      {penaltyGoals > 0 && <span className="text-amber-400">{openPlay > 0 ? "+" : ""}{penaltyGoals}P</span>}
+    </>
+  );
+}
+
+function RankCell({ rank, total }: { rank: number; total: number }) {
+  return (
+    <td className="px-3 py-2.5 text-right">
+      <RankBadge rank={rank} total={total} />
+    </td>
+  );
+}
+
 const RANKING_METRICS: Array<{
   overallKey: keyof PlayerRankings;
   leagueKey: keyof PlayerRankings;
   clubKey: keyof PlayerRankings;
   positionKey: keyof PlayerRankings;
   label: string;
-  accentClass: string;
   sortKey: string | null;
 }> = [
-  { overallKey: "marketValueOverall", leagueKey: "marketValueLeague", clubKey: "marketValueClub", positionKey: "marketValuePosition", label: "Market value", accentClass: "text-accent-gold", sortKey: "value" },
-  { overallKey: "npgaOverall", leagueKey: "npgaLeague", clubKey: "npgaClub", positionKey: "npgaPosition", label: "npG+A", accentClass: "text-accent-hot", sortKey: null },
-  { overallKey: "pointsOverall", leagueKey: "pointsLeague", clubKey: "pointsClub", positionKey: "pointsPosition", label: "G+A", accentClass: "text-emerald-400", sortKey: null },
-  { overallKey: "minutesOverall", leagueKey: "minutesLeague", clubKey: "minutesClub", positionKey: "minutesPosition", label: "Minutes", accentClass: "text-accent-blue", sortKey: "mins" },
-  { overallKey: "goalsOverall", leagueKey: "goalsLeague", clubKey: "goalsClub", positionKey: "goalsPosition", label: "Goals", accentClass: "text-text-primary", sortKey: null },
-  { overallKey: "assistsOverall", leagueKey: "assistsLeague", clubKey: "assistsClub", positionKey: "assistsPosition", label: "Assists", accentClass: "text-text-primary", sortKey: null },
+  { overallKey: "marketValueOverall", leagueKey: "marketValueLeague", clubKey: "marketValueClub", positionKey: "marketValuePosition", label: "Market value", sortKey: "value" },
+  { overallKey: "npgaOverall", leagueKey: "npgaLeague", clubKey: "npgaClub", positionKey: "npgaPosition", label: "npG+A", sortKey: null },
+  { overallKey: "pointsOverall", leagueKey: "pointsLeague", clubKey: "pointsClub", positionKey: "pointsPosition", label: "G+A", sortKey: null },
+  { overallKey: "minutesOverall", leagueKey: "minutesLeague", clubKey: "minutesClub", positionKey: "minutesPosition", label: "Minutes", sortKey: "mins" },
+  { overallKey: "goalsOverall", leagueKey: "goalsLeague", clubKey: "goalsClub", positionKey: "goalsPosition", label: "Goals", sortKey: null },
+  { overallKey: "assistsOverall", leagueKey: "assistsLeague", clubKey: "assistsClub", positionKey: "assistsPosition", label: "Assists", sortKey: null },
+  { overallKey: "form5Overall", leagueKey: "form5League", clubKey: "form5Club", positionKey: "form5Position", label: "Last 5 npG+A", sortKey: "ga&fw=5" },
+  { overallKey: "form10Overall", leagueKey: "form10League", clubKey: "form10Club", positionKey: "form10Position", label: "Last 10 npG+A", sortKey: "ga&fw=10" },
 ];
 
 function formatShortDate(value: string): string {
@@ -194,11 +235,8 @@ function RecentMatchCard({
       : resultLabel === "L"
       ? "border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft"
       : "border-border-subtle bg-card text-text-secondary";
-  const fixtureLabel = match.opponentName
-    ? match.venue === "away"
-      ? `at ${match.opponentName}`
-      : `vs ${match.opponentName}`
-    : "Opponent unavailable";
+  const venuePrefix = match.venue === "away" ? "at " : "vs ";
+  const opponentHref = match.opponentClubId ? `/teams/${match.opponentClubId}` : null;
   const contextLabel = [match.competitionName || match.competitionId, match.gameDay ? `MD ${match.gameDay}` : null]
     .filter(Boolean)
     .join(" · ");
@@ -236,7 +274,16 @@ function RecentMatchCard({
             </div>
           )}
           <div className="min-w-0">
-            <p className="truncate text-sm text-text-primary">{fixtureLabel}</p>
+            <p className="truncate text-sm text-text-primary">
+              {match.opponentName ? (
+                <>
+                  {venuePrefix}
+                  {opponentHref ? (
+                    <Link href={opponentHref} className="hover:underline">{match.opponentName}</Link>
+                  ) : match.opponentName}
+                </>
+              ) : "Opponent unavailable"}
+            </p>
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-text-secondary">
               {venueLabel && (
                 <span className={match.venue === "home" ? "text-amber-400/80" : "text-sky-400/80"}>{venueLabel}</span>
@@ -254,21 +301,7 @@ function RecentMatchCard({
           <div className="rounded-lg border border-border-subtle/80 bg-black/20 px-2 py-1.5 text-center">
             <p className="text-[9px] uppercase tracking-[0.16em] text-text-muted">Goals</p>
             <p className="mt-0.5 font-value text-base">
-              {(() => {
-                const pens = match.penaltyGoals ?? 0;
-                const openPlay = match.goals - pens;
-                if (match.goals === 0) return <span className="text-text-muted">0</span>;
-                return (
-                  <>
-                    {openPlay > 0 && <span className="text-emerald-400">{openPlay}</span>}
-                    {pens > 0 && (
-                      <span className="text-amber-400">
-                        {openPlay > 0 ? "+" : ""}{pens}P
-                      </span>
-                    )}
-                  </>
-                );
-              })()}
+              <GoalBreakdown goals={match.goals} penaltyGoals={match.penaltyGoals ?? 0} />
             </p>
           </div>
           <div className="rounded-lg border border-border-subtle/80 bg-black/20 px-2 py-1.5 text-center">
@@ -500,6 +533,9 @@ export default async function PlayerDetailPage({
     subgroupRankings,
     positionLabel,
     positionPeerCount,
+    overallCount,
+    leagueCount,
+    clubCount,
     penaltyRank,
   } = data;
   const fallbackMatchCount = player.recentForm?.length ?? 0;
@@ -702,10 +738,10 @@ export default async function PlayerDetailPage({
                             {m.label}
                           </Link>
                         </td>
-                        <td className={`px-3 py-2.5 text-right font-value ${m.accentClass}`}>#{rankings[m.overallKey]}</td>
-                        <td className="px-3 py-2.5 text-right font-value text-text-primary">#{rankings[m.leagueKey]}</td>
-                        <td className="px-3 py-2.5 text-right font-value text-text-primary">#{rankings[m.clubKey]}</td>
-                        <td className="px-3 py-2.5 text-right font-value text-text-secondary">#{rankings[m.positionKey]}</td>
+                        <RankCell rank={rankings[m.overallKey]} total={overallCount} />
+                        <RankCell rank={rankings[m.leagueKey]} total={leagueCount} />
+                        <RankCell rank={rankings[m.clubKey]} total={clubCount} />
+                        <RankCell rank={rankings[m.positionKey]} total={positionPeerCount} />
                       </tr>
                     ))}
                   </tbody>
@@ -752,35 +788,29 @@ export default async function PlayerDetailPage({
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-border-subtle/50">
-                      <td className="px-3 py-2.5 text-text-secondary">Season</td>
-                      <td className="px-3 py-2.5 text-right font-value text-accent-hot">{form.seasonNpga}</td>
-                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.seasonGoals}</td>
-                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.seasonAssists}</td>
-                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.seasonMinutes.toLocaleString()}</td>
-                    </tr>
-                    <tr className="border-b border-border-subtle/50">
-                      <td className="px-3 py-2.5 text-text-secondary">Last 5</td>
-                      <td className="px-3 py-2.5 text-right font-value text-accent-hot">{form.last5Npga}</td>
-                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last5Goals}</td>
-                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last5Assists}</td>
-                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last5Minutes.toLocaleString()}</td>
-                    </tr>
-                    <tr className="border-b border-border-subtle/50">
-                      <td className="px-3 py-2.5 text-text-secondary">Last 10</td>
-                      <td className="px-3 py-2.5 text-right font-value text-accent-hot">{form.last10Npga}</td>
-                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last10Goals}</td>
-                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last10Assists}</td>
-                      <td className="px-3 py-2.5 text-right font-value text-text-primary">{form.last10Minutes.toLocaleString()}</td>
-                    </tr>
+                    {([
+                      { label: "Season", npga: form.seasonNpga, goals: form.seasonGoals, pens: form.penaltyGoals, assists: form.seasonAssists, mins: form.seasonMinutes },
+                      { label: "Last 5", npga: form.last5Npga, goals: form.last5Goals, pens: form.last5PenaltyGoals, assists: form.last5Assists, mins: form.last5Minutes },
+                      { label: "Last 10", npga: form.last10Npga, goals: form.last10Goals, pens: form.last10PenaltyGoals, assists: form.last10Assists, mins: form.last10Minutes },
+                    ]).map((row) => (
+                      <tr key={row.label} className="border-b border-border-subtle/50">
+                        <td className="px-3 py-2.5 text-text-secondary">{row.label}</td>
+                        <td className="px-3 py-2.5 text-right font-value text-accent-hot">{row.npga}</td>
+                        <td className="px-3 py-2.5 text-right font-value">
+                          <GoalBreakdown goals={row.goals} penaltyGoals={row.pens} />
+                        </td>
+                        <td className="px-3 py-2.5 text-right font-value text-text-primary">{row.assists}</td>
+                        <td className="px-3 py-2.5 text-right font-value text-text-primary">{row.mins.toLocaleString()}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
               {form.penaltyAttempts > 0 && (
                 <Link href="/players?sort=pen" className="mt-2.5 block text-sm text-text-secondary transition-colors hover:text-text-primary">
-                  Penalties: <span className="font-value text-text-primary">{form.penaltyGoals}/{form.penaltyAttempts}</span> scored
-                  {form.penaltyConversion !== null && <> (<span className="font-value text-text-primary">{form.penaltyConversion}%</span>)</>}
-                  {penaltyRank && <> · <span className="font-value text-text-primary">#{penaltyRank.rank}</span> of {penaltyRank.total} takers</>}
+                  Penalties: <span className="font-value text-amber-400">{form.penaltyGoals}/{form.penaltyAttempts}</span> scored
+                  {form.penaltyConversion !== null && <> (<span className={`font-value ${form.penaltyConversion >= 80 ? "text-emerald-400" : form.penaltyConversion >= 60 ? "text-amber-400" : "text-red-400"}`}>{form.penaltyConversion}%</span>)</>}
+                  {penaltyRank && <> · <RankBadge rank={penaltyRank.rank} total={penaltyRank.total} /> of {penaltyRank.total} takers</>}
                 </Link>
               )}
               {player.positionStats && player.positionStats.length > 1 && (
