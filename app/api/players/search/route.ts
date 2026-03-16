@@ -1,10 +1,16 @@
+import { readFile } from "fs/promises";
+import { join } from "path";
 import { NextResponse } from "next/server";
 import { getMinutesValueData } from "@/lib/fetch-minutes-value";
 
 export async function GET() {
   try {
-    const players = await getMinutesValueData();
-    const index = players.map((p) => ({
+    const [players, clubsRaw] = await Promise.all([
+      getMinutesValueData(),
+      readFile(join(process.cwd(), "data", "clubs.json"), "utf-8").catch(() => "{}"),
+    ]);
+    const playerIndex = players.map((p) => ({
+      type: "player" as const,
       id: p.playerId,
       name: p.name,
       club: p.club,
@@ -14,7 +20,14 @@ export async function GET() {
       imageUrl: p.imageUrl,
       marketValue: p.marketValue,
     }));
-    return NextResponse.json(index, {
+    const clubs: Record<string, { name: string; logoUrl: string }> = JSON.parse(clubsRaw);
+    const teamIndex = Object.entries(clubs).map(([id, c]) => ({
+      type: "team" as const,
+      id,
+      name: c.name,
+      logoUrl: c.logoUrl,
+    }));
+    return NextResponse.json({ players: playerIndex, teams: teamIndex }, {
       headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
     });
   } catch (error) {

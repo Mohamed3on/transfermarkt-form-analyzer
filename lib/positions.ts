@@ -25,7 +25,7 @@ const DEFENSIVE_POSITIONS = new Set<string>([
   "Right Wing-Back",
 ]);
 
-export type BroadPositionGroup = "forwards" | "midfielders" | "defenders";
+export type BroadPositionGroup = "forwards" | "midfielders" | "defenders" | "goalkeepers";
 
 const BROAD_POSITION_MAP: Record<string, BroadPositionGroup> = {
   "Centre-Forward": "forwards",
@@ -40,7 +40,7 @@ const BROAD_POSITION_MAP: Record<string, BroadPositionGroup> = {
   "Left-Back": "defenders",
   "Right-Back": "defenders",
   "Centre-Back": "defenders",
-  "Goalkeeper": "defenders",
+  "Goalkeeper": "goalkeepers",
 };
 
 export function getBroadPositionGroup(position: string): BroadPositionGroup {
@@ -51,6 +51,7 @@ const BROAD_POSITION_LABELS: Record<BroadPositionGroup, string> = {
   forwards: "Forwards",
   midfielders: "Midfielders",
   defenders: "Defenders",
+  goalkeepers: "Goalkeepers",
 };
 
 export function getBroadPositionLabel(position: string): string {
