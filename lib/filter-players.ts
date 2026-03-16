@@ -48,6 +48,31 @@ export function getFormNpga(player: { recentForm?: { goals: number; assists: num
   return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.goals - (g.penaltyGoals ?? 0) + g.assists, 0);
 }
 
+export function getFormGoals(player: { recentForm?: { goals: number }[] }, window: number): number {
+  return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.goals, 0);
+}
+
+export function getFormAssists(player: { recentForm?: { assists: number }[] }, window: number): number {
+  return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.assists, 0);
+}
+
+/** Single-pass form stats for a window — avoids 4 separate traversals. */
+export function getFormStats(
+  player: { recentForm?: { goals: number; assists: number; penaltyGoals: number; minutes: number }[] },
+  window: number,
+): { goals: number; assists: number; penaltyGoals: number; npga: number; minutes: number } {
+  const games = (player.recentForm ?? []).slice(0, window);
+  let goals = 0, assists = 0, penaltyGoals = 0, npga = 0, minutes = 0;
+  for (const g of games) {
+    goals += g.goals;
+    assists += g.assists;
+    penaltyGoals += g.penaltyGoals ?? 0;
+    npga += g.goals - (g.penaltyGoals ?? 0) + g.assists;
+    minutes += g.minutes;
+  }
+  return { goals, assists, penaltyGoals, npga, minutes };
+}
+
 /** Fraction of games missed (0–1). Players with 0 matches and 0 minutes are treated as 100% unavailable. */
 export function missedPct(p: { totalMatches: number; minutes: number; gamesMissed?: number }): number {
   const missed = p.gamesMissed ?? 0;

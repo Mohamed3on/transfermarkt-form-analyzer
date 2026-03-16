@@ -16,7 +16,7 @@ import { InfoTip } from "@/app/components/InfoTip";
 import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { filterPlayersByLeagueAndClub, getFormMinutes, uniqueFilterOptions } from "@/lib/filter-players";
-import { formatReturnInfo, formatInjuryDuration, getLeistungsdatenUrl } from "@/lib/format";
+import { extractClubIdFromLogoUrl, formatReturnInfo, formatInjuryDuration, getLeistungsdatenUrl, getPlayerDetailHref, getTeamDetailHref } from "@/lib/format";
 import type { MinutesValuePlayer, InjuryMap } from "@/app/types";
 
 type SortKey = "value" | "mins" | "games" | "ga" | "pen" | "miss";
@@ -96,7 +96,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
   const recentGA = isRecent ? getFormGA(player, formWindow, includePen) : null;
   const displayMinutes = isRecent ? getFormMinutes(player, formWindow) : player.minutes;
   const injuryInfo = injuryMap?.[player.playerId];
-  const benchmarkHref = `/value-analysis?${new URLSearchParams({ id: player.playerId, name: player.name })}`;
+  const detailHref = getPlayerDetailHref(player.playerId);
 
   let nationalityDisplay: ReactNode = null;
   if (player.nationalityFlagUrl) {
@@ -165,7 +165,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <Link
-              href={benchmarkHref}
+              href={detailHref}
               className="font-semibold text-sm hover:underline truncate transition-colors text-left text-text-primary"
             >
               {player.name}
@@ -182,10 +182,20 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
           <div className="flex items-center gap-1.5 text-xs mt-0.5 overflow-hidden text-text-secondary">
             <PositionDisplay position={player.position} playedPosition={player.playedPosition} />
             <span className="opacity-40">·</span>
-            <span className="truncate inline-flex items-center gap-1">
-              {player.clubLogoUrl && <img src={player.clubLogoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}
-              {player.club}
-            </span>
+            {(() => {
+              const cid = extractClubIdFromLogoUrl(player.clubLogoUrl);
+              return cid ? (
+                <Link href={getTeamDetailHref(cid)} className="truncate inline-flex items-center gap-1 hover:underline">
+                  {player.clubLogoUrl && <img src={player.clubLogoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}
+                  {player.club}
+                </Link>
+              ) : (
+                <span className="truncate inline-flex items-center gap-1">
+                  {player.clubLogoUrl && <img src={player.clubLogoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}
+                  {player.club}
+                </span>
+              );
+            })()}
             {player.leagueLogoUrl && <>
               <span className="opacity-40">·</span>
               <img src={player.leagueLogoUrl} alt={player.league} title={player.league} className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px shrink-0" />
@@ -472,7 +482,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
                   }}
                   className="rounded-lg overflow-hidden border border-border-subtle"
                 >
-                  {(["value", "mins", "games", "ga", "pen", "miss"] as const).map((key) => (
+                  {(["value", "ga", "mins", "games", "pen", "miss"] as const).map((key) => (
                     <ToggleGroupItem
                       key={key}
                       value={key}

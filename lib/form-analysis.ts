@@ -234,7 +234,14 @@ export const getAnalysis = unstable_cache(
     const aggregatedTop = aggregateEntries("top");
     const aggregatedBottom = aggregateEntries("bottom");
 
-    return { success: matchedPeriod !== null, matchedPeriod, analysis, aggregatedTop, aggregatedBottom };
+    return {
+      success: matchedPeriod !== null,
+      matchedPeriod,
+      analysis,
+      aggregatedTop,
+      aggregatedBottom,
+      allTeamsPerPeriod: PERIODS.map((period, i) => ({ period, teams: allTeamsPerPeriod[i] })),
+    };
   },
   ["form-analysis"],
   { revalidate: 7200, tags: ["form-analysis"] }

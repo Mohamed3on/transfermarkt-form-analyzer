@@ -1,10 +1,14 @@
 import { writeFile, readFile, mkdir } from "fs/promises";
 import { join } from "path";
-import { fetchMinutesValueRaw } from "@/lib/fetch-minutes-value";
+import { fetchMinutesValueRaw, fetchU23MostValuableRaw } from "@/lib/fetch-minutes-value";
 import { fetchTopScorersRaw, fetchYearlyScorersRaw } from "@/lib/fetch-top-scorers";
-import { fetchPlayerMinutesRaw } from "@/lib/fetch-player-minutes";
+import { derivePositionStats, fetchPlayerMinutesRaw } from "@/lib/fetch-player-minutes";
+import { extractClubIdFromLogoUrl } from "@/lib/format";
+import { fetchPage, setMaxConcurrent } from "@/lib/fetch";
+import { BASE_URL } from "@/lib/constants";
 import type { MinutesValuePlayer, PlayerStatsResult } from "@/app/types";
 
+setMaxConcurrent(20); // Script has its own adaptive backoff; no need for the default 4-slot limiter
 const CONCURRENCY = { max: 50, min: 10 };
 const DELAY = { base: 200, multiplier: 2 };
 const FAILURE_THRESHOLD = 0.3;
@@ -14,8 +18,10 @@ const MAX_RETRY_ROUNDS = 8;
 const DATA_DIR = join(process.cwd(), "data");
 const OUT_PATH = join(DATA_DIR, "minutes-value.json");
 const CACHE_PATH = join(DATA_DIR, "player-cache.json");
+const CLUBS_PATH = join(DATA_DIR, "clubs.json");
 
 type Cache = Record<string, PlayerStatsResult>;
+type ClubMap = Record<string, { name: string; logoUrl: string }>;
 
 // --- 1. Gather & dedupe player pool ---
 
@@ -40,8 +46,9 @@ async function fetchMVWithRetry(maxAttempts = 6): Promise<MinutesValuePlayer[]> 
 async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
   console.log("[refresh] Fetching player lists...");
 
-  const [mvPlayers, seasonScorers, yearlyScorers] = await Promise.all([
+  const [mvPlayers, u23Players, seasonScorers, yearlyScorers] = await Promise.all([
     fetchMVWithRetry(),
+    fetchU23MostValuableRaw().catch(() => [] as MinutesValuePlayer[]),
     fetchTopScorersRaw().catch(() => [] as MinutesValuePlayer[]),
     fetchYearlyScorersRaw().catch(() => [] as MinutesValuePlayer[]),
   ]);
@@ -49,6 +56,7 @@ async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
   if (mvPlayers.length === 0) {
     throw new Error("0 players from MV pages after 6 attempts — rate-limited.");
   }
+  if (u23Players.length === 0) console.warn("[refresh] U23 MV unavailable — continuing without");
   if (seasonScorers.length === 0) console.warn("[refresh] season scorers unavailable — continuing without");
   if (yearlyScorers.length === 0) console.warn("[refresh] yearly scorers unavailable — continuing without");
 
@@ -56,6 +64,7 @@ async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
   const players: MinutesValuePlayer[] = [];
   for (const { label, list } of [
     { label: "MV", list: mvPlayers },
+    { label: "U23 MV", list: u23Players },
     { label: "season scorers", list: seasonScorers },
     { label: "yearly scorers", list: yearlyScorers },
   ]) {
@@ -164,6 +173,7 @@ function mergeStats(players: MinutesValuePlayer[], cache: Cache): void {
     if (s.contractExpiry) p.contractExpiry = s.contractExpiry;
     if (s.playedPosition) p.playedPosition = s.playedPosition;
     if (s.recentForm?.length) p.recentForm = s.recentForm;
+    if (s.rawGames?.length) p.positionStats = derivePositionStats(s.rawGames);
     if (s.marketValue) { p.marketValue = s.marketValue; p.marketValueDisplay = s.marketValueDisplay; }
     if (s.age) p.age = s.age;
 
@@ -173,7 +183,86 @@ function mergeStats(players: MinutesValuePlayer[], cache: Cache): void {
   }
 }
 
-// --- 4. Validate ---
+// --- 4. Club map: build from player data + scrape unknowns ---
+
+function clubLogoUrl(clubId: string): string {
+  return `https://tmssl.akamaized.net/images/wappen/head/${clubId}.png`;
+}
+
+async function loadClubMap(): Promise<ClubMap> {
+  try {
+    return JSON.parse(await readFile(CLUBS_PATH, "utf-8")) as ClubMap;
+  } catch {
+    return {};
+  }
+}
+
+function seedClubMapFromPlayers(players: MinutesValuePlayer[], clubs: ClubMap): void {
+  for (const p of players) {
+    const id = extractClubIdFromLogoUrl(p.clubLogoUrl);
+    if (id && p.club && !clubs[id]) {
+      clubs[id] = { name: p.club, logoUrl: clubLogoUrl(id) };
+    }
+  }
+}
+
+async function scrapeClubName(clubId: string): Promise<string | null> {
+  try {
+    const html = await fetchPage(`${BASE_URL}/x/datenfakten/verein/${clubId}`);
+    const match = html.match(/<title>([^<]+)/);
+    if (!match) return null;
+    return match[1].replace(/ - .*/, "").trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveUnknownClubs(players: MinutesValuePlayer[], clubs: ClubMap): Promise<void> {
+  // Only resolve opponents from recentForm (last 10 games per player)
+  const unknown = new Set<string>();
+  for (const p of players) {
+    for (const m of p.recentForm ?? []) {
+      if (m.opponentClubId && !clubs[m.opponentClubId]) unknown.add(m.opponentClubId);
+    }
+  }
+  if (unknown.size === 0) return;
+
+  console.log(`[refresh] Resolving ${unknown.size} unknown opponent clubs...`);
+  const ids = [...unknown];
+  const BATCH = 10;
+  let resolved = 0;
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = ids.slice(i, i + BATCH);
+    const results = await Promise.allSettled(batch.map((id) => scrapeClubName(id)));
+    for (let j = 0; j < batch.length; j++) {
+      const r = results[j];
+      const name = r.status === "fulfilled" ? r.value : null;
+      clubs[batch[j]] = { name: name ?? `Club ${batch[j]}`, logoUrl: clubLogoUrl(batch[j]) };
+      if (name) resolved++;
+    }
+    if (i + BATCH < ids.length) {
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  }
+  console.log(`[refresh] Resolved ${resolved}/${unknown.size} club names`);
+}
+
+function enrichRecentForm(players: MinutesValuePlayer[], clubs: ClubMap): void {
+  for (const p of players) {
+    if (!p.recentForm) continue;
+    for (const m of p.recentForm) {
+      if (m.opponentClubId && !m.opponentName) {
+        const club = clubs[m.opponentClubId];
+        if (club) {
+          m.opponentName = club.name;
+          m.opponentLogoUrl = club.logoUrl;
+        }
+      }
+    }
+  }
+}
+
+// --- 5. Validate ---
 
 async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<void> {
   const fetched = players.filter((p) => cache[p.playerId]);
@@ -204,15 +293,23 @@ async function main() {
   const cache = await fetchAllStats(players.map((p) => p.playerId));
 
   mergeStats(players, cache);
+
+  // Build club map and enrich recentForm with opponent names/logos
+  const clubs = await loadClubMap();
+  seedClubMapFromPlayers(players, clubs);
+  await resolveUnknownClubs(players, clubs);
+  enrichRecentForm(players, clubs);
+
   await validate(players, cache);
 
   const withMV = players.filter((p) => p.marketValue > 0);
   console.log(`[refresh] Filtered: ${players.length - withMV.length} players with no market value`);
 
   await mkdir(DATA_DIR, { recursive: true });
+  await writeFile(CLUBS_PATH, JSON.stringify(clubs));
   await writeFile(OUT_PATH, JSON.stringify(withMV));
   await writeFile(join(DATA_DIR, "updated-at.txt"), new Date().toISOString());
-  console.log(`[refresh] Done: ${withMV.length} players → ${OUT_PATH}`);
+  console.log(`[refresh] Done: ${withMV.length} players → ${OUT_PATH}, ${Object.keys(clubs).length} clubs cached`);
 }
 
 main().catch((err) => {

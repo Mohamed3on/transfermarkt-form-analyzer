@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { PlayerStatsResult, RecentGameStats } from "@/app/types";
+import type { CeapiGame, PlayerStatsResult, RecentGameStats } from "@/app/types";
 import { BASE_URL } from "./constants";
 import { fetchPage } from "./fetch";
 import { parseMarketValue } from "./parse-market-value";
@@ -26,6 +26,7 @@ const ZERO_STATS: PlayerStatsResult = {
   playedPosition: "",
   contractExpiry: undefined,
   gamesMissed: 0,
+  positionStats: [],
   marketValue: 0,
   marketValueDisplay: "-",
   age: 0,
@@ -37,7 +38,7 @@ const CEAPI_HEADERS = {
 };
 
 /** Domestic league competition ID → display name */
-const LEAGUE_NAMES: Record<string, string> = {
+export const LEAGUE_NAMES: Record<string, string> = {
   GB1: "Premier League",
   ES1: "LaLiga",
   L1: "Bundesliga",
@@ -63,17 +64,9 @@ function currentSeasonId(): number {
   return now.getMonth() >= 7 ? year : year - 1;
 }
 
-interface CeapiGame {
-  gameInformation: { seasonId: number; competitionTypeId: number; competitionId: string; date?: { dateTimeUTC?: string } };
-  statistics: {
-    generalStatistics: { positionId?: number | null; participationState?: string | null };
-    goalStatistics: { goalsScoredTotal?: number | null; assists?: number | null; penaltyShooterGoalsScored?: number | null; penaltyShooterMisses?: number | null };
-    playingTimeStatistics: { playedMinutes?: number | null };
-  };
-}
 
 /** Transfermarkt CEAPI positionId → display name */
-const POSITION_NAMES: Record<number, string> = {
+export const POSITION_NAMES: Record<number, string> = {
   1: "Goalkeeper",
   3: "Centre-Back",
   4: "Left-Back",
@@ -96,6 +89,7 @@ interface AggregatedStats {
   recentForm: RecentGameStats[];
   playedPosition: string;
   gamesMissed: number;
+  positionStats: { positionId: number; position: string; minutes: number; goals: number; assists: number; appearances: number }[];
 }
 
 /** States that count as "missed" (injury, suspension, absence — but not "not in squad") */
@@ -108,7 +102,6 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
   let gamesMissed = 0;
   let league = "";
   const recentDomestic: RecentGameStats[] = [];
-  const minutesByPosition: Record<number, number> = {};
   for (const g of games) {
     if (g.gameInformation.seasonId !== seasonId) continue;
     const gs = g.statistics.goalStatistics;
@@ -136,31 +129,57 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
       if (mins > 0) {
         appearances++;
         recentDomestic.push({
-          goals: gls, assists: ast, penaltyGoals: pGoals, minutes: mins,
+          goals: gls,
+          assists: ast,
+          penaltyGoals: pGoals,
+          minutes: mins,
           date: g.gameInformation.date?.dateTimeUTC?.slice(0, 10) ?? "",
+          gameId: g.gameInformation.gameId,
+          gameDay: g.gameInformation.gameDay,
+          competitionId: g.gameInformation.competitionId,
+          positionId: posId ?? undefined,
+          competitionName: LEAGUE_NAMES[g.gameInformation.competitionId],
+          venue: g.clubsInformation?.club?.venue,
+          teamGoals: g.clubsInformation?.club?.goalsTotal ?? undefined,
+          opponentGoals: g.clubsInformation?.club?.opponentGoalsTotal ?? undefined,
+          opponentClubId: g.clubsInformation?.opponent?.clubId,
+          matchReportUrl: g.gameInformation.gameId
+            ? `${BASE_URL}/spielbericht/index/spielbericht/${g.gameInformation.gameId}`
+            : undefined,
         });
       }
       if (!league && g.gameInformation.competitionTypeId === 1) {
         league = LEAGUE_NAMES[g.gameInformation.competitionId] ?? "";
       }
     }
-    if (mins > 0 && posId) {
-      minutesByPosition[posId] = (minutesByPosition[posId] ?? 0) + mins;
-    }
   }
   // ceapi returns games newest-first; sort to ensure that, then keep last 10
   recentDomestic.sort((a, b) => b.date.localeCompare(a.date));
   const recentForm = recentDomestic.slice(0, 10);
-  // Most-played position by total minutes (including international)
-  let playedPosition = "";
-  let maxMins = 0;
-  for (const [id, total] of Object.entries(minutesByPosition)) {
-    if (total > maxMins) {
-      maxMins = total;
-      playedPosition = POSITION_NAMES[Number(id)] ?? "";
+  const positionStats = derivePositionStats(games);
+  const playedPosition = positionStats[0]?.position ?? "";
+  return { goals, assists, minutes, appearances, penaltyGoals, penaltyMisses, intlGoals, intlAssists, intlMinutes, intlAppearances, intlPenaltyGoals, league, recentForm, playedPosition, gamesMissed, positionStats };
+}
+
+/** Derive per-position stats from raw CEAPI games (server-only). */
+export function derivePositionStats(rawGames: CeapiGame[]): NonNullable<PlayerStatsResult["positionStats"]> {
+  const season = currentSeasonId();
+  const byPos: Record<number, { minutes: number; goals: number; assists: number; appearances: number }> = {};
+  for (const g of rawGames) {
+    if (g.gameInformation.seasonId !== season) continue;
+    const mins = g.statistics.playingTimeStatistics.playedMinutes ?? 0;
+    const posId = g.statistics.generalStatistics.positionId;
+    if (mins > 0 && posId) {
+      const ps = byPos[posId] ??= { minutes: 0, goals: 0, assists: 0, appearances: 0 };
+      ps.minutes += mins;
+      ps.goals += g.statistics.goalStatistics.goalsScoredTotal ?? 0;
+      ps.assists += g.statistics.goalStatistics.assists ?? 0;
+      ps.appearances++;
     }
   }
-  return { goals, assists, minutes, appearances, penaltyGoals, penaltyMisses, intlGoals, intlAssists, intlMinutes, intlAppearances, intlPenaltyGoals, league, recentForm, playedPosition, gamesMissed };
+  return Object.entries(byPos)
+    .map(([id, ps]) => ({ positionId: Number(id), position: POSITION_NAMES[Number(id)] ?? `Position ${id}`, ...ps }))
+    .sort((a, b) => b.minutes - a.minutes);
 }
 
 /** Raw fetch — no caching. Used by the offline refresh script. */
@@ -231,5 +250,5 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const games: CeapiGame[] = ceapi?.data?.performance ?? [];
   const stats = aggregateSeasonStats(games);
 
-  return { ...stats, ...shared };
+  return { ...stats, ...shared, rawGames: games };
 }

@@ -44,6 +44,14 @@ export function getLeistungsdatenUrl(profileUrl: string): string {
   return `https://www.transfermarkt.com${profileUrl.replace(PROFIL_RE, "/leistungsdaten/")}/saison/${season}/plus/1`;
 }
 
+export function getPlayerDetailHref(playerId: string): string {
+  return `/players/${playerId}`;
+}
+
+export function getPlayerIdFromProfileUrl(profileUrl: string): string | null {
+  return profileUrl.match(/\/spieler\/(\d+)/)?.[1] ?? null;
+}
+
 export function formatValueStr(value: string): string {
   return value || "-";
 }
@@ -52,4 +60,13 @@ export function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+export function getTeamDetailHref(clubId: string): string {
+  return `/teams/${clubId}`;
+}
+
+export function extractClubIdFromLogoUrl(url?: string): string | null {
+  if (!url) return null;
+  return url.match(/\/(\d+)\.png/)?.[1] ?? null;
 }

@@ -4,13 +4,14 @@ import { useQueries } from "@tanstack/react-query";
 import type { AnalysisResult, PeriodAnalysis, QualifiedTeam, AggregatedTeam, ManagerInfo } from "@/app/types";
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ManagerSection, ManagerSkeleton } from "./ManagerPPGBadge";
 import { InfoTip } from "./InfoTip";
 import { getLeagueLogoUrl, getLeagueUrl } from "@/lib/leagues";
-import { ordinal } from "@/lib/format";
+import { getTeamDetailHref, ordinal } from "@/lib/format";
 import { ChevronDown } from "lucide-react";
 
 async function fetchManager(clubId: string): Promise<{ clubId: string; manager: ManagerInfo | null }> {
@@ -87,15 +88,13 @@ function AggregatedTeamCard({
         )}
         <div className="flex-1 min-w-0">
           <div className="font-pixel text-base sm:text-lg truncate text-text-primary">
-            {team.clubUrl ? (
-              <a
-                href={`https://www.transfermarkt.com${team.clubUrl}`}
-                target="_blank"
-                rel="noopener noreferrer"
+            {team.clubId ? (
+              <Link
+                href={getTeamDetailHref(team.clubId)}
                 className={`hover:underline transition-colors ${isTop ? "text-accent-hot" : "text-accent-cold"}`}
               >
                 {team.name}
-              </a>
+              </Link>
             ) : (
               team.name
             )}
@@ -300,10 +299,10 @@ function CompactTeamCard({ team, type }: { team: QualifiedTeam; type: "top" | "b
         )}
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-sm truncate text-text-primary">
-            {team.clubUrl ? (
-              <a href={`https://www.transfermarkt.com${team.clubUrl}`} target="_blank" rel="noopener noreferrer" className={`hover:underline ${isTop ? "text-accent-hot" : "text-accent-cold"}`}>
+            {team.clubId ? (
+              <Link href={getTeamDetailHref(team.clubId)} className={`hover:underline ${isTop ? "text-accent-hot" : "text-accent-cold"}`}>
                 {team.name}
-              </a>
+              </Link>
             ) : team.name}
           </div>
           <div className="text-xs text-text-muted">

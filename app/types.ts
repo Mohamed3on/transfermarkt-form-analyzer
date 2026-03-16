@@ -72,6 +72,7 @@ export interface AnalysisResult {
   analysis: PeriodAnalysis[];
   aggregatedTop: AggregatedTeam[];
   aggregatedBottom: AggregatedTeam[];
+  allTeamsPerPeriod?: { period: number; teams: TeamStats[] }[];
 }
 
 export interface ManagerTrivia {
@@ -193,9 +194,31 @@ export interface MinutesValuePlayer {
   isOnLoan?: boolean;
   contractExpiry?: string;
   gamesMissed?: number;
+  positionStats?: { positionId: number; position: string; minutes: number; goals: number; assists: number; appearances: number }[];
   nationalityFlagUrl?: string;
   leagueLogoUrl?: string;
   recentForm?: RecentGameStats[];
+  rawGames?: CeapiGame[];
+}
+
+export interface CeapiGame {
+  gameInformation: {
+    gameId?: string;
+    seasonId: number;
+    competitionTypeId: number;
+    competitionId: string;
+    gameDay?: number;
+    date?: { dateTimeUTC?: string };
+  };
+  clubsInformation?: {
+    club?: { venue?: "home" | "away"; goalsTotal?: number | null; opponentGoalsTotal?: number | null };
+    opponent?: { clubId?: string };
+  };
+  statistics: {
+    generalStatistics: { positionId?: number | null; participationState?: string | null };
+    goalStatistics: { goalsScoredTotal?: number | null; assists?: number | null; penaltyShooterGoalsScored?: number | null; penaltyShooterMisses?: number | null };
+    playingTimeStatistics: { playedMinutes?: number | null };
+  };
 }
 
 export type InjuryMap = Record<string, { injury: string; returnDate: string; injurySince: string }>;
@@ -227,7 +250,19 @@ export interface RecentGameStats {
   assists: number;
   penaltyGoals: number;
   minutes: number;
+  positionId?: number;
   date: string;
+  gameId?: string;
+  gameDay?: number;
+  competitionId?: string;
+  competitionName?: string;
+  venue?: "home" | "away";
+  teamGoals?: number;
+  opponentGoals?: number;
+  opponentClubId?: string;
+  opponentName?: string;
+  opponentLogoUrl?: string;
+  matchReportUrl?: string;
 }
 
 export interface PlayerStatsResult {
@@ -252,10 +287,12 @@ export interface PlayerStatsResult {
   playedPosition: string;
   contractExpiry?: string;
   gamesMissed: number;
+  positionStats?: { positionId: number; position: string; minutes: number; goals: number; assists: number; appearances: number }[];
   nationalityFlagUrl?: string;
   leagueLogoUrl?: string;
   recentForm?: RecentGameStats[];
   marketValue: number;
   marketValueDisplay: string;
   age: number;
+  rawGames?: CeapiGame[];
 }

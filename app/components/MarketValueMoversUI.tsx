@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { formatMarketValue } from "@/lib/format";
+import { formatMarketValue, getPlayerDetailHref } from "@/lib/format";
 import { InfoTip } from "@/app/components/InfoTip";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import type { MarketValueMover, MarketValueMoversResult } from "@/app/types";
@@ -57,14 +58,12 @@ function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMov
           <PlayerAvatar imageUrl={latest.imageUrl} name={latest.name || "?"} size="lg" className="shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <a
-                href={latest.profileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={getPlayerDetailHref(latest.playerId)}
                 className="text-base sm:text-lg font-pixel text-text-primary hover:text-accent-hot transition-colors"
               >
                 {latest.name}
-              </a>
+              </Link>
               <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 shrink-0 font-value">
                 {sorted.length}×
               </Badge>
@@ -136,17 +135,15 @@ function PeriodPlayerRow({ player, isRepeat, variant }: { player: MarketValueMov
       <PlayerAvatar imageUrl={player.imageUrl} name={player.name || "?"} size="sm" className="shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <a
-            href={player.profileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href={getPlayerDetailHref(player.playerId)}
             className={cn(
               "text-sm font-semibold truncate transition-colors hover:text-accent-hot",
               isRepeat ? cfg.color : "text-text-primary"
             )}
           >
             {player.name}
-          </a>
+          </Link>
           {isRepeat && (
             <Badge variant={variant === "losers" ? "destructive" : "default"} className="text-[9px] px-1 py-0 h-3.5 shrink-0" title={`Value ${variant === "losers" ? "dropped" : "rose"} in 2+ consecutive Transfermarkt updates`}>
               Repeat mover

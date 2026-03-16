@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,7 @@ import type { InjuredPlayer } from "@/app/types";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { RankBadge } from "@/components/RankBadge";
-import { formatReturnInfo, formatInjuryDuration, formatMarketValue, formatValueStr } from "@/lib/format";
+import { extractClubIdFromLogoUrl, formatReturnInfo, formatInjuryDuration, formatMarketValue, formatValueStr, getPlayerDetailHref, getPlayerIdFromProfileUrl, getTeamDetailHref } from "@/lib/format";
 import { useProgressiveFetch } from "@/lib/use-progressive-fetch";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { Combobox } from "@/components/Combobox";
@@ -52,11 +53,17 @@ async function fetchLeagueInjured(code: string): Promise<InjuredPlayer[]> {
   return (data.players || []) as InjuredPlayer[];
 }
 
+function getInjuredPlayerDetailHref(profileUrl: string): string | null {
+  const playerId = getPlayerIdFromProfileUrl(profileUrl);
+  return playerId ? getPlayerDetailHref(playerId) : null;
+}
+
 
 
 
 function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: number; index?: number }) {
   const returnInfo = formatReturnInfo(player.returnDate);
+  const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
 
   return (
     <Card
@@ -73,14 +80,20 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <a
-                  href={player.profileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-bold text-sm sm:text-base hover:underline block text-text-primary"
-                >
-                  {player.name}
-                </a>
+                {detailHref ? (
+                  <Link href={detailHref} className="font-bold text-sm sm:text-base hover:underline block text-text-primary">
+                    {player.name}
+                  </Link>
+                ) : (
+                  <a
+                    href={player.profileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-sm sm:text-base hover:underline block text-text-primary"
+                  >
+                    {player.name}
+                  </a>
+                )}
                 <p className="text-xs sm:text-sm text-text-muted">
                   {player.position}
                 </p>
@@ -157,9 +170,18 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="font-bold text-sm sm:text-base text-text-primary">
-                  {team.club}
-                </h3>
+                {(() => {
+                  const teamClubId = extractClubIdFromLogoUrl(team.clubLogoUrl);
+                  return teamClubId ? (
+                    <Link href={getTeamDetailHref(teamClubId)} className="font-bold text-sm sm:text-base text-text-primary hover:underline block">
+                      {team.club}
+                    </Link>
+                  ) : (
+                    <h3 className="font-bold text-sm sm:text-base text-text-primary">
+                      {team.club}
+                    </h3>
+                  );
+                })()}
                 <LeagueBadge league={team.league} />
               </div>
               <div className="text-right shrink-0">
@@ -179,12 +201,13 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
           {team.players.map((player) => {
             const ri = formatReturnInfo(player.returnDate);
             const dur = formatInjuryDuration(player.injurySince);
+            const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
             return (
-              <a
+              <Link
                 key={player.profileUrl || player.name}
-                href={player.profileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={detailHref || `https://www.transfermarkt.com${player.profileUrl}`}
+                target={detailHref ? undefined : "_blank"}
+                rel={detailHref ? undefined : "noopener noreferrer"}
                 className="flex items-center gap-2.5 py-2 first:pt-0 last:pb-0"
               >
                 <PlayerAvatar imageUrl={player.imageUrl} name="?" className="w-8 h-8 rounded-full shrink-0 text-[10px]" />
@@ -199,7 +222,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                     {ri && <><span className="opacity-40">·</span><span className={ri.imminent ? "text-emerald-500 font-medium" : ""}>{ri.label}</span></>}
                   </div>
                 </div>
-              </a>
+              </Link>
             );
           })}
         </div>
@@ -209,12 +232,13 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
           {team.players.map((player) => {
             const ri = formatReturnInfo(player.returnDate);
             const dur = formatInjuryDuration(player.injurySince);
+            const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
             return (
-              <a
+              <Link
                 key={player.profileUrl || player.name}
-                href={player.profileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={detailHref || `https://www.transfermarkt.com${player.profileUrl}`}
+                target={detailHref ? undefined : "_blank"}
+                rel={detailHref ? undefined : "noopener noreferrer"}
                 className="flex items-center gap-3 px-3 py-2 hover:bg-card-hover transition-colors duration-150 odd:bg-elevated/40"
               >
                 <PlayerAvatar imageUrl={player.imageUrl} name="?" className="w-7 h-7 rounded-full shrink-0 text-[10px]" />
@@ -231,7 +255,7 @@ function TeamInjuryCard({ team, rank, index = 0 }: { team: TeamInjuryGroup; rank
                   </span>
                 )}
                 <span className="text-sm font-medium text-accent-hot font-value shrink-0 w-16 text-right">{player.marketValue}</span>
-              </a>
+              </Link>
             );
           })}
         </div>
@@ -261,12 +285,13 @@ function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; ra
           {group.players.map((player) => {
             const ri = formatReturnInfo(player.returnDate);
             const dur = formatInjuryDuration(player.injurySince);
+            const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
             return (
-              <a
+              <Link
                 key={player.profileUrl || player.name}
-                href={player.profileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={detailHref || `https://www.transfermarkt.com${player.profileUrl}`}
+                target={detailHref ? undefined : "_blank"}
+                rel={detailHref ? undefined : "noopener noreferrer"}
                 className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] sm:text-xs hover:bg-card-hover transition-colors duration-150 bg-elevated border border-border-subtle"
               >
                 {player.imageUrl && !player.imageUrl.includes("data:image") && (
@@ -277,7 +302,7 @@ function InjuryTypeCard({ group, rank, index = 0 }: { group: InjuryTypeGroup; ra
                 <span className="text-accent-hot font-medium font-value">{player.marketValue}</span>
                 {dur && <span className="text-text-muted">out {dur}</span>}
                 {ri && <span className={cn("font-medium", ri.imminent ? "text-emerald-500" : "text-text-muted")}>{ri.label}</span>}
-              </a>
+              </Link>
             );
           })}
         </div>
