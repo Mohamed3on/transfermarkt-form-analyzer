@@ -260,7 +260,7 @@ function PlayerCard({ player, index, injuryMap, ctx }: { player: MinutesValuePla
         <span className={`text-sm ${!recentGA ? "text-accent-hot" : ""}`}>{seasonGA.total} <span className="text-[10px] text-accent-hot/60">{includePen ? "G+A" : "npG+A"}</span></span>
         <span className="text-sm text-accent-blue">{player.marketValueDisplay}</span>
         <span>{player.age}y</span>
-        <span>{player.totalMatches} <span className="text-text-muted">gm</span></span>
+        <span>{player.totalMatches} games</span>
         <span>{displayMinutes.toLocaleString()}&apos;</span>
         {showCaps && (player.intlCareerCaps ?? 0) > 0 && (
           <span>{player.intlCareerCaps} <span className="text-text-muted">caps</span></span>
