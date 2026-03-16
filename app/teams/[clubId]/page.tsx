@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowUpRight, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Crown, Medal, Skull, TrendingDown, TrendingUp } from "lucide-react";
 import { createPageMetadata } from "@/lib/metadata";
 import {
   formatMarketValue,
@@ -368,7 +368,7 @@ export default async function TeamDetailPage({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                        <th className="px-3 py-2 text-left font-normal">Window</th>
+                        <th className="px-3 py-2 text-left font-normal">Window <span className="text-text-secondary">/ {recentForm[0]?.totalTeams ?? ""} teams</span></th>
                         <th className="px-3 py-2 text-right font-normal">W</th>
                         <th className="px-3 py-2 text-right font-normal">D</th>
                         <th className="px-3 py-2 text-right font-normal">L</th>
@@ -387,9 +387,15 @@ export default async function TeamDetailPage({
                           const fromBottom = totalTeams - r + 1;
                           const isTop = r <= 3;
                           const isBottom = fromBottom <= 3;
+                          const color = isTop ? "text-emerald-400" : isBottom ? "text-red-400" : "text-text-muted";
+                          const icon = r === 1 ? <Crown className="inline h-2.5 w-2.5" />
+                            : isTop ? <Medal className="inline h-2.5 w-2.5 opacity-60" />
+                            : fromBottom === 1 ? <Skull className="inline h-2.5 w-2.5" />
+                            : isBottom ? <Skull className="inline h-2.5 w-2.5 opacity-60" />
+                            : null;
                           return (
-                            <span className={`ml-1 text-[10px] ${isTop ? "text-emerald-400" : isBottom ? "text-red-400" : "text-text-muted"}`}>
-                              {isBottom ? `↓${ordinal(fromBottom)}` : `#${r}`}
+                            <span className={`ml-1 text-[10px] ${color}`}>
+                              {icon} #{r}
                             </span>
                           );
                         };
