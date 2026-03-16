@@ -387,14 +387,13 @@ export default async function TeamDetailPage({
                           const fromBottom = totalTeams - r + 1;
                           const isTop = r <= 3;
                           const isBottom = fromBottom <= 3;
-                          const color = isTop ? "text-emerald-400" : isBottom ? "text-red-400/80" : "text-text-muted";
-                          const icon = r === 1 ? <Crown className="inline h-2.5 w-2.5" />
-                            : isTop ? <Medal className="inline h-2.5 w-2.5 opacity-60" />
-                            : isBottom ? <TriangleAlert className="inline h-2.5 w-2.5" />
-                            : null;
+                          const color = isTop ? "text-emerald-400" : isBottom ? "text-red-400/70" : "text-text-muted/60";
                           return (
-                            <span className={`ml-1 text-[10px] ${color}`}>
-                              {icon} #{r}
+                            <span className={`ml-1.5 text-[10px] ${color}`}>
+                              {r === 1 && <Crown className="mr-0.5 inline h-2.5 w-2.5" />}
+                              {isTop && r > 1 && <Medal className="mr-0.5 inline h-2.5 w-2.5 opacity-60" />}
+                              {isBottom && <TriangleAlert className="mr-0.5 inline h-2.5 w-2.5" />}
+                              #{r}
                             </span>
                           );
                         };
