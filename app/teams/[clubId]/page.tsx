@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowUpRight, Crown, Medal, Skull, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Crown, Medal, TrendingDown, TrendingUp, TriangleAlert } from "lucide-react";
 import { createPageMetadata } from "@/lib/metadata";
 import {
   formatMarketValue,
@@ -387,11 +387,10 @@ export default async function TeamDetailPage({
                           const fromBottom = totalTeams - r + 1;
                           const isTop = r <= 3;
                           const isBottom = fromBottom <= 3;
-                          const color = isTop ? "text-emerald-400" : isBottom ? "text-red-400" : "text-text-muted";
+                          const color = isTop ? "text-emerald-400" : isBottom ? "text-red-400/80" : "text-text-muted";
                           const icon = r === 1 ? <Crown className="inline h-2.5 w-2.5" />
                             : isTop ? <Medal className="inline h-2.5 w-2.5 opacity-60" />
-                            : fromBottom === 1 ? <Skull className="inline h-2.5 w-2.5" />
-                            : isBottom ? <Skull className="inline h-2.5 w-2.5 opacity-60" />
+                            : isBottom ? <TriangleAlert className="inline h-2.5 w-2.5" />
                             : null;
                           return (
                             <span className={`ml-1 text-[10px] ${color}`}>
