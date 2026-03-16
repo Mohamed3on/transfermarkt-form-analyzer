@@ -57,14 +57,7 @@ export function PlayerSearch() {
         if (!r.ok) throw new Error(`Search index returned ${r.status}`);
         return r.json();
       })
-      .then((data) => {
-        // Handle both old format (flat array) and new format ({ players, teams })
-        if (Array.isArray(data)) {
-          setIndex({ players: data, teams: [] });
-        } else {
-          setIndex(data);
-        }
-      })
+      .then(setIndex)
       .catch((err) => {
         console.error("[PlayerSearch] Failed to load search index:", err);
         fetchedRef.current = false;
@@ -132,13 +125,10 @@ export function PlayerSearch() {
     return scored.slice(0, 8);
   }, [index, query]);
 
-  const handleSelect = useCallback(
-    (path: string) => {
-      setOpen(false);
-      router.push(path);
-    },
-    [router]
-  );
+  const handleSelect = (path: string) => {
+    setOpen(false);
+    router.push(path);
+  };
 
   return (
     <>
@@ -179,38 +169,33 @@ export function PlayerSearch() {
                 <CommandEmpty className="py-12 text-text-muted">No results found.</CommandEmpty>
               ) : (
                 <CommandGroup>
-                  {results.map((r) =>
-                    r.type === "player" ? (
+                  {results.map((r) => {
+                    const prefix = r.type === "player" ? "p" : "t";
+                    const href = r.type === "player" ? `/players/${r.data.id}` : `/teams/${r.data.id}`;
+                    return (
                       <CommandItem
-                        key={`p-${r.data.id}`}
-                        value={`p-${r.data.id}`}
-                        onSelect={() => handleSelect(`/players/${r.data.id}`)}
+                        key={`${prefix}-${r.data.id}`}
+                        value={`${prefix}-${r.data.id}`}
+                        onSelect={() => handleSelect(href)}
                         className="gap-3 rounded-xl px-3 py-2.5 data-[selected=true]:bg-white/5"
                       >
-                        <PlayerAvatar
-                          name={r.data.name}
-                          imageUrl={r.data.imageUrl}
-                          className="h-9 w-9 rounded-lg border border-border-subtle/50"
-                        />
+                        {r.type === "player" ? (
+                          <PlayerAvatar name={r.data.name} imageUrl={r.data.imageUrl} className="h-9 w-9 rounded-lg border border-border-subtle/50" />
+                        ) : (
+                          <img src={r.data.logoUrl} alt={r.data.name} className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain p-0.5" />
+                        )}
                         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                           <span className="truncate text-sm text-text-primary">{r.data.name}</span>
-                          <span className="truncate text-xs text-text-muted">{r.data.position} · {r.data.club}</span>
+                          {r.type === "player" && (
+                            <span className="truncate text-xs text-text-muted">{r.data.position} · {r.data.club}</span>
+                          )}
                         </div>
-                        <span className="font-value text-xs text-text-muted">{formatMarketValue(r.data.marketValue)}</span>
+                        <span className="font-value text-xs text-text-muted">
+                          {r.type === "player" ? formatMarketValue(r.data.marketValue) : "Team"}
+                        </span>
                       </CommandItem>
-                    ) : (
-                      <CommandItem
-                        key={`t-${r.data.id}`}
-                        value={`t-${r.data.id}`}
-                        onSelect={() => handleSelect(`/teams/${r.data.id}`)}
-                        className="gap-3 rounded-xl px-3 py-2.5 data-[selected=true]:bg-white/5"
-                      >
-                        <img src={r.data.logoUrl} alt={r.data.name} className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain p-0.5" />
-                        <span className="truncate text-sm text-text-primary">{r.data.name}</span>
-                        <span className="ml-auto text-[10px] uppercase tracking-wider text-text-muted">Team</span>
-                      </CommandItem>
-                    )
-                  )}
+                    );
+                  })}
                 </CommandGroup>
               )}
             </CommandList>
