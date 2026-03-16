@@ -368,7 +368,7 @@ export default async function TeamDetailPage({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                        <th className="px-3 py-2 text-left font-normal">Window <span className="text-text-secondary">/ {recentForm[0]?.totalTeams ?? ""} teams</span></th>
+                        <th className="px-3 py-2 text-left font-normal">Window <span className="text-text-secondary">/ {recentForm[0]?.totalTeams ?? ""} top-5 league teams</span></th>
                         <th className="px-3 py-2 text-right font-normal">W</th>
                         <th className="px-3 py-2 text-right font-normal">D</th>
                         <th className="px-3 py-2 text-right font-normal">L</th>
