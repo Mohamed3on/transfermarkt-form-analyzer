@@ -73,7 +73,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     description:
       "Most valuable players from the top 5 leagues.",
     sourcePath: "/players",
-    query: { top5: "1", sort: "value" },
+    query: { league: "top5", sort: "value" },
   },
   {
     slug: "top-5-most-productive-players",
@@ -83,7 +83,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     description:
       "Top 5 league players sorted by goals plus assists (G+A).",
     sourcePath: "/players",
-    query: { top5: "1", sort: "ga" },
+    query: { league: "top5", sort: "ga" },
   },
 
   {

@@ -328,7 +328,7 @@ export function PlayersUI({ initialData: rawPlayers, injuryMap }: { initialData:
   const sortBy = parseSortKey(params.get("sort"));
   const sortAsc = params.get("dir") === "asc";
   const formWindow = parseFormWindow(params.get("fw"));
-  const leagueFilter = params.get("league") || "all";
+  const leagueFilter = params.get("league") || (params.get("top5") === "1" ? "top5" : "all");
   const clubFilter = params.get("club") || "all";
   const nationalityFilter = params.get("nat") || "all";
   const positionFilter = params.get("pos") || "";
