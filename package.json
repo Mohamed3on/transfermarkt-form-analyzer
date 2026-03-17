@@ -9,6 +9,7 @@
     "lint": "eslint",
     "refresh:minutes-value": "bun run scripts/refresh-minutes-value.ts",
     "refresh:biggest-movers": "bun run scripts/refresh-biggest-movers.ts",
+    "refresh:injured": "bun run scripts/refresh-injured.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepare": "husky"

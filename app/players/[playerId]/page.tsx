@@ -647,9 +647,7 @@ export default async function PlayerDetailPage({
                 {signalSummary.cheaperPlayersBeatingTarget} cheaper peers with more output
               </SignalBadge>
             )}
-            <Suspense>
-              <PlayerInjuryBadge playerId={player.playerId} />
-            </Suspense>
+            <PlayerInjuryBadge playerId={player.playerId} />
             {player.contractExpiry && (
               <SignalBadge className="border-border-subtle bg-card-hover text-text-secondary">
                 Contract until {player.contractExpiry}

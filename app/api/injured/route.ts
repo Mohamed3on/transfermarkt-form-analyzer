@@ -1,15 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getInjuredPlayers, fetchLeagueInjured } from "@/lib/injured";
+import { NextResponse } from "next/server";
+import { getInjuredPlayers } from "@/lib/injured";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const league = request.nextUrl.searchParams.get("league");
-    if (league) {
-      const players = await fetchLeagueInjured(league);
-      return NextResponse.json({ players });
-    }
     const data = await getInjuredPlayers();
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
+    });
   } catch (error) {
     console.error("Error fetching injured players:", error);
     return NextResponse.json({ error: "Failed to fetch injured players" }, { status: 500 });

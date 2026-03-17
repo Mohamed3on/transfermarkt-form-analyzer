@@ -4,8 +4,11 @@ import { ArrowLeft, ArrowUpRight, Crown, Medal, TrendingDown, TrendingUp, Triang
 import { createPageMetadata } from "@/lib/metadata";
 import {
   extractClubIdFromLogoUrl,
+  formatInjuryDuration,
   formatMarketValue,
+  formatReturnInfo,
   getPlayerDetailHref,
+  getPlayerIdFromProfileUrl,
   ordinal,
 } from "@/lib/format";
 import { getTeamDetailData } from "@/lib/team-detail";
@@ -19,8 +22,48 @@ import { DetailDeck } from "@/components/DetailDeck";
 import { HeroMetric } from "@/components/HeroMetric";
 import { SectionPanel } from "@/components/SectionPanel";
 import { SquadTab } from "./SquadTab";
-import { ManagerClient, InjuriesTabClient, InjuriesProvider } from "./TeamDeferredData";
+import { ManagerClient } from "./TeamDeferredData";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
+import type { InjuredPlayer } from "@/app/types";
 
+function InjuredPlayerRow({ player }: { player: InjuredPlayer }) {
+  const returnInfo = formatReturnInfo(player.returnDate);
+  const duration = formatInjuryDuration(player.injurySince);
+  const playerId = getPlayerIdFromProfileUrl(player.profileUrl);
+  const href = playerId ? getPlayerDetailHref(playerId) : `https://www.transfermarkt.com${player.profileUrl}`;
+  return (
+    <Link
+      href={href}
+      target={playerId ? undefined : "_blank"}
+      rel={playerId ? undefined : "noopener noreferrer"}
+      className="flex items-center gap-3 rounded-xl border border-border-subtle bg-elevated p-2.5 transition-colors hover:border-border-medium hover:bg-card-hover"
+    >
+      <PlayerAvatar imageUrl={player.imageUrl} name={player.name} size="sm" className="border border-border-subtle" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm text-text-primary">{player.name}</p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-text-secondary">
+          <span>{player.position}</span>
+          <span className="opacity-40">·</span>
+          <span className="text-red-400">{player.injury}</span>
+          {duration && (
+            <>
+              <span className="opacity-40">·</span>
+              <span>out {duration}</span>
+            </>
+          )}
+        </p>
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="text-sm font-value text-accent-hot">{player.marketValue}</p>
+        {returnInfo && (
+          <p className={`text-[11px] ${returnInfo.imminent ? "text-emerald-400 font-medium" : "text-text-muted"}`}>
+            {returnInfo.label}
+          </p>
+        )}
+      </div>
+    </Link>
+  );
+}
 
 export async function generateMetadata({
   params,
@@ -110,7 +153,6 @@ export default async function TeamDetailPage({
     : null;
 
   return (
-    <InjuriesProvider clubId={clubId}>
     <div className="full-bleed pt-6 pb-12 sm:pt-8 sm:pb-16">
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-4">
         <Link
@@ -403,10 +445,21 @@ export default async function TeamDetailPage({
           </div>
 
           {/* Tab 4: Injuries */}
-          <InjuriesTabClient />
+          <div>
+            {clubInjuries.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border-subtle bg-elevated px-4 py-6 text-sm text-text-secondary">
+                No injured players currently tracked for this team.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {clubInjuries.map((p) => (
+                  <InjuredPlayerRow key={p.profileUrl || p.name} player={p} />
+                ))}
+              </div>
+            )}
+          </div>
         </DetailDeck>
       </div>
     </div>
-    </InjuriesProvider>
   );
 }
