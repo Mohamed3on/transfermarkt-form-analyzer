@@ -11,6 +11,7 @@ import { InfoTip } from "@/app/components/InfoTip";
 import { LEAGUES, getLeagueLogoUrl } from "@/lib/leagues";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { RankBadge } from "@/components/RankBadge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatValueStr, getTeamDetailHref, ordinal } from "@/lib/format";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 
@@ -79,7 +80,7 @@ interface TeamCardProps {
 
 function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
   const isOver = type === "over";
-  const { data: manager } = useQuery<ManagerInfo | null>({
+  const { data: manager, isLoading: managerLoading } = useQuery<ManagerInfo | null>({
     queryKey: ["manager", team.clubId],
     queryFn: () => fetch(`/api/manager/${team.clubId}`).then((r) => r.json()).then((d) => d.manager ?? null),
     staleTime: 86400_000,
@@ -137,8 +138,13 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
           </div>
 
           {/* Manager info */}
-          {manager && (
-            <div className="mt-2 text-[11px] sm:text-sm text-text-muted">
+          {managerLoading ? (
+            <div className="mt-2 flex items-center gap-2">
+              <Skeleton className="h-3 w-14" />
+              <Skeleton className="h-3 w-28" />
+            </div>
+          ) : manager && (
+            <div className="mt-2 text-[11px] sm:text-sm text-text-muted animate-in fade-in duration-300">
               <ManagerSection manager={manager} />
             </div>
           )}

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import {
   extractClubIdFromLogoUrl,
@@ -11,6 +12,7 @@ import {
   getPlayerIdFromProfileUrl,
 } from "@/lib/format";
 import type { InjuredPlayer, ManagerInfo } from "@/app/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // --- Shared injuries context (fetch once, use in badge + tab) ---
 
@@ -35,23 +37,19 @@ export function InjuriesProvider({ clubId, children }: { clubId: string; childre
 // --- Manager ---
 
 export function ManagerClient({ clubId }: { clubId: string }) {
-  const [manager, setManager] = useState<ManagerInfo | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const { data: manager, isLoading } = useQuery<ManagerInfo | null>({
+    queryKey: ["manager", clubId],
+    queryFn: () => fetch(`/api/manager/${clubId}`).then((r) => r.json()).then((d) => d.manager ?? null),
+    staleTime: 86400_000,
+  });
 
-  useEffect(() => {
-    fetch(`/api/manager/${clubId}`)
-      .then((r) => r.json())
-      .then((d) => { setManager(d.manager); setLoaded(true); })
-      .catch(() => setLoaded(true));
-  }, [clubId]);
-
-  if (!loaded) return (
+  if (isLoading) return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2">
-        <div className="h-3.5 w-16 animate-pulse rounded bg-border-subtle/50" />
-        <div className="h-3.5 w-32 animate-pulse rounded bg-border-subtle/40" />
+        <Skeleton className="h-3.5 w-16" />
+        <Skeleton className="h-3.5 w-32" />
       </div>
-      <div className="h-3 w-48 animate-pulse rounded bg-border-subtle/30" />
+      <Skeleton className="h-3 w-48" />
     </div>
   );
   if (!manager) return null;
