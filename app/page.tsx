@@ -535,6 +535,8 @@ function FeatureCard({ feature }: { feature: Feature }) {
   );
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const [analysisResult, teamFormResult, playersResult, injuredResult, losersResult, winnersResult] = await Promise.allSettled([
     getAnalysis(),
