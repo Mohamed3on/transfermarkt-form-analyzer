@@ -1,11 +1,10 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import type { InjuredPlayer, MarketValueMover, MinutesValuePlayer, PlayerStats } from "@/app/types";
+import type { MarketValueMover, MinutesValuePlayer, PlayerStats } from "@/app/types";
 import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { applyStatsToggles, getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
 import { getFormStats, missedPct } from "@/lib/filter-players";
 import { extractClubIdFromLogoUrl, formatMarketValue } from "@/lib/format";
-import { getInjuredPlayers } from "@/lib/injured";
 import { normalizeForSearch } from "@/lib/normalize";
 import {
   canBeOutperformerAgainst,
@@ -17,8 +16,6 @@ import {
   strictlyOutperforms,
 } from "@/lib/positions";
 import { MIN_COMPARISON_COUNT, countComparisons } from "@/lib/value-analysis";
-
-const PLAYER_ID_RE = /\/spieler\/(\d+)/;
 
 export interface PlayerRankings {
   marketValueOverall: number;
@@ -109,7 +106,7 @@ export interface SubgroupRanking {
 export interface PlayerDetailData {
   player: MinutesValuePlayer;
   playerStats: PlayerStats;
-  injury: InjuredPlayer | null;
+  injury: null;
   clubId: string | null;
   rankings: PlayerRankings;
   positionLabel: string;
@@ -267,9 +264,8 @@ function stripRecentForm({ recentForm: _, ...rest }: MinutesValuePlayer): Minute
 }
 
 async function computePlayerDetailData(playerId: string): Promise<PlayerDetailData | null> {
-  const [players, injuredData, winners, losers] = await Promise.all([
+  const [players, winners, losers] = await Promise.all([
     getMinutesValueData(),
-    getInjuredPlayers(),
     findRepeatWinners(),
     findRepeatLosers(),
   ]);
@@ -294,9 +290,6 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
       : candidate.club === player.club && candidate.league === player.league;
     if (matchesClub) clubmates.push(candidate);
   }
-  const injury = injuredData.players.find(
-    (candidate) => candidate.profileUrl.match(PLAYER_ID_RE)?.[1] === player.playerId,
-  ) ?? null;
 
   const playerStats = toPlayerStats(player);
   const comparisonPlayers = applyStatsToggles(players.map(toPlayerStats), {
@@ -382,7 +375,7 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
   return {
     player,
     playerStats,
-    injury,
+    injury: null,
     clubId,
     rankings: buildRankings(player, players, leaguePlayers, clubmates, positionPlayers),
     positionLabel,
@@ -424,7 +417,7 @@ export const getPlayerDetailData = cache((playerId: string) =>
   unstable_cache(
     () => computePlayerDetailData(playerId),
     [`player-detail-${playerId}`],
-    { revalidate: 86400, tags: ["form-analysis", "injured"] },
+    { revalidate: 86400, tags: ["form-analysis"] },
   )(),
 );
 

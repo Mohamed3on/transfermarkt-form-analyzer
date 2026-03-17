@@ -6,13 +6,12 @@ import {
   ArrowUpRight,
   Crown,
   Medal,
-  ShieldAlert,
   Sparkles,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import { createPageMetadata } from "@/lib/metadata";
-import { formatInjuryDuration, formatReturnInfo, getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
+import { getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
 import { getPlayerDetailData, seasonNpga, type PlayerRankings } from "@/lib/player-detail";
 import { getPlayerRecentMatches } from "@/lib/player-recent-matches";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +26,7 @@ import { HeroMetric } from "@/components/HeroMetric";
 import { SectionPanel } from "@/components/SectionPanel";
 import type { MinutesValuePlayer, PlayerStats, RecentGameStats } from "@/app/types";
 import { POSITION_NAMES } from "@/lib/fetch-player-minutes";
+import { PlayerInjuryBadge } from "./PlayerInjuryBadge";
 import { effectivePosition, getBroadPositionFilter } from "@/lib/positions";
 
 function rankColor(rank: number, total: number): string {
@@ -495,7 +495,6 @@ export default async function PlayerDetailPage({
 
   const {
     player,
-    injury,
     rankings,
     signalSummary,
     trend,
@@ -515,8 +514,6 @@ export default async function PlayerDetailPage({
     penaltyRank,
   } = data;
   const fallbackMatchCount = player.recentForm?.length ?? 0;
-  const injuryReturn = injury ? formatReturnInfo(injury.returnDate) : null;
-  const injuryDuration = injury ? formatInjuryDuration(injury.injurySince) : null;
 
   return (
     <div className="full-bleed pt-6 pb-12 sm:pt-8 sm:pb-16">
@@ -650,14 +647,7 @@ export default async function PlayerDetailPage({
                 {signalSummary.cheaperPlayersBeatingTarget} cheaper peers with more output
               </SignalBadge>
             )}
-            {injury && (
-              <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
-                <ShieldAlert className="mr-1 h-3.5 w-3.5" />
-                {injury.injury}
-                {injuryDuration ? ` · out ${injuryDuration}` : ""}
-                {injuryReturn ? ` · ${injuryReturn.label}` : ""}
-              </SignalBadge>
-            )}
+            <PlayerInjuryBadge playerId={player.playerId} />
             {player.contractExpiry && (
               <SignalBadge className="border-border-subtle bg-card-hover text-text-secondary">
                 Contract until {player.contractExpiry}
