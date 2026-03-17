@@ -12,7 +12,7 @@ import {
   getPlayerIdFromProfileUrl,
 } from "@/lib/format";
 import type { InjuredPlayer, ManagerInfo } from "@/app/types";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ManagerSkeleton } from "@/app/components/ManagerPPGBadge";
 
 // --- Shared injuries context (fetch once, use in badge + tab) ---
 
@@ -44,12 +44,8 @@ export function ManagerClient({ clubId }: { clubId: string }) {
   });
 
   if (isLoading) return (
-    <div className="mt-3 space-y-2">
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-3.5 w-16" />
-        <Skeleton className="h-3.5 w-32" />
-      </div>
-      <Skeleton className="h-3 w-48" />
+    <div className="mt-3">
+      <ManagerSkeleton />
     </div>
   );
   if (!manager) return null;
@@ -61,7 +57,7 @@ export function ManagerClient({ clubId }: { clubId: string }) {
   const ppgColor = isBest ? "text-emerald-400" : isWorst ? "text-red-400" : "text-text-secondary";
 
   return (
-    <div className="mt-3 space-y-1.5 text-sm text-text-secondary animate-in fade-in duration-300">
+    <div className="mt-3 space-y-1.5 text-sm text-text-secondary animate-fade-in">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-text-muted">Manager:</span>
         <a href={manager.profileUrl} target="_blank" rel="noopener noreferrer" className={`font-semibold hover:underline transition-colors ${manager.isCurrentManager ? "text-accent-blue" : "text-text-muted"}`}>

@@ -6,12 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import type { ManagerInfo, TeamFormEntry } from "@/app/types";
 import { Card } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { ManagerSection } from "@/app/components/ManagerPPGBadge";
+import { ManagerSection, ManagerSkeleton } from "@/app/components/ManagerPPGBadge";
 import { InfoTip } from "@/app/components/InfoTip";
 import { LEAGUES, getLeagueLogoUrl } from "@/lib/leagues";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { RankBadge } from "@/components/RankBadge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { formatValueStr, getTeamDetailHref, ordinal } from "@/lib/format";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 
@@ -139,12 +138,11 @@ function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
 
           {/* Manager info */}
           {managerLoading ? (
-            <div className="mt-2 flex items-center gap-2">
-              <Skeleton className="h-3 w-14" />
-              <Skeleton className="h-3 w-28" />
+            <div className="mt-2 text-[11px] sm:text-sm">
+              <ManagerSkeleton />
             </div>
           ) : manager && (
-            <div className="mt-2 text-[11px] sm:text-sm text-text-muted animate-in fade-in duration-300">
+            <div className="mt-2 text-[11px] sm:text-sm text-text-muted animate-fade-in">
               <ManagerSection manager={manager} />
             </div>
           )}
