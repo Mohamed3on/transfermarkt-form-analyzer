@@ -7,6 +7,13 @@ import { fetchPage } from "./fetch";
 import { parseMarketValue } from "./parse-market-value";
 
 const MV_BASE = `${BASE_URL}/spieler-statistik/wertvollstespieler/marktwertetop`;
+
+export const EMPTY_PLAYER_STATS: Omit<MinutesValuePlayer, "name" | "position" | "imageUrl" | "profileUrl" | "playerId"> = {
+  age: 0, club: "", clubLogoUrl: "", league: "", nationality: "", nationalityFlagUrl: "",
+  marketValue: 0, marketValueDisplay: "-", minutes: 0, clubMatches: 0, intlMatches: 0,
+  totalMatches: 0, goals: 0, assists: 0, penaltyGoals: 0, penaltyMisses: 0,
+  intlGoals: 0, intlAssists: 0, intlMinutes: 0, intlAppearances: 0, intlPenaltyGoals: 0, intlCareerCaps: 0,
+};
 export function toPlayerStats(p: MinutesValuePlayer): PlayerStats {
   return {
     name: p.name,
@@ -126,14 +133,9 @@ async function fetchMVPages(queryString: string, pages: number): Promise<Minutes
   const players: MinutesValuePlayer[] = [];
   for (const [playerId, mv] of mvMap) {
     players.push({
-      name: mv.name!, position: mv.position || "", age: mv.age || 0,
-      club: mv.club || "", clubLogoUrl: "", league: mv.league || "",
-      nationality: mv.nationality || "", nationalityFlagUrl: mv.nationalityFlagUrl || "",
-      marketValue: mv.marketValue || 0, marketValueDisplay: mv.marketValueDisplay || "",
-      minutes: 0, clubMatches: 0, intlMatches: 0, totalMatches: 0,
-      goals: 0, assists: 0, penaltyGoals: 0, penaltyMisses: 0,
-      intlGoals: 0, intlAssists: 0, intlMinutes: 0, intlAppearances: 0,
-      intlPenaltyGoals: 0, intlCareerCaps: 0,
+      ...EMPTY_PLAYER_STATS,
+      ...mv,
+      name: mv.name || "", position: mv.position || "",
       imageUrl: mv.imageUrl || "", profileUrl: mv.profileUrl || "", playerId,
     });
   }

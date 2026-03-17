@@ -2,13 +2,7 @@ import * as cheerio from "cheerio";
 import type { MinutesValuePlayer } from "@/app/types";
 import { BASE_URL } from "./constants";
 import { fetchPage } from "./fetch";
-
-const EMPTY_PLAYER: Omit<MinutesValuePlayer, "name" | "position" | "imageUrl" | "profileUrl" | "playerId"> = {
-  age: 0, club: "", clubLogoUrl: "", league: "", nationality: "", nationalityFlagUrl: "",
-  marketValue: 0, marketValueDisplay: "-", minutes: 0, clubMatches: 0, intlMatches: 0,
-  totalMatches: 0, goals: 0, assists: 0, penaltyGoals: 0, penaltyMisses: 0,
-  intlGoals: 0, intlAssists: 0, intlMinutes: 0, intlAppearances: 0, intlPenaltyGoals: 0, intlCareerCaps: 0,
-};
+import { EMPTY_PLAYER_STATS } from "./fetch-minutes-value";
 
 function fetchPlayerList(
   urls: string[],
@@ -43,7 +37,7 @@ function fetchPlayerList(
         const imgEl = inlineTable.find("img").first();
         const imageUrl = (imgEl.attr("data-src") || imgEl.attr("src") || "").replace("/medium/", "/header/");
 
-        players.push({ ...EMPTY_PLAYER, name, position, imageUrl, profileUrl, playerId });
+        players.push({ ...EMPTY_PLAYER_STATS, name, position, imageUrl, profileUrl, playerId });
       });
     }
 

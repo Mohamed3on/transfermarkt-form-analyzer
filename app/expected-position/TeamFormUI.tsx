@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import type { ManagerInfo, TeamFormEntry } from "@/app/types";
 import { Card } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -13,6 +13,7 @@ import { LeagueBadge } from "@/components/LeagueBadge";
 import { RankBadge } from "@/components/RankBadge";
 import { formatValueStr, getTeamDetailHref, ordinal } from "@/lib/format";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
+import { managerQueryOptions } from "@/lib/hooks/use-manager-query";
 
 export interface TeamFormResponse {
   success: boolean;
@@ -75,15 +76,12 @@ interface TeamCardProps {
   type: "over" | "under";
   index?: number;
   formLeader?: { type: "top" | "bottom"; count: number };
+  manager?: ManagerInfo | null;
+  managerLoading?: boolean;
 }
 
-function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
+function TeamCard({ team, rank, type, index = 0, formLeader, manager, managerLoading }: TeamCardProps) {
   const isOver = type === "over";
-  const { data: manager, isLoading: managerLoading } = useQuery<ManagerInfo | null>({
-    queryKey: ["manager", team.clubId],
-    queryFn: () => fetch(`/api/manager/${team.clubId}`).then((r) => r.json()).then((d) => d.manager ?? null),
-    staleTime: 86400_000,
-  });
 
   return (
     <Card
@@ -180,6 +178,23 @@ function TeamListsGrid({
   underperformers: TeamFormEntry[];
   formLeaders?: Record<string, { type: "top" | "bottom"; count: number }>;
 }) {
+  const allTeams = useMemo(() => [...overperformers, ...underperformers], [overperformers, underperformers]);
+  const clubIds = useMemo(() => [...new Set(allTeams.map((t) => t.clubId).filter(Boolean))], [allTeams]);
+
+  const managerQueries = useQueries({
+    queries: clubIds.map((clubId) => managerQueryOptions(clubId)),
+  });
+
+  const { managersMap, loadingSet } = useMemo(() => {
+    const map: Record<string, ManagerInfo | null> = {};
+    const loading = new Set<string>();
+    managerQueries.forEach((q, i) => {
+      if (q.data !== undefined) map[clubIds[i]] = q.data;
+      if (q.isLoading) loading.add(clubIds[i]);
+    });
+    return { managersMap: map, loadingSet: loading };
+  }, [managerQueries, clubIds]);
+
   const maxLength = Math.max(overperformers.length, underperformers.length);
 
   const renderTeamCard = (team: TeamFormEntry, rank: number, type: "over" | "under", index: number) => (
@@ -189,6 +204,8 @@ function TeamListsGrid({
       type={type}
       index={index}
       formLeader={formLeaders?.[team.clubId]}
+      manager={managersMap[team.clubId]}
+      managerLoading={loadingSet.has(team.clubId)}
     />
   );
 

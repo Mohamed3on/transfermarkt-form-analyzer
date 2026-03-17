@@ -14,11 +14,7 @@ import { getLeagueLogoUrl, getLeagueUrl } from "@/lib/leagues";
 import { getTeamDetailHref, ordinal } from "@/lib/format";
 import { ChevronDown } from "lucide-react";
 
-async function fetchManager(clubId: string): Promise<{ clubId: string; manager: ManagerInfo | null }> {
-  const res = await fetch(`/api/manager/${clubId}`);
-  if (!res.ok) throw new Error(`Manager fetch failed for ${clubId}: ${res.status}`);
-  return res.json();
-}
+import { managerQueryOptions } from "@/lib/hooks/use-manager-query";
 
 function formatStatValue(category: string, value: number): string {
   if (category.includes("GD")) return value > 0 ? `+${value}` : `${value}`;
@@ -144,11 +140,9 @@ function AggregatedTeamCard({
           {managerLoading ? (
             <ManagerSkeleton />
           ) : manager ? (
-            <div className="animate-fade-in">
-              <ManagerSection manager={manager} />
-            </div>
+            <ManagerSection manager={manager} />
           ) : (
-            <span className="text-text-muted animate-fade-in">Manager data unavailable</span>
+            <span className="text-text-muted">Manager data unavailable</span>
           )}
         </div>
       )}
@@ -160,21 +154,14 @@ function AggregatedSection({ teams, type, deltaMap }: { teams: AggregatedTeam[];
   const clubIds = useMemo(() => teams.map((t) => t.clubId).filter(Boolean), [teams]);
 
   const managerQueries = useQueries({
-    queries: clubIds.map((clubId) => ({
-      queryKey: ["manager", clubId],
-      queryFn: () => fetchManager(clubId),
-      staleTime: 60 * 60 * 1000,
-      gcTime: 24 * 60 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-    })),
+    queries: clubIds.map((clubId) => managerQueryOptions(clubId)),
   });
 
   const { managersMap, loadingSet } = useMemo(() => {
     const map: Record<string, ManagerInfo | null> = {};
     const loading = new Set<string>();
     managerQueries.forEach((q, i) => {
-      if (q.data) map[clubIds[i]] = q.data.manager;
+      if (q.data !== undefined) map[clubIds[i]] = q.data;
       if (q.isLoading) loading.add(clubIds[i]);
     });
     return { managersMap: map, loadingSet: loading };

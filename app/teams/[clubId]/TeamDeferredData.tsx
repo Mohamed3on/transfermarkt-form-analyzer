@@ -1,15 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import type { ManagerInfo } from "@/app/types";
+import { useManagerQuery } from "@/lib/hooks/use-manager-query";
 import { ManagerSkeleton } from "@/app/components/ManagerPPGBadge";
 
 export function ManagerClient({ clubId }: { clubId: string }) {
-  const { data: manager, isLoading } = useQuery<ManagerInfo | null>({
-    queryKey: ["manager", clubId],
-    queryFn: () => fetch(`/api/manager/${clubId}`).then((r) => r.json()).then((d) => d.manager ?? null),
-    staleTime: 86400_000,
-  });
+  const { data: manager, isLoading } = useManagerQuery(clubId);
 
   if (isLoading) return (
     <div className="mt-3">
