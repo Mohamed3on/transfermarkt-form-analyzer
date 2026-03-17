@@ -230,7 +230,7 @@ export default async function TeamDetailPage({
                               <span className="font-value">{manager.ppg!.toFixed(2)}</span> PPG · {manager.matches} {manager.matches === 1 ? "game" : "games"} · <span className="font-value">#{manager.ppgRank}</span> of {manager.totalComparableManagers}
                               {isBest && <span className="ml-1 text-emerald-400 font-medium">· Best ever</span>}
                               {isWorst && <span className="ml-1 text-red-400 font-medium">· Worst ever</span>}
-                              {isOnly && <span className="ml-1 text-text-muted">· Only manager</span>}
+                              {isOnly && <span className="ml-1 text-text-muted">· Only manager since &apos;95 with {manager.matches}+ games</span>}
                             </span>
                           )}
                           {manager.ppg !== null && !hasRanking && (
