@@ -25,7 +25,6 @@ import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { getManagerInfo } from "@/lib/fetch-manager";
 import type { AggregatedTeam, ManagerInfo, MarketValueMover, MinutesValuePlayer } from "@/app/types";
 
-export const revalidate = 7200; // 2 hours — matches form/team-form cache
 
 export const metadata = createPageMetadata({
   title: "Football Form, Value & Injury Analytics",
@@ -534,8 +533,6 @@ function FeatureCard({ feature }: { feature: Feature }) {
     </Card>
   );
 }
-
-export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const [analysisResult, teamFormResult, playersResult, injuredResult, losersResult, winnersResult] = await Promise.allSettled([
