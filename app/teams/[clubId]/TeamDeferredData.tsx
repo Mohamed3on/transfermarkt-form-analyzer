@@ -1,40 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { PlayerAvatar } from "@/components/PlayerAvatar";
-import {
-  extractClubIdFromLogoUrl,
-  formatReturnInfo,
-  formatInjuryDuration,
-  getPlayerDetailHref,
-  getPlayerIdFromProfileUrl,
-} from "@/lib/format";
-import type { InjuredPlayer, ManagerInfo } from "@/app/types";
+import type { ManagerInfo } from "@/app/types";
 import { ManagerSkeleton } from "@/app/components/ManagerPPGBadge";
-
-// --- Shared injuries context (fetch once, use in badge + tab) ---
-
-const InjuriesContext = createContext<InjuredPlayer[] | null>(null);
-
-export function InjuriesProvider({ clubId, children }: { clubId: string; children: ReactNode }) {
-  const [injuries, setInjuries] = useState<InjuredPlayer[] | null>(null);
-
-  useEffect(() => {
-    fetch("/api/injured")
-      .then((r) => r.json())
-      .then((d) => {
-        const allPlayers: InjuredPlayer[] = d.players ?? [];
-        setInjuries(allPlayers.filter((p) => extractClubIdFromLogoUrl(p.clubLogoUrl) === clubId));
-      })
-      .catch(() => setInjuries([]));
-  }, [clubId]);
-
-  return <InjuriesContext.Provider value={injuries}>{children}</InjuriesContext.Provider>;
-}
-
-// --- Manager ---
 
 export function ManagerClient({ clubId }: { clubId: string }) {
   const { data: manager, isLoading } = useQuery<ManagerInfo | null>({
@@ -102,65 +70,6 @@ export function ManagerClient({ clubId }: { clubId: string }) {
           </span>
         </div>
       )}
-    </div>
-  );
-}
-
-// --- Injuries badge ---
-
-// --- Injuries tab ---
-
-export function InjuriesTabClient() {
-  const injuries = useContext(InjuriesContext);
-
-  if (injuries === null) return <div className="h-24 animate-pulse rounded-xl bg-border-subtle/30" />;
-  if (injuries.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border-subtle bg-elevated px-4 py-6 text-sm text-text-secondary">
-        No injured players currently tracked for this team.
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {injuries.map((player) => {
-        const returnInfo = formatReturnInfo(player.returnDate);
-        const duration = formatInjuryDuration(player.injurySince);
-        const playerId = getPlayerIdFromProfileUrl(player.profileUrl);
-        const href = playerId ? getPlayerDetailHref(playerId) : `https://www.transfermarkt.com${player.profileUrl}`;
-        return (
-          <Link
-            key={player.profileUrl || player.name}
-            href={href}
-            className="hover-lift flex items-center gap-3 rounded-2xl border border-border-subtle bg-[linear-gradient(180deg,rgba(22,27,34,0.92),rgba(13,17,23,0.95))] p-3 transition-colors hover:border-border-medium hover:bg-card-hover sm:gap-4 sm:p-4"
-          >
-            <PlayerAvatar name={player.name} imageUrl={player.imageUrl} className="h-10 w-10 rounded-lg border border-border-subtle sm:h-12 sm:w-12" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-text-primary">{player.name}</p>
-              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-text-secondary">
-                <span>{player.position}</span>
-                <span className="opacity-40">·</span>
-                <span className="text-red-400">{player.injury}</span>
-                {duration && (
-                  <>
-                    <span className="opacity-40">·</span>
-                    <span>out {duration}</span>
-                  </>
-                )}
-              </p>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-sm font-value text-accent-hot">{player.marketValue}</p>
-              {returnInfo && (
-                <p className={`text-[11px] ${returnInfo.imminent ? "text-emerald-400 font-medium" : "text-text-muted"}`}>
-                  {returnInfo.label}
-                </p>
-              )}
-            </div>
-          </Link>
-        );
-      })}
     </div>
   );
 }
