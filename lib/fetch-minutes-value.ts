@@ -8,6 +8,7 @@ import { parseMarketValue } from "./parse-market-value";
 
 const MV_PAGES = 20;
 const U23_PAGES = 10;
+const O30_PAGES = 3;
 export function toPlayerStats(p: MinutesValuePlayer): PlayerStats {
   return {
     name: p.name,
@@ -168,6 +169,63 @@ export async function fetchU23MostValuableRaw(): Promise<MinutesValuePlayer[]> {
   const urls = Array.from({ length: U23_PAGES }, (_, i) => {
     const page = i + 1;
     const base = `${mvBaseUrl}?ajax=yw1&altersklasse=u23&ausrichtung=alle&spielerposition_id=alle&land_id=0&kontinent_id=0&jahrgang=0&jahr=0&yt0=Show`;
+    return page === 1 ? base : `${base}&page=${page}`;
+  });
+
+  const results = await Promise.allSettled(urls.map((url) => fetchPage(url)));
+
+  const mvMap = new Map<string, Partial<MinutesValuePlayer>>();
+  for (const result of results) {
+    if (result.status !== "fulfilled") continue;
+    const $ = cheerio.load(result.value);
+    $("table.items > tbody > tr").each((_, row) => {
+      const player = parseMarketValueRow($, row);
+      if (player?.playerId) mvMap.set(player.playerId, player);
+    });
+  }
+
+  const players: MinutesValuePlayer[] = [];
+  for (const [playerId, mv] of mvMap) {
+    players.push({
+      name: mv.name!,
+      position: mv.position || "",
+      age: mv.age || 0,
+      club: mv.club || "",
+      clubLogoUrl: "",
+      league: mv.league || "",
+      nationality: mv.nationality || "",
+      marketValue: mv.marketValue || 0,
+      marketValueDisplay: mv.marketValueDisplay || "",
+      minutes: 0,
+      clubMatches: 0,
+      intlMatches: 0,
+      totalMatches: 0,
+      goals: 0,
+      assists: 0,
+      penaltyGoals: 0,
+      penaltyMisses: 0,
+      intlGoals: 0,
+      intlAssists: 0,
+      intlMinutes: 0,
+      intlAppearances: 0,
+      intlPenaltyGoals: 0,
+      intlCareerCaps: 0,
+      imageUrl: mv.imageUrl || "",
+      profileUrl: mv.profileUrl || "",
+      playerId,
+    });
+  }
+
+  players.sort((a, b) => b.marketValue - a.marketValue);
+  return players;
+}
+
+/** Raw scraper — O30 most valuable players (3 pages). */
+export async function fetchO30MostValuableRaw(): Promise<MinutesValuePlayer[]> {
+  const mvBaseUrl = `${BASE_URL}/spieler-statistik/wertvollstespieler/marktwertetop`;
+  const urls = Array.from({ length: O30_PAGES }, (_, i) => {
+    const page = i + 1;
+    const base = `${mvBaseUrl}?ajax=yw1&altersklasse=o30&ausrichtung=alle&spielerposition_id=alle&land_id=0&kontinent_id=0&jahrgang=0&jahr=0&yt0=Show`;
     return page === 1 ? base : `${base}&page=${page}`;
   });
 
