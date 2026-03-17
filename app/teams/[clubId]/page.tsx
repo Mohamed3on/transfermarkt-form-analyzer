@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight, Crown, Medal, TrendingDown, TrendingUp, TriangleAlert } from "lucide-react";
 import { createPageMetadata } from "@/lib/metadata";
 import {
-  formatMarketValue,
   getPlayerDetailHref,
   ordinal,
 } from "@/lib/format";
@@ -84,7 +83,6 @@ export default async function TeamDetailPage({
     clubUrl,
     teamForm,
     squad,
-    squadValue,
     formPresence,
     recentForm,
     overperformers,
@@ -92,7 +90,6 @@ export default async function TeamDetailPage({
     trendPlayers,
   } = data;
 
-  const avgValue = squad.length > 0 ? Math.round(squadValue / squad.length) : 0;
 
   const deltaLabel = teamForm
     ? teamForm.deltaPts > 0
@@ -191,11 +188,11 @@ export default async function TeamDetailPage({
                   accentClass={teamForm.deltaPts > 0 ? "text-emerald-400" : teamForm.deltaPts < 0 ? "text-red-400" : "text-text-primary"}
                 />
               )}
-              {squad.length > 0 && (
+              {teamForm && (
                 <HeroMetric
-                  label="Avg. player value"
-                  value={formatMarketValue(avgValue)}
-                  subline={teamForm ? `${ordinal(teamForm.marketValueRank)} by squad value` : `${squad.length} tracked players`}
+                  label="Avg. squad value"
+                  value={teamForm.marketValue}
+                  subline={`${ordinal(teamForm.marketValueRank)} by squad value`}
                   accentClass="text-accent-gold"
                 />
               )}

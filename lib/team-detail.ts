@@ -1,5 +1,4 @@
 import { cache } from "react";
-import { unstable_cache } from "next/cache";
 import type {
   AggregatedTeam,
   MinutesValuePlayer,
@@ -160,10 +159,4 @@ async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | n
   };
 }
 
-export const getTeamDetailData = cache((clubId: string) =>
-  unstable_cache(
-    () => computeTeamDetailData(clubId),
-    [`team-detail-${clubId}`],
-    { revalidate: 86400, tags: ["team-form", "form-analysis", "injured", "manager"] },
-  )(),
-);
+export const getTeamDetailData = cache(computeTeamDetailData);
