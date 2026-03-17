@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import type {
   AggregatedTeam,
   InjuredPlayer,
@@ -13,7 +14,7 @@ import { getTeamFormData } from "@/lib/team-form";
 import { getAnalysis } from "@/lib/form-analysis";
 import { getManagerInfo } from "@/lib/fetch-manager";
 import { findRepeatWinners, findRepeatLosers } from "@/lib/biggest-movers";
-import { extractClubIdFromLogoUrl, formatMarketValue } from "@/lib/format";
+import { extractClubIdFromLogoUrl } from "@/lib/format";
 import { findValueCandidates, type ValueCandidate } from "@/lib/value-analysis";
 import type { MarketValueMover } from "@/app/types";
 
@@ -164,7 +165,7 @@ async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | n
     league,
     clubUrl,
     teamForm,
-    squad: [...squad].sort((a, b) => b.marketValue - a.marketValue),
+    squad: [...squad].sort((a, b) => b.marketValue - a.marketValue).map(({ recentForm: _, ...rest }) => rest),
     squadValue,
     manager,
     formPresence,
@@ -176,4 +177,10 @@ async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | n
   };
 }
 
-export const getTeamDetailData = cache(computeTeamDetailData);
+export const getTeamDetailData = cache((clubId: string) =>
+  unstable_cache(
+    () => computeTeamDetailData(clubId),
+    [`team-detail-${clubId}`],
+    { revalidate: 86400, tags: ["team-form", "form-analysis", "injured", "manager"] },
+  )(),
+);
