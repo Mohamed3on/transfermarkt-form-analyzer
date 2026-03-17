@@ -100,9 +100,16 @@ function PlayerCard({ player, rank, index = 0 }: { player: InjuredPlayer; rank: 
               {player.clubLogoUrl && (
                 <img src={player.clubLogoUrl} alt={player.club} className="w-5 h-5 sm:w-6 sm:h-6 object-contain bg-white rounded p-0.5" />
               )}
-              <span className="text-xs sm:text-sm text-text-secondary">
-                {player.club}
-              </span>
+              {(() => {
+                const cid = extractClubIdFromLogoUrl(player.clubLogoUrl);
+                return cid ? (
+                  <Link href={getTeamDetailHref(cid)} className="text-xs sm:text-sm text-text-secondary hover:underline hover:text-text-primary transition-colors">
+                    {player.club}
+                  </Link>
+                ) : (
+                  <span className="text-xs sm:text-sm text-text-secondary">{player.club}</span>
+                );
+              })()}
               <LeagueBadge league={player.league} />
             </div>
 
@@ -338,31 +345,41 @@ function StatsHighlights({
   return (
     <div className="mb-6 sm:mb-8 animate-scale-in rounded-xl border border-border-subtle bg-elevated overflow-hidden">
       <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border-subtle">
-        {mostPlayersClub && (
-          <div className="p-3 sm:p-4 flex items-start gap-2 border-l-2 border-l-red-500/50">
-            {mostPlayersClub.clubLogoUrl && (
-              <img src={mostPlayersClub.clubLogoUrl} alt="" className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-sm bg-white p-px shrink-0 mt-3" />
-            )}
-            <StatCell
-              label="Most Players Injured"
-              value={mostPlayersClub.club}
-              sub={`${mostPlayersClub.count} players · ${formatMarketValue(mostPlayersClub.totalValue)}`}
-            />
-          </div>
-        )}
+        {mostPlayersClub && (() => {
+          const cid = extractClubIdFromLogoUrl(mostPlayersClub.clubLogoUrl);
+          const inner = (
+            <>
+              {mostPlayersClub.clubLogoUrl && (
+                <img src={mostPlayersClub.clubLogoUrl} alt="" className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-sm bg-white p-px shrink-0 mt-3" />
+              )}
+              <StatCell
+                label="Most Players Injured"
+                value={mostPlayersClub.club}
+                sub={`${mostPlayersClub.count} players · ${formatMarketValue(mostPlayersClub.totalValue)}`}
+              />
+            </>
+          );
+          const cls = "p-3 sm:p-4 flex items-start gap-2 border-l-2 border-l-red-500/50";
+          return cid ? <Link href={getTeamDetailHref(cid)} className={`${cls} hover:bg-card-hover transition-colors`}>{inner}</Link> : <div className={cls}>{inner}</div>;
+        })()}
 
-        {mostValueClub && (
-          <div className="p-3 sm:p-4 flex items-start gap-2 border-l-2 border-l-amber-500/50">
-            {mostValueClub.clubLogoUrl && (
-              <img src={mostValueClub.clubLogoUrl} alt="" className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-sm bg-white p-px shrink-0 mt-3" />
-            )}
-            <StatCell
-              label="Most Value Sidelined"
-              value={mostValueClub.club}
-              sub={`${formatMarketValue(mostValueClub.totalValue)} · ${mostValueClub.count} players`}
-            />
-          </div>
-        )}
+        {mostValueClub && (() => {
+          const cid = extractClubIdFromLogoUrl(mostValueClub.clubLogoUrl);
+          const inner = (
+            <>
+              {mostValueClub.clubLogoUrl && (
+                <img src={mostValueClub.clubLogoUrl} alt="" className="w-5 h-5 sm:w-6 sm:h-6 object-contain rounded-sm bg-white p-px shrink-0 mt-3" />
+              )}
+              <StatCell
+                label="Most Value Sidelined"
+                value={mostValueClub.club}
+                sub={`${formatMarketValue(mostValueClub.totalValue)} · ${mostValueClub.count} players`}
+              />
+            </>
+          );
+          const cls = "p-3 sm:p-4 flex items-start gap-2 border-l-2 border-l-amber-500/50";
+          return cid ? <Link href={getTeamDetailHref(cid)} className={`${cls} hover:bg-card-hover transition-colors`}>{inner}</Link> : <div className={cls}>{inner}</div>;
+        })()}
 
         {topInjury && (
           <div className="p-3 sm:p-4 border-l-2 border-l-blue-500/50">

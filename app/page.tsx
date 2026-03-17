@@ -70,6 +70,7 @@ interface SnapshotItem {
   imageContain?: boolean;
   profileUrl?: string;
   playerId?: string;
+  clubId?: string;
   manager?: ManagerInfo;
   tone?: SnapshotTone;
 }
@@ -198,6 +199,10 @@ function SnapshotItemRow({
             <Link href={getPlayerDetailHref(item.playerId)} className={`truncate font-semibold leading-tight text-text-primary hover:underline ${!isHero ? "mt-0.5 text-sm" : ""} block`}>
               {item.value}
             </Link>
+          ) : item.clubId ? (
+            <Link href={getTeamDetailHref(item.clubId)} className={`truncate font-semibold leading-tight text-text-primary hover:underline ${!isHero ? "mt-0.5 text-sm" : ""} block`}>
+              {item.value}
+            </Link>
           ) : item.profileUrl ? (
             <a href={item.profileUrl.startsWith("http") ? item.profileUrl : `https://www.transfermarkt.com${item.profileUrl}`} target="_blank" rel="noopener noreferrer" className={`truncate font-semibold leading-tight text-text-primary hover:underline ${!isHero ? "mt-0.5 text-sm" : ""} block`}>
               {item.value}
@@ -289,9 +294,9 @@ function teamItem(
   opts?: { metrics?: string[]; tone?: SnapshotTone; manager?: ManagerInfo },
 ): SnapshotItem {
   return {
-    label, value: team.name, detail,
-    href: team.clubId ? getTeamDetailHref(team.clubId) : href,
+    label, value: team.name, detail, href,
     imageUrl: team.logoUrl, imageContain: true,
+    clubId: team.clubId,
     metrics: opts?.metrics, manager: opts?.manager, tone: opts?.tone,
   };
 }
