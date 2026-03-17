@@ -27,6 +27,7 @@ import { HeroMetric } from "@/components/HeroMetric";
 import { SectionPanel } from "@/components/SectionPanel";
 import type { MinutesValuePlayer, PlayerStats, RecentGameStats } from "@/app/types";
 import { POSITION_NAMES } from "@/lib/fetch-player-minutes";
+import { effectivePosition, getBroadPositionFilter } from "@/lib/positions";
 
 function rankColor(rank: number, total: number): string {
   const pct = rank / total;
@@ -58,10 +59,16 @@ function GoalBreakdown({ goals, penaltyGoals }: { goals: number; penaltyGoals: n
   );
 }
 
-function RankCell({ rank, total }: { rank: number; total: number }) {
+function RankCell({ rank, total, href }: { rank: number; total: number; href?: string }) {
   return (
     <TableCell className="text-right whitespace-nowrap">
-      <RankBadge rank={rank} total={total} />
+      {href ? (
+        <Link href={href} className="transition-opacity hover:opacity-70">
+          <RankBadge rank={rank} total={total} />
+        </Link>
+      ) : (
+        <RankBadge rank={rank} total={total} />
+      )}
     </TableCell>
   );
 }
@@ -76,11 +83,11 @@ const RANKING_METRICS: Array<{
   sortKey: string | null;
 }> = [
   { overallKey: "marketValueOverall", leagueKey: "marketValueLeague", clubKey: "marketValueClub", positionKey: "marketValuePosition", label: "Market value", shortLabel: "Value", sortKey: "value" },
-  { overallKey: "npgaOverall", leagueKey: "npgaLeague", clubKey: "npgaClub", positionKey: "npgaPosition", label: "npG+A", shortLabel: "npG+A", sortKey: null },
-  { overallKey: "pointsOverall", leagueKey: "pointsLeague", clubKey: "pointsClub", positionKey: "pointsPosition", label: "G+A", shortLabel: "G+A", sortKey: null },
+  { overallKey: "npgaOverall", leagueKey: "npgaLeague", clubKey: "npgaClub", positionKey: "npgaPosition", label: "npG+A", shortLabel: "npG+A", sortKey: "ga" },
+  { overallKey: "pointsOverall", leagueKey: "pointsLeague", clubKey: "pointsClub", positionKey: "pointsPosition", label: "G+A", shortLabel: "G+A", sortKey: "ga" },
   { overallKey: "minutesOverall", leagueKey: "minutesLeague", clubKey: "minutesClub", positionKey: "minutesPosition", label: "Minutes", shortLabel: "Mins", sortKey: "mins" },
-  { overallKey: "goalsOverall", leagueKey: "goalsLeague", clubKey: "goalsClub", positionKey: "goalsPosition", label: "Goals", shortLabel: "Goals", sortKey: null },
-  { overallKey: "assistsOverall", leagueKey: "assistsLeague", clubKey: "assistsClub", positionKey: "assistsPosition", label: "Assists", shortLabel: "Asst", sortKey: null },
+  { overallKey: "goalsOverall", leagueKey: "goalsLeague", clubKey: "goalsClub", positionKey: "goalsPosition", label: "Goals", shortLabel: "Goals", sortKey: "ga" },
+  { overallKey: "assistsOverall", leagueKey: "assistsLeague", clubKey: "assistsClub", positionKey: "assistsPosition", label: "Assists", shortLabel: "Asst", sortKey: "ga" },
   { overallKey: "form5Overall", leagueKey: "form5League", clubKey: "form5Club", positionKey: "form5Position", label: "Last 5 npG+A", shortLabel: "L5", sortKey: "ga&fw=5" },
   { overallKey: "form10Overall", leagueKey: "form10League", clubKey: "form10Club", positionKey: "form10Position", label: "Last 10 npG+A", shortLabel: "L10", sortKey: "ga&fw=10" },
 ];
@@ -686,25 +693,32 @@ export default async function PlayerDetailPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {RANKING_METRICS.map((m) => (
-                    <TableRow key={m.label}>
-                      <TableCell className="whitespace-nowrap">
-                        <Link
-                          href={`/players${m.sortKey ? `?sort=${m.sortKey}` : ""}`}
-                          className="text-text-secondary transition-colors hover:text-text-primary hover:underline"
-                        >
-                          <span className="sm:hidden">{m.shortLabel}</span>
-                          <span className="hidden sm:inline">{m.label}</span>
-                        </Link>
-                      </TableCell>
-                      <RankCell rank={rankings[m.overallKey]} total={overallCount} />
-                      <RankCell rank={rankings[m.leagueKey]} total={leagueCount} />
-                      <TableCell className="hidden sm:table-cell text-right whitespace-nowrap">
-                        <RankBadge rank={rankings[m.clubKey]} total={clubCount} />
-                      </TableCell>
-                      <RankCell rank={rankings[m.positionKey]} total={positionPeerCount} />
-                    </TableRow>
-                  ))}
+                  {RANKING_METRICS.map((m) => {
+                    const base = `/players${m.sortKey ? `?sort=${m.sortKey}` : ""}`;
+                    const sep = m.sortKey ? "&" : "?";
+                    const posFilter = getBroadPositionFilter(effectivePosition(player));
+                    return (
+                      <TableRow key={m.label}>
+                        <TableCell className="whitespace-nowrap">
+                          <Link
+                            href={base}
+                            className="text-text-secondary transition-colors hover:text-text-primary hover:underline"
+                          >
+                            <span className="sm:hidden">{m.shortLabel}</span>
+                            <span className="hidden sm:inline">{m.label}</span>
+                          </Link>
+                        </TableCell>
+                        <RankCell rank={rankings[m.overallKey]} total={overallCount} href={base} />
+                        <RankCell rank={rankings[m.leagueKey]} total={leagueCount} href={`${base}${sep}league=${encodeURIComponent(player.league)}`} />
+                        <TableCell className="hidden sm:table-cell text-right whitespace-nowrap">
+                          <Link href={`${base}${sep}club=${encodeURIComponent(player.club)}`} className="transition-opacity hover:opacity-70">
+                            <RankBadge rank={rankings[m.clubKey]} total={clubCount} />
+                          </Link>
+                        </TableCell>
+                        <RankCell rank={rankings[m.positionKey]} total={positionPeerCount} href={`${base}${sep}pos=${posFilter}`} />
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
               {subgroupRankings.length > 0 && (
