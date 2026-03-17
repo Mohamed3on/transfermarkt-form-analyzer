@@ -1,4 +1,4 @@
-import { getTeamFormData } from "@/lib/team-form";
+import { getTeamFormData, enrichWithManagers } from "@/lib/team-form";
 import { getAnalysis } from "@/lib/form-analysis";
 import { TeamFormUI } from "./TeamFormUI";
 import { createPageMetadata } from "@/lib/metadata";
@@ -22,6 +22,9 @@ export const metadata = createPageMetadata({
 
 export default async function ExpectedPositionPage() {
   const [data, formData] = await Promise.all([getTeamFormData(), getAnalysis()]);
+
+  // Enrich over/underperformers with manager data (separate from core cache)
+  await enrichWithManagers([...data.overperformers, ...data.underperformers]);
 
   // Build clubId → form leader info from form analysis
   const formLeaders: Record<string, { type: "top" | "bottom"; count: number }> = {};

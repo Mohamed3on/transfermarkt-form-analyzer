@@ -7,6 +7,16 @@ import { fetchPage } from "./fetch";
 import { parseMarketValue } from "./parse-market-value";
 import { getManagerInfo } from "./fetch-manager";
 
+/** Enrich a list of teams with manager data (separate from core team-form cache). */
+export async function enrichWithManagers(teams: TeamFormEntry[]): Promise<void> {
+  const results = await Promise.allSettled(
+    teams.map((t) => getManagerInfo(t.clubId))
+  );
+  teams.forEach((t, i) => {
+    t.manager = results[i].status === "fulfilled" ? results[i].value : null;
+  });
+}
+
 interface LeagueTeam {
   name: string;
   position: number;
@@ -180,15 +190,6 @@ export const getTeamFormData = unstable_cache(
       .filter((t) => t.deltaPts < 0)
       .sort((a, b) => a.deltaPts - b.deltaPts || b.marketValueNum - a.marketValueNum)
       .slice(0, 20);
-
-    // Enrich with manager data
-    const toEnrich = [...overperformers, ...underperformers];
-    const managerResults = await Promise.allSettled(
-      toEnrich.map((t) => getManagerInfo(t.clubId))
-    );
-    toEnrich.forEach((t, i) => {
-      t.manager = managerResults[i].status === "fulfilled" ? managerResults[i].value : null;
-    });
 
     return {
       success: true,
