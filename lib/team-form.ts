@@ -5,18 +5,6 @@ import { BASE_URL } from "./constants";
 import { LEAGUES } from "./leagues";
 import { fetchPage } from "./fetch";
 import { parseMarketValue } from "./parse-market-value";
-import { getManagerInfo } from "./fetch-manager";
-
-/** Enrich a list of teams with manager data (separate from core team-form cache). */
-export async function enrichWithManagers(teams: TeamFormEntry[]): Promise<void> {
-  const results = await Promise.allSettled(
-    teams.map((t) => getManagerInfo(t.clubId))
-  );
-  teams.forEach((t, i) => {
-    t.manager = results[i].status === "fulfilled" ? results[i].value : null;
-  });
-}
-
 interface LeagueTeam {
   name: string;
   position: number;

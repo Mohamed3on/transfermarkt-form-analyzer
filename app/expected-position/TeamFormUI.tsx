@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import type { TeamFormEntry } from "@/app/types";
+import { useQuery } from "@tanstack/react-query";
+import type { ManagerInfo, TeamFormEntry } from "@/app/types";
 import { Card } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ManagerSection } from "@/app/components/ManagerPPGBadge";
@@ -78,7 +79,11 @@ interface TeamCardProps {
 
 function TeamCard({ team, rank, type, index = 0, formLeader }: TeamCardProps) {
   const isOver = type === "over";
-  const manager = team.manager;
+  const { data: manager } = useQuery<ManagerInfo | null>({
+    queryKey: ["manager", team.clubId],
+    queryFn: () => fetch(`/api/manager/${team.clubId}`).then((r) => r.json()).then((d) => d.manager ?? null),
+    staleTime: 86400_000,
+  });
 
   return (
     <Card
