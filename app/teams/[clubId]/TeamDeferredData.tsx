@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import {
+  extractClubIdFromLogoUrl,
   formatMarketValue,
   formatReturnInfo,
   formatInjuryDuration,
@@ -12,30 +13,35 @@ import {
   getPlayerIdFromProfileUrl,
 } from "@/lib/format";
 import type { InjuredPlayer, ManagerInfo } from "@/app/types";
+import { isWorstHitInLeague } from "@/lib/injury-utils";
 
 // --- Shared injuries context (fetch once, use in badge + tab) ---
 
-const InjuriesContext = createContext<InjuredPlayer[] | null>(null);
+interface InjuriesState {
+  injuries: InjuredPlayer[];
+  isWorstHit: boolean;
+}
+
+const InjuriesContext = createContext<InjuriesState | null>(null);
 
 export function InjuriesProvider({ clubId, children }: { clubId: string; children: ReactNode }) {
-  const [injuries, setInjuries] = useState<InjuredPlayer[] | null>(null);
+  const [state, setState] = useState<InjuriesState | null>(null);
 
   useEffect(() => {
     fetch("/api/injured")
       .then((r) => r.json())
       .then((d) => {
-        const clubInjuries = (d.players ?? []).filter(
-          (p: InjuredPlayer) => {
-            const id = p.clubLogoUrl?.match(/\/(\d+)\.png/)?.[1];
-            return id === clubId;
-          },
-        );
-        setInjuries(clubInjuries);
+        const allPlayers: InjuredPlayer[] = d.players ?? [];
+        const clubInjuries = allPlayers.filter((p) => extractClubIdFromLogoUrl(p.clubLogoUrl) === clubId);
+        setState({
+          injuries: clubInjuries,
+          isWorstHit: isWorstHitInLeague(clubId, clubInjuries, allPlayers),
+        });
       })
-      .catch(() => setInjuries([]));
+      .catch(() => setState({ injuries: [], isWorstHit: false }));
   }, [clubId]);
 
-  return <InjuriesContext.Provider value={injuries}>{children}</InjuriesContext.Provider>;
+  return <InjuriesContext.Provider value={state}>{children}</InjuriesContext.Provider>;
 }
 
 // --- Manager ---
@@ -51,8 +57,7 @@ export function ManagerClient({ clubId }: { clubId: string }) {
       .catch(() => setLoaded(true));
   }, [clubId]);
 
-  if (!loaded) return <div className="mt-3 h-5 w-48 animate-pulse rounded bg-border-subtle" />;
-  if (!manager) return null;
+  if (!loaded || !manager) return <div className="mt-3 min-h-[3.5rem]" />;
 
   const hasRanking = manager.ppg !== null && manager.ppgRank !== undefined && manager.totalComparableManagers !== undefined;
   const isOnly = hasRanking && manager.totalComparableManagers === 1;
@@ -61,7 +66,7 @@ export function ManagerClient({ clubId }: { clubId: string }) {
   const ppgColor = isBest ? "text-emerald-400" : isWorst ? "text-red-400" : "text-text-secondary";
 
   return (
-    <div className="mt-3 space-y-1.5 text-sm text-text-secondary">
+    <div className="mt-3 space-y-1.5 text-sm text-text-secondary animate-in fade-in duration-300">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-text-muted">Manager:</span>
         <a href={manager.profileUrl} target="_blank" rel="noopener noreferrer" className={`font-semibold hover:underline transition-colors ${manager.isCurrentManager ? "text-accent-blue" : "text-text-muted"}`}>
@@ -113,12 +118,12 @@ export function ManagerClient({ clubId }: { clubId: string }) {
 // --- Injuries badge ---
 
 export function InjuriesBadgeClient() {
-  const injuries = useContext(InjuriesContext);
-  if (!injuries || injuries.length === 0) return null;
-  const injuryValue = injuries.reduce((s, p) => s + p.marketValueNum, 0);
+  const state = useContext(InjuriesContext);
+  if (!state || state.injuries.length === 0 || !state.isWorstHit) return null;
+  const injuryValue = state.injuries.reduce((s, p) => s + p.marketValueNum, 0);
   return (
     <Badge className="rounded-full border border-accent-cold-border bg-accent-cold-glow px-3 py-1 text-xs text-accent-cold-soft">
-      {injuries.length} injured · {formatMarketValue(injuryValue)} sidelined
+      {state.injuries.length} injured · {formatMarketValue(injuryValue)} sidelined
     </Badge>
   );
 }
@@ -126,9 +131,10 @@ export function InjuriesBadgeClient() {
 // --- Injuries tab ---
 
 export function InjuriesTabClient() {
-  const injuries = useContext(InjuriesContext);
+  const state = useContext(InjuriesContext);
 
-  if (injuries === null) return <div className="h-24 animate-pulse rounded-xl bg-border-subtle/30" />;
+  if (state === null) return <div className="h-24 animate-pulse rounded-xl bg-border-subtle/30" />;
+  const injuries = state.injuries;
   if (injuries.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border-subtle bg-elevated px-4 py-6 text-sm text-text-secondary">
