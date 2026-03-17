@@ -21,7 +21,7 @@ import { PlayerSearch } from "./PlayerSearch";
 const PAGE_CACHE_MAP: Record<string, { tags?: string[]; workflow?: boolean }> = {
   "/form": { tags: ["form-analysis"] },
   "/expected-position": { tags: ["team-form"] },
-  "/injured": { tags: ["injured"] },
+  "/injured": { tags: ["injured"], workflow: true },
   "/players": { workflow: true },
   "/value-analysis": { workflow: true },
   "/biggest-movers": { workflow: true },
