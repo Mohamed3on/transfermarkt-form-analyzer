@@ -18,15 +18,7 @@ import { Combobox } from "@/components/Combobox";
 import { LeagueCombobox } from "@/components/LeagueCombobox";
 import { InfoTip } from "@/app/components/InfoTip";
 import { filterPlayersByLeagueAndClub, uniqueFilterOptions } from "@/lib/filter-players";
-
-interface TeamInjuryGroup {
-  club: string;
-  clubLogoUrl: string;
-  league: string;
-  players: InjuredPlayer[];
-  totalValue: number;
-  count: number;
-}
+import { groupPlayersByClub, type TeamInjuryGroup } from "@/lib/injury-utils";
 
 interface InjuryTypeGroup {
   injury: string;
@@ -411,27 +403,7 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
   );
 
   const teamGroups = useMemo(() => {
-    const groupMap = new Map<string, TeamInjuryGroup>();
-
-    players.forEach((player) => {
-      const existing = groupMap.get(player.club);
-      if (existing) {
-        existing.players.push(player);
-        existing.totalValue += player.marketValueNum;
-        existing.count++;
-      } else {
-        groupMap.set(player.club, {
-          club: player.club,
-          clubLogoUrl: player.clubLogoUrl,
-          league: player.league,
-          players: [player],
-          totalValue: player.marketValueNum,
-          count: 1,
-        });
-      }
-    });
-
-    const groups = Array.from(groupMap.values());
+    const groups = groupPlayersByClub(players);
     return teamSort === "count"
       ? groups.sort((a, b) => b.count - a.count || b.totalValue - a.totalValue)
       : groups.sort((a, b) => b.totalValue - a.totalValue);

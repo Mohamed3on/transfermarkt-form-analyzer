@@ -3,10 +3,14 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight, Crown, Medal, TrendingDown, TrendingUp, TriangleAlert } from "lucide-react";
 import { createPageMetadata } from "@/lib/metadata";
 import {
+  extractClubIdFromLogoUrl,
+  formatMarketValue,
   getPlayerDetailHref,
   ordinal,
 } from "@/lib/format";
 import { getTeamDetailData } from "@/lib/team-detail";
+import { getInjuredPlayers } from "@/lib/injured";
+import { getWorstHitResult } from "@/lib/injury-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LeagueBadge } from "@/components/LeagueBadge";
@@ -15,7 +19,7 @@ import { DetailDeck } from "@/components/DetailDeck";
 import { HeroMetric } from "@/components/HeroMetric";
 import { SectionPanel } from "@/components/SectionPanel";
 import { SquadTab } from "./SquadTab";
-import { ManagerClient, InjuriesBadgeClient, InjuriesTabClient, InjuriesProvider } from "./TeamDeferredData";
+import { ManagerClient, InjuriesTabClient, InjuriesProvider } from "./TeamDeferredData";
 
 
 export async function generateMetadata({
@@ -48,7 +52,13 @@ export default async function TeamDetailPage({
   params: Promise<{ clubId: string }>;
 }) {
   const { clubId } = await params;
-  const data = await getTeamDetailData(clubId);
+  const [data, injuredData] = await Promise.all([
+    getTeamDetailData(clubId),
+    getInjuredPlayers().catch(() => ({ players: [] as import("@/app/types").InjuredPlayer[] })),
+  ]);
+  const allInjured = injuredData.players ?? [];
+  const clubInjuries = allInjured.filter((p) => extractClubIdFromLogoUrl(p.clubLogoUrl) === clubId);
+  const worstHit = getWorstHitResult(clubId, clubInjuries, allInjured);
 
   if (!data) {
     if (/^\d+$/.test(clubId)) {
@@ -199,7 +209,18 @@ export default async function TeamDetailPage({
             </div>
 
             <div className="col-span-full flex flex-wrap gap-2.5 empty:hidden">
-                <InjuriesBadgeClient />
+                {worstHit.reason && clubInjuries.length > 0 && (() => {
+                  const injuryValue = clubInjuries.reduce((s, p) => s + p.marketValueNum, 0);
+                  const scopeLabel = worstHit.scope === "top5" ? "in top 5 leagues" : "in league";
+                  const label = worstHit.reason === "count" || worstHit.reason === "both"
+                    ? `Most injuries ${scopeLabel} · ${clubInjuries.length} out · ${formatMarketValue(injuryValue)}`
+                    : `Most value sidelined ${scopeLabel} · ${formatMarketValue(injuryValue)} · ${clubInjuries.length} out`;
+                  return (
+                    <Badge className="rounded-full border border-accent-cold-border bg-accent-cold-glow px-3 py-1 text-xs text-accent-cold-soft">
+                      {label}
+                    </Badge>
+                  );
+                })()}
                 {trendPlayers.map((tp) => (
                   <Link key={tp.player.playerId} href={getPlayerDetailHref(tp.player.playerId)}>
                     <Badge className={`rounded-full border px-3 py-1 text-xs transition-colors hover:brightness-125 ${
