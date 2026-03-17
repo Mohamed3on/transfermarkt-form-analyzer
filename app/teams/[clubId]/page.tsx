@@ -16,7 +16,7 @@ import { DetailDeck } from "@/components/DetailDeck";
 import { HeroMetric } from "@/components/HeroMetric";
 import { SectionPanel } from "@/components/SectionPanel";
 import { SquadTab } from "./SquadTab";
-import { ManagerClient, InjuriesBadgeClient, InjuriesTabClient } from "./TeamDeferredData";
+import { ManagerClient, InjuriesBadgeClient, InjuriesTabClient, InjuriesProvider } from "./TeamDeferredData";
 
 
 export async function generateMetadata({
@@ -103,6 +103,7 @@ export default async function TeamDetailPage({
     : null;
 
   return (
+    <InjuriesProvider clubId={clubId}>
     <div className="full-bleed pt-6 pb-12 sm:pt-8 sm:pb-16">
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-4">
         <Link
@@ -190,16 +191,18 @@ export default async function TeamDetailPage({
                   accentClass={teamForm.deltaPts > 0 ? "text-emerald-400" : teamForm.deltaPts < 0 ? "text-red-400" : "text-text-primary"}
                 />
               )}
-              <HeroMetric
-                label="Avg. player value"
-                value={formatMarketValue(avgValue)}
-                subline={teamForm ? `${ordinal(teamForm.marketValueRank)} by squad value` : `${squad.length} tracked players`}
-                accentClass="text-accent-gold"
-              />
+              {squad.length > 0 && (
+                <HeroMetric
+                  label="Avg. player value"
+                  value={formatMarketValue(avgValue)}
+                  subline={teamForm ? `${ordinal(teamForm.marketValueRank)} by squad value` : `${squad.length} tracked players`}
+                  accentClass="text-accent-gold"
+                />
+              )}
             </div>
 
             <div className="col-span-full flex flex-wrap gap-2.5 empty:hidden">
-                <InjuriesBadgeClient clubId={clubId} />
+                <InjuriesBadgeClient />
                 {trendPlayers.map((tp) => (
                   <Link key={tp.player.playerId} href={getPlayerDetailHref(tp.player.playerId)}>
                     <Badge className={`rounded-full border px-3 py-1 text-xs transition-colors hover:brightness-125 ${
@@ -382,9 +385,10 @@ export default async function TeamDetailPage({
           </div>
 
           {/* Tab 4: Injuries */}
-          <InjuriesTabClient clubId={clubId} />
+          <InjuriesTabClient />
         </DetailDeck>
       </div>
     </div>
+    </InjuriesProvider>
   );
 }

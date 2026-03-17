@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
@@ -13,17 +13,46 @@ import {
 } from "@/lib/format";
 import type { InjuredPlayer, ManagerInfo } from "@/app/types";
 
+// --- Shared injuries context (fetch once, use in badge + tab) ---
+
+const InjuriesContext = createContext<InjuredPlayer[] | null>(null);
+
+export function InjuriesProvider({ clubId, children }: { clubId: string; children: ReactNode }) {
+  const [injuries, setInjuries] = useState<InjuredPlayer[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/injured")
+      .then((r) => r.json())
+      .then((d) => {
+        const clubInjuries = (d.players ?? []).filter(
+          (p: InjuredPlayer) => {
+            const id = p.clubLogoUrl?.match(/\/(\d+)\.png/)?.[1];
+            return id === clubId;
+          },
+        );
+        setInjuries(clubInjuries);
+      })
+      .catch(() => setInjuries([]));
+  }, [clubId]);
+
+  return <InjuriesContext.Provider value={injuries}>{children}</InjuriesContext.Provider>;
+}
+
+// --- Manager ---
+
 export function ManagerClient({ clubId }: { clubId: string }) {
   const [manager, setManager] = useState<ManagerInfo | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     fetch(`/api/manager/${clubId}`)
       .then((r) => r.json())
-      .then((d) => setManager(d.manager))
-      .catch(() => {});
+      .then((d) => { setManager(d.manager); setLoaded(true); })
+      .catch(() => setLoaded(true));
   }, [clubId]);
 
-  if (!manager) return <div className="mt-3 h-5 w-48 animate-pulse rounded bg-border-subtle" />;
+  if (!loaded) return <div className="mt-3 h-5 w-48 animate-pulse rounded bg-border-subtle" />;
+  if (!manager) return null;
 
   const hasRanking = manager.ppg !== null && manager.ppgRank !== undefined && manager.totalComparableManagers !== undefined;
   const isOnly = hasRanking && manager.totalComparableManagers === 1;
@@ -81,27 +110,12 @@ export function ManagerClient({ clubId }: { clubId: string }) {
   );
 }
 
-export function InjuriesBadgeClient({ clubId }: { clubId: string }) {
-  const [injuries, setInjuries] = useState<InjuredPlayer[] | null>(null);
+// --- Injuries badge ---
 
-  useEffect(() => {
-    fetch("/api/injured")
-      .then((r) => r.json())
-      .then((d) => {
-        const clubInjuries = (d.players ?? []).filter(
-          (p: InjuredPlayer) => {
-            const id = p.clubLogoUrl?.match(/\/(\d+)\.png/)?.[1];
-            return id === clubId;
-          },
-        );
-        setInjuries(clubInjuries);
-      })
-      .catch(() => setInjuries([]));
-  }, [clubId]);
-
+export function InjuriesBadgeClient() {
+  const injuries = useContext(InjuriesContext);
   if (!injuries || injuries.length === 0) return null;
   const injuryValue = injuries.reduce((s, p) => s + p.marketValueNum, 0);
-
   return (
     <Badge className="rounded-full border border-accent-cold-border bg-accent-cold-glow px-3 py-1 text-xs text-accent-cold-soft">
       {injuries.length} injured · {formatMarketValue(injuryValue)} sidelined
@@ -109,23 +123,10 @@ export function InjuriesBadgeClient({ clubId }: { clubId: string }) {
   );
 }
 
-export function InjuriesTabClient({ clubId }: { clubId: string }) {
-  const [injuries, setInjuries] = useState<InjuredPlayer[] | null>(null);
+// --- Injuries tab ---
 
-  useEffect(() => {
-    fetch("/api/injured")
-      .then((r) => r.json())
-      .then((d) => {
-        const clubInjuries = (d.players ?? []).filter(
-          (p: InjuredPlayer) => {
-            const id = p.clubLogoUrl?.match(/\/(\d+)\.png/)?.[1];
-            return id === clubId;
-          },
-        );
-        setInjuries(clubInjuries);
-      })
-      .catch(() => setInjuries([]));
-  }, [clubId]);
+export function InjuriesTabClient() {
+  const injuries = useContext(InjuriesContext);
 
   if (injuries === null) return <div className="h-24 animate-pulse rounded-xl bg-border-subtle/30" />;
   if (injuries.length === 0) {
@@ -152,14 +153,25 @@ export function InjuriesTabClient({ clubId }: { clubId: string }) {
             <PlayerAvatar name={player.name} imageUrl={player.imageUrl} className="h-10 w-10 rounded-lg border border-border-subtle sm:h-12 sm:w-12" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm text-text-primary">{player.name}</p>
-              <p className="mt-0.5 text-xs text-text-muted">{player.position} · {player.age ? `${player.age}y` : ""}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-red-400">{player.injury}</p>
-              <p className="mt-0.5 text-xs text-text-muted">
-                {returnInfo ? returnInfo.label : ""}
-                {duration && ` · ${duration}`}
+              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-text-secondary">
+                <span>{player.position}</span>
+                <span className="opacity-40">·</span>
+                <span className="text-red-400">{player.injury}</span>
+                {duration && (
+                  <>
+                    <span className="opacity-40">·</span>
+                    <span>out {duration}</span>
+                  </>
+                )}
               </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-sm font-value text-accent-hot">{player.marketValue}</p>
+              {returnInfo && (
+                <p className={`text-[11px] ${returnInfo.imminent ? "text-emerald-400 font-medium" : "text-text-muted"}`}>
+                  {returnInfo.label}
+                </p>
+              )}
             </div>
           </Link>
         );
