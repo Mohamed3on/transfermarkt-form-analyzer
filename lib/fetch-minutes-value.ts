@@ -6,9 +6,7 @@ import { BASE_URL } from "./constants";
 import { fetchPage } from "./fetch";
 import { parseMarketValue } from "./parse-market-value";
 
-const MV_PAGES = 20;
-const U23_PAGES = 10;
-const O30_PAGES = 3;
+const MV_BASE = `${BASE_URL}/spieler-statistik/wertvollstespieler/marktwertetop`;
 export function toPlayerStats(p: MinutesValuePlayer): PlayerStats {
   return {
     name: p.name,
@@ -106,70 +104,11 @@ function parseMarketValueRow($: cheerio.CheerioAPI, row: any): Partial<MinutesVa
   return { name, position, age, club, league, nationality, nationalityFlagUrl, marketValue, marketValueDisplay: mvDisplay, imageUrl, profileUrl, playerId };
 }
 
-/** Raw scraper — no caching. Fetches MV pages only (identity + market value). */
-export async function fetchMinutesValueRaw(): Promise<MinutesValuePlayer[]> {
-  const mvBaseUrl = `${BASE_URL}/spieler-statistik/wertvollstespieler/marktwertetop`;
-  const mvUrls = Array.from({ length: MV_PAGES }, (_, i) => {
-    const page = i + 1;
-    const base = `${mvBaseUrl}?ajax=yw1&altersklasse=alle&ausrichtung=alle&land_id=0&yt0=Show`;
-    return page === 1 ? base : `${base}&page=${page}`;
-  });
-
-  const mvResults = await Promise.allSettled(mvUrls.map((url) => fetchPage(url)));
-
-  const mvMap = new Map<string, Partial<MinutesValuePlayer>>();
-  for (const result of mvResults) {
-    if (result.status !== "fulfilled") continue;
-    const $ = cheerio.load(result.value);
-    $("table.items > tbody > tr").each((_, row) => {
-      const player = parseMarketValueRow($, row);
-      if (player?.playerId) mvMap.set(player.playerId, player);
-    });
-  }
-
-  const players: MinutesValuePlayer[] = [];
-  for (const [playerId, mv] of mvMap) {
-    players.push({
-      name: mv.name!,
-      position: mv.position || "",
-      age: mv.age || 0,
-      club: mv.club || "",
-      clubLogoUrl: "",
-      league: mv.league || "",
-      nationality: mv.nationality || "",
-      marketValue: mv.marketValue || 0,
-      marketValueDisplay: mv.marketValueDisplay || "",
-      minutes: 0,
-      clubMatches: 0,
-      intlMatches: 0,
-      totalMatches: 0,
-      goals: 0,
-      assists: 0,
-      penaltyGoals: 0,
-      penaltyMisses: 0,
-      intlGoals: 0,
-      intlAssists: 0,
-      intlMinutes: 0,
-      intlAppearances: 0,
-      intlPenaltyGoals: 0,
-      intlCareerCaps: 0,
-      imageUrl: mv.imageUrl || "",
-      profileUrl: mv.profileUrl || "",
-      playerId,
-    });
-  }
-
-  players.sort((a, b) => b.marketValue - a.marketValue);
-  return players;
-}
-
-/** Raw scraper — U23 most valuable players (10 pages). */
-export async function fetchU23MostValuableRaw(): Promise<MinutesValuePlayer[]> {
-  const mvBaseUrl = `${BASE_URL}/spieler-statistik/wertvollstespieler/marktwertetop`;
-  const urls = Array.from({ length: U23_PAGES }, (_, i) => {
-    const page = i + 1;
-    const base = `${mvBaseUrl}?ajax=yw1&altersklasse=u23&ausrichtung=alle&spielerposition_id=alle&land_id=0&kontinent_id=0&jahrgang=0&jahr=0&yt0=Show`;
-    return page === 1 ? base : `${base}&page=${page}`;
+/** Scrape market-value listing pages with a given query string. */
+async function fetchMVPages(queryString: string, pages: number): Promise<MinutesValuePlayer[]> {
+  const urls = Array.from({ length: pages }, (_, i) => {
+    const base = `${MV_BASE}?ajax=yw1&${queryString}`;
+    return i === 0 ? base : `${base}&page=${i + 1}`;
   });
 
   const results = await Promise.allSettled(urls.map((url) => fetchPage(url)));
@@ -187,32 +126,15 @@ export async function fetchU23MostValuableRaw(): Promise<MinutesValuePlayer[]> {
   const players: MinutesValuePlayer[] = [];
   for (const [playerId, mv] of mvMap) {
     players.push({
-      name: mv.name!,
-      position: mv.position || "",
-      age: mv.age || 0,
-      club: mv.club || "",
-      clubLogoUrl: "",
-      league: mv.league || "",
-      nationality: mv.nationality || "",
-      marketValue: mv.marketValue || 0,
-      marketValueDisplay: mv.marketValueDisplay || "",
-      minutes: 0,
-      clubMatches: 0,
-      intlMatches: 0,
-      totalMatches: 0,
-      goals: 0,
-      assists: 0,
-      penaltyGoals: 0,
-      penaltyMisses: 0,
-      intlGoals: 0,
-      intlAssists: 0,
-      intlMinutes: 0,
-      intlAppearances: 0,
-      intlPenaltyGoals: 0,
-      intlCareerCaps: 0,
-      imageUrl: mv.imageUrl || "",
-      profileUrl: mv.profileUrl || "",
-      playerId,
+      name: mv.name!, position: mv.position || "", age: mv.age || 0,
+      club: mv.club || "", clubLogoUrl: "", league: mv.league || "",
+      nationality: mv.nationality || "", nationalityFlagUrl: mv.nationalityFlagUrl || "",
+      marketValue: mv.marketValue || 0, marketValueDisplay: mv.marketValueDisplay || "",
+      minutes: 0, clubMatches: 0, intlMatches: 0, totalMatches: 0,
+      goals: 0, assists: 0, penaltyGoals: 0, penaltyMisses: 0,
+      intlGoals: 0, intlAssists: 0, intlMinutes: 0, intlAppearances: 0,
+      intlPenaltyGoals: 0, intlCareerCaps: 0,
+      imageUrl: mv.imageUrl || "", profileUrl: mv.profileUrl || "", playerId,
     });
   }
 
@@ -220,62 +142,14 @@ export async function fetchU23MostValuableRaw(): Promise<MinutesValuePlayer[]> {
   return players;
 }
 
-/** Raw scraper — O30 most valuable players (3 pages). */
-export async function fetchO30MostValuableRaw(): Promise<MinutesValuePlayer[]> {
-  const mvBaseUrl = `${BASE_URL}/spieler-statistik/wertvollstespieler/marktwertetop`;
-  const urls = Array.from({ length: O30_PAGES }, (_, i) => {
-    const page = i + 1;
-    const base = `${mvBaseUrl}?ajax=yw1&altersklasse=o30&ausrichtung=alle&spielerposition_id=alle&land_id=0&kontinent_id=0&jahrgang=0&jahr=0&yt0=Show`;
-    return page === 1 ? base : `${base}&page=${page}`;
-  });
+export const fetchMinutesValueRaw = () =>
+  fetchMVPages("altersklasse=alle&ausrichtung=alle&land_id=0&yt0=Show", 20);
 
-  const results = await Promise.allSettled(urls.map((url) => fetchPage(url)));
+export const fetchU23MostValuableRaw = () =>
+  fetchMVPages("altersklasse=u23&ausrichtung=alle&spielerposition_id=alle&land_id=0&kontinent_id=0&jahrgang=0&jahr=0&yt0=Show", 10);
 
-  const mvMap = new Map<string, Partial<MinutesValuePlayer>>();
-  for (const result of results) {
-    if (result.status !== "fulfilled") continue;
-    const $ = cheerio.load(result.value);
-    $("table.items > tbody > tr").each((_, row) => {
-      const player = parseMarketValueRow($, row);
-      if (player?.playerId) mvMap.set(player.playerId, player);
-    });
-  }
-
-  const players: MinutesValuePlayer[] = [];
-  for (const [playerId, mv] of mvMap) {
-    players.push({
-      name: mv.name!,
-      position: mv.position || "",
-      age: mv.age || 0,
-      club: mv.club || "",
-      clubLogoUrl: "",
-      league: mv.league || "",
-      nationality: mv.nationality || "",
-      marketValue: mv.marketValue || 0,
-      marketValueDisplay: mv.marketValueDisplay || "",
-      minutes: 0,
-      clubMatches: 0,
-      intlMatches: 0,
-      totalMatches: 0,
-      goals: 0,
-      assists: 0,
-      penaltyGoals: 0,
-      penaltyMisses: 0,
-      intlGoals: 0,
-      intlAssists: 0,
-      intlMinutes: 0,
-      intlAppearances: 0,
-      intlPenaltyGoals: 0,
-      intlCareerCaps: 0,
-      imageUrl: mv.imageUrl || "",
-      profileUrl: mv.profileUrl || "",
-      playerId,
-    });
-  }
-
-  players.sort((a, b) => b.marketValue - a.marketValue);
-  return players;
-}
+export const fetchO30MostValuableRaw = () =>
+  fetchMVPages("altersklasse=o30&ausrichtung=alle&spielerposition_id=alle&land_id=0&kontinent_id=0&jahrgang=0&jahr=0&yt0=Show", 3);
 
 /** Reads pre-built JSON data committed to the repo. */
 export async function getMinutesValueData(): Promise<MinutesValuePlayer[]> {
