@@ -142,10 +142,10 @@ export default async function TeamDetailPage({
 
   const deltaLabel = teamForm
     ? teamForm.deltaPts > 0
-      ? `+${teamForm.deltaPts} above expectation`
+      ? "above expected"
       : teamForm.deltaPts < 0
-      ? `${teamForm.deltaPts} below expectation`
-      : "On par with expectation"
+      ? "below expected"
+      : "on par"
     : null;
 
   return (

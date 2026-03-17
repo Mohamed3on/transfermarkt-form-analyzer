@@ -17,7 +17,7 @@ interface PlayerSubtitleProps {
 
 export function PlayerSubtitle({ position, playedPosition, club, clubLogoUrl, clubId, age, nationalityFlagUrl, nationality }: PlayerSubtitleProps) {
   const clubContent = (
-    <span className="truncate max-w-24 sm:max-w-none inline-flex items-center gap-1">
+    <span className="inline-flex items-center gap-1">
       {clubLogoUrl && <ClubLogo src={clubLogoUrl} />}
       {club}
     </span>
@@ -34,15 +34,15 @@ export function PlayerSubtitle({ position, playedPosition, club, clubLogoUrl, cl
       )}
       <span className="opacity-40">•</span>
       {clubId ? (
-        <Link href={getTeamDetailHref(clubId)} className="truncate max-w-24 sm:max-w-none inline-flex items-center gap-1 hover:underline">
+        <Link href={getTeamDetailHref(clubId)} className="inline-flex items-center gap-1 hover:underline">
           {clubLogoUrl && <ClubLogo src={clubLogoUrl} />}
           {club}
         </Link>
       ) : (
         clubContent
       )}
-      <span className="hidden sm:inline opacity-40">•</span>
-      <span className="hidden sm:inline">{age}y</span>
+      <span className="opacity-40">•</span>
+      <span>{age}y</span>
     </>
   );
 }

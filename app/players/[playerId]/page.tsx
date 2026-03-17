@@ -12,7 +12,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { createPageMetadata } from "@/lib/metadata";
-import { formatInjuryDuration, formatReturnInfo, getLeistungsdatenUrl, getPlayerDetailHref, ordinal } from "@/lib/format";
+import { formatInjuryDuration, formatReturnInfo, getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
 import { getPlayerDetailData, seasonNpga, type PlayerRankings } from "@/lib/player-detail";
 import { getPlayerRecentMatches } from "@/lib/player-recent-matches";
 import { Badge } from "@/components/ui/badge";
@@ -92,29 +92,6 @@ function formatShortDate(value: string): string {
     month: "short",
     day: "numeric",
   }).format(date);
-}
-
-function summaryLine({
-  league,
-  club,
-  rankings,
-  pricierPlayersBeatenByTarget,
-  cheaperPlayersBeatingTarget,
-}: {
-  league: string;
-  club: string;
-  rankings: PlayerRankings;
-  pricierPlayersBeatenByTarget: number;
-  cheaperPlayersBeatingTarget: number;
-}) {
-  const comparisonText =
-    pricierPlayersBeatenByTarget > 0
-      ? `beats ${pricierPlayersBeatenByTarget} pricier comparable players`
-      : cheaperPlayersBeatingTarget > 0
-      ? `is beaten by ${cheaperPlayersBeatingTarget} cheaper comparable players`
-      : "has a clean value-comparison profile right now";
-
-  return `${ordinal(rankings.npgaOverall)} for npG+A in the tracked pool, ${ordinal(rankings.npgaLeague)} in ${league}, and ${ordinal(rankings.npgaClub)} at ${club}. ${comparisonText}.`;
 }
 
 function SignalBadge({
@@ -606,15 +583,6 @@ export default async function PlayerDetailPage({
                   />
                 </div>
 
-                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-text-secondary sm:text-base">
-                  {summaryLine({
-                    league: player.league,
-                    club: player.club,
-                    rankings,
-                    pricierPlayersBeatenByTarget: signalSummary.pricierPlayersBeatenByTarget,
-                    cheaperPlayersBeatingTarget: signalSummary.cheaperPlayersBeatingTarget,
-                  })}
-                </p>
 
                 <div className="mt-5 flex flex-wrap items-center gap-3">
                   <Button asChild>
