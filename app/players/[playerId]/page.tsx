@@ -17,6 +17,7 @@ import { getPlayerDetailData, seasonNpga, type PlayerRankings } from "@/lib/play
 import { getPlayerRecentMatches } from "@/lib/player-recent-matches";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { PlayerSubtitle } from "@/components/PlayerSubtitle";
@@ -59,9 +60,9 @@ function GoalBreakdown({ goals, penaltyGoals }: { goals: number; penaltyGoals: n
 
 function RankCell({ rank, total }: { rank: number; total: number }) {
   return (
-    <td className="px-2 sm:px-3 py-2.5 text-right whitespace-nowrap">
+    <TableCell className="text-right whitespace-nowrap">
       <RankBadge rank={rank} total={total} />
-    </td>
+    </TableCell>
   );
 }
 
@@ -706,99 +707,93 @@ export default async function PlayerDetailPage({
         <div className="space-y-8">
           <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[1.06fr_0.94fr]">
             <SectionPanel title="Rankings">
-              <div className="overflow-x-auto rounded-xl border border-border-subtle">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                      <th className="px-2 sm:px-3 py-2 text-left font-normal">Metric</th>
-                      <th className="px-2 sm:px-3 py-2 text-right font-normal">All</th>
-                      <th className="px-2 sm:px-3 py-2 text-right font-normal">League</th>
-                      <th className="hidden sm:table-cell px-2 sm:px-3 py-2 text-right font-normal">Club</th>
-                      <th className="px-2 sm:px-3 py-2 text-right font-normal whitespace-nowrap">{positionShortLabel || positionLabel}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {RANKING_METRICS.map((m) => (
-                      <tr key={m.label} className="border-b border-border-subtle/50 last:border-0">
-                        <td className="px-2 sm:px-3 py-2.5 whitespace-nowrap">
-                          <Link
-                            href={`/players${m.sortKey ? `?sort=${m.sortKey}` : ""}`}
-                            className="text-text-secondary transition-colors hover:text-text-primary hover:underline"
-                          >
-                            <span className="sm:hidden">{m.shortLabel}</span>
-                            <span className="hidden sm:inline">{m.label}</span>
-                          </Link>
-                        </td>
-                        <RankCell rank={rankings[m.overallKey]} total={overallCount} />
-                        <RankCell rank={rankings[m.leagueKey]} total={leagueCount} />
-                        <td className="hidden sm:table-cell px-2 sm:px-3 py-2.5 text-right whitespace-nowrap">
-                          <RankBadge rank={rankings[m.clubKey]} total={clubCount} />
-                        </td>
-                        <RankCell rank={rankings[m.positionKey]} total={positionPeerCount} />
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-left">Metric</TableHead>
+                    <TableHead className="text-right">All</TableHead>
+                    <TableHead className="text-right">League</TableHead>
+                    <TableHead className="hidden sm:table-cell text-right">Club</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">{positionShortLabel || positionLabel}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {RANKING_METRICS.map((m) => (
+                    <TableRow key={m.label}>
+                      <TableCell className="whitespace-nowrap">
+                        <Link
+                          href={`/players${m.sortKey ? `?sort=${m.sortKey}` : ""}`}
+                          className="text-text-secondary transition-colors hover:text-text-primary hover:underline"
+                        >
+                          <span className="sm:hidden">{m.shortLabel}</span>
+                          <span className="hidden sm:inline">{m.label}</span>
+                        </Link>
+                      </TableCell>
+                      <RankCell rank={rankings[m.overallKey]} total={overallCount} />
+                      <RankCell rank={rankings[m.leagueKey]} total={leagueCount} />
+                      <TableCell className="hidden sm:table-cell text-right whitespace-nowrap">
+                        <RankBadge rank={rankings[m.clubKey]} total={clubCount} />
+                      </TableCell>
+                      <RankCell rank={rankings[m.positionKey]} total={positionPeerCount} />
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
               {subgroupRankings.length > 0 && (
                 <div className="mt-4 space-y-3">
                   {subgroupRankings.map((group) => (
-                    <div key={group.label} className="overflow-hidden rounded-xl border border-border-subtle">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                            <th className="px-2 sm:px-3 py-2 text-left font-normal">{group.label} ({group.total})</th>
-                            <th className="px-2 sm:px-3 py-2 text-right font-normal">npG+A</th>
-                            <th className="px-2 sm:px-3 py-2 text-right font-normal">Value</th>
-                            <th className="px-2 sm:px-3 py-2 text-right font-normal">Minutes</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="px-2 sm:px-3 py-2.5 text-text-secondary">Rank</td>
-                            <td className="px-2 sm:px-3 py-2.5 text-right font-value text-accent-hot">#{group.npgaRank}</td>
-                            <td className="px-2 sm:px-3 py-2.5 text-right font-value text-accent-gold">#{group.marketValueRank}</td>
-                            <td className="px-2 sm:px-3 py-2.5 text-right font-value text-accent-blue">#{group.minutesRank}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+                    <Table key={group.label}>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-left">{group.label} ({group.total})</TableHead>
+                          <TableHead className="text-right">npG+A</TableHead>
+                          <TableHead className="text-right">Value</TableHead>
+                          <TableHead className="text-right">Minutes</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="text-text-secondary">Rank</TableCell>
+                          <TableCell className="text-right font-value text-accent-hot">#{group.npgaRank}</TableCell>
+                          <TableCell className="text-right font-value text-accent-gold">#{group.marketValueRank}</TableCell>
+                          <TableCell className="text-right font-value text-accent-blue">#{group.minutesRank}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
                   ))}
                 </div>
               )}
             </SectionPanel>
 
             <SectionPanel title="Season">
-              <div className="overflow-x-auto rounded-xl border border-border-subtle">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                      <th className="px-2 sm:px-3 py-2 text-left font-normal">Period</th>
-                      <th className="px-2 sm:px-3 py-2 text-right font-normal">npG+A</th>
-                      <th className="px-2 sm:px-3 py-2 text-right font-normal">G</th>
-                      <th className="px-2 sm:px-3 py-2 text-right font-normal">A</th>
-                      <th className="px-2 sm:px-3 py-2 text-right font-normal">Mins</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {([
-                      { label: "Season", npga: form.seasonNpga, goals: form.seasonGoals, pens: form.penaltyGoals, assists: form.seasonAssists, mins: form.seasonMinutes },
-                      { label: "Last 5", npga: form.last5Npga, goals: form.last5Goals, pens: form.last5PenaltyGoals, assists: form.last5Assists, mins: form.last5Minutes },
-                      { label: "Last 10", npga: form.last10Npga, goals: form.last10Goals, pens: form.last10PenaltyGoals, assists: form.last10Assists, mins: form.last10Minutes },
-                    ]).map((row) => (
-                      <tr key={row.label} className="border-b border-border-subtle/50">
-                        <td className="px-2 sm:px-3 py-2.5 text-text-secondary">{row.label}</td>
-                        <td className="px-2 sm:px-3 py-2.5 text-right font-value text-accent-hot">{row.npga}</td>
-                        <td className="px-2 sm:px-3 py-2.5 text-right font-value">
-                          <GoalBreakdown goals={row.goals} penaltyGoals={row.pens} />
-                        </td>
-                        <td className="px-2 sm:px-3 py-2.5 text-right font-value text-text-primary">{row.assists}</td>
-                        <td className="px-2 sm:px-3 py-2.5 text-right font-value text-text-primary">{row.mins.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-left">Period</TableHead>
+                    <TableHead className="text-right">npG+A</TableHead>
+                    <TableHead className="text-right">G</TableHead>
+                    <TableHead className="text-right">A</TableHead>
+                    <TableHead className="text-right">Mins</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {([
+                    { label: "Season", npga: form.seasonNpga, goals: form.seasonGoals, pens: form.penaltyGoals, assists: form.seasonAssists, mins: form.seasonMinutes },
+                    { label: "Last 5", npga: form.last5Npga, goals: form.last5Goals, pens: form.last5PenaltyGoals, assists: form.last5Assists, mins: form.last5Minutes },
+                    { label: "Last 10", npga: form.last10Npga, goals: form.last10Goals, pens: form.last10PenaltyGoals, assists: form.last10Assists, mins: form.last10Minutes },
+                  ]).map((row) => (
+                    <TableRow key={row.label}>
+                      <TableCell className="text-text-secondary">{row.label}</TableCell>
+                      <TableCell className="text-right font-value text-accent-hot">{row.npga}</TableCell>
+                      <TableCell className="text-right font-value">
+                        <GoalBreakdown goals={row.goals} penaltyGoals={row.pens} />
+                      </TableCell>
+                      <TableCell className="text-right font-value text-text-primary">{row.assists}</TableCell>
+                      <TableCell className="text-right font-value text-text-primary">{row.mins.toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
               {form.penaltyAttempts > 0 && (
                 <Link href="/players?sort=pen" className="mt-2.5 block text-sm text-text-secondary transition-colors hover:text-text-primary">
                   Penalties: <span className="font-value text-amber-400">{form.penaltyGoals}/{form.penaltyAttempts}</span> scored
@@ -807,36 +802,36 @@ export default async function PlayerDetailPage({
                 </Link>
               )}
               {player.positionStats && player.positionStats.length > 1 && (
-                <div className="mt-4 overflow-x-auto rounded-xl border border-border-subtle">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                        <th className="px-2 sm:px-3 py-2 text-left font-normal">Position</th>
-                        <th className="px-2 sm:px-3 py-2 text-right font-normal">Apps</th>
-                        <th className="px-2 sm:px-3 py-2 text-right font-normal">G</th>
-                        <th className="px-2 sm:px-3 py-2 text-right font-normal">A</th>
-                        <th className="px-2 sm:px-3 py-2 text-right font-normal">npG+A</th>
-                        <th className="px-2 sm:px-3 py-2 text-right font-normal">Mins</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {player.positionStats.map((ps) => {
-                        const npga = ps.goals - (/* no penalty split per position */ 0) + ps.assists;
-                        const bestNpga = Math.max(...player.positionStats!.map((p) => p.goals + p.assists));
-                        const isBest = npga === bestNpga && player.positionStats!.length > 1;
-                        return (
-                          <tr key={ps.positionId} className="border-b border-border-subtle/50 last:border-0">
-                            <td className="px-2 sm:px-3 py-2.5 text-text-secondary">{ps.position}</td>
-                            <td className="px-2 sm:px-3 py-2.5 text-right font-value text-text-primary">{ps.appearances}</td>
-                            <td className="px-2 sm:px-3 py-2.5 text-right font-value text-text-primary">{ps.goals}</td>
-                            <td className="px-2 sm:px-3 py-2.5 text-right font-value text-text-primary">{ps.assists}</td>
-                            <td className={`px-2 sm:px-3 py-2.5 text-right font-value ${isBest ? "text-accent-hot" : "text-text-primary"}`}>{npga}</td>
-                            <td className="px-2 sm:px-3 py-2.5 text-right font-value text-text-primary">{ps.minutes.toLocaleString()}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div className="mt-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-left">Position</TableHead>
+                      <TableHead className="text-right">Apps</TableHead>
+                      <TableHead className="text-right">G</TableHead>
+                      <TableHead className="text-right">A</TableHead>
+                      <TableHead className="text-right">npG+A</TableHead>
+                      <TableHead className="text-right">Mins</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {player.positionStats.map((ps) => {
+                      const npga = ps.goals - (/* no penalty split per position */ 0) + ps.assists;
+                      const bestNpga = Math.max(...player.positionStats!.map((p) => p.goals + p.assists));
+                      const isBest = npga === bestNpga && player.positionStats!.length > 1;
+                      return (
+                        <TableRow key={ps.positionId}>
+                          <TableCell className="text-text-secondary">{ps.position}</TableCell>
+                          <TableCell className="text-right font-value text-text-primary">{ps.appearances}</TableCell>
+                          <TableCell className="text-right font-value text-text-primary">{ps.goals}</TableCell>
+                          <TableCell className="text-right font-value text-text-primary">{ps.assists}</TableCell>
+                          <TableCell className={`text-right font-value ${isBest ? "text-accent-hot" : "text-text-primary"}`}>{npga}</TableCell>
+                          <TableCell className="text-right font-value text-text-primary">{ps.minutes.toLocaleString()}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
                 </div>
               )}
             </SectionPanel>
