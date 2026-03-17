@@ -144,9 +144,11 @@ function AggregatedTeamCard({
           {managerLoading ? (
             <ManagerSkeleton />
           ) : manager ? (
-            <ManagerSection manager={manager} />
+            <div className="animate-fade-in">
+              <ManagerSection manager={manager} />
+            </div>
           ) : (
-            <span className="text-text-muted">Manager data unavailable</span>
+            <span className="text-text-muted animate-fade-in">Manager data unavailable</span>
           )}
         </div>
       )}
