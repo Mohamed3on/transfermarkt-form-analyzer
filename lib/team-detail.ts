@@ -2,17 +2,13 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import type {
   AggregatedTeam,
-  InjuredPlayer,
-  ManagerInfo,
   MinutesValuePlayer,
   TeamFormEntry,
   TeamStats,
 } from "@/app/types";
 import { getMinutesValueData, applyStatsToggles, toPlayerStats } from "@/lib/fetch-minutes-value";
-import { getInjuredPlayers } from "@/lib/injured";
 import { getTeamFormData } from "@/lib/team-form";
 import { getAnalysis } from "@/lib/form-analysis";
-import { getManagerInfo } from "@/lib/fetch-manager";
 import { findRepeatWinners, findRepeatLosers } from "@/lib/biggest-movers";
 import { extractClubIdFromLogoUrl } from "@/lib/format";
 import { findValueCandidates, type ValueCandidate } from "@/lib/value-analysis";
@@ -27,7 +23,6 @@ export interface TeamDetailData {
   teamForm: TeamFormEntry | null;
   squad: MinutesValuePlayer[];
   squadValue: number;
-  manager: ManagerInfo | null;
   formPresence: { type: "top" | "bottom"; category: string; periods: number[] }[];
   recentForm: {
     period: number;
@@ -35,29 +30,24 @@ export interface TeamDetailData {
     totalTeams: number;
     ranks: { points: number; goalDiff: number; goalsScored: number; goalsConceded: number };
   }[];
-  injuries: InjuredPlayer[];
   overperformers: ValueCandidate[];
   underperformers: ValueCandidate[];
   trendPlayers: { player: MinutesValuePlayer; type: "winner" | "loser"; appearances: MarketValueMover[] }[];
 }
 
 async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | null> {
-  const [teamFormResult, playersResult, injuredResult, analysisResult, managerResult, winnersResult, losersResult] =
+  const [teamFormResult, playersResult, analysisResult, winnersResult, losersResult] =
     await Promise.allSettled([
       getTeamFormData(),
       getMinutesValueData(),
-      getInjuredPlayers(),
       getAnalysis(),
-      getManagerInfo(clubId),
       findRepeatWinners(),
       findRepeatLosers(),
     ]);
 
   const teamFormData = teamFormResult.status === "fulfilled" ? teamFormResult.value : null;
   const players = playersResult.status === "fulfilled" ? playersResult.value : [];
-  const injuredData = injuredResult.status === "fulfilled" ? injuredResult.value : null;
   const analysisData = analysisResult.status === "fulfilled" ? analysisResult.value : null;
-  const manager = managerResult.status === "fulfilled" ? managerResult.value : null;
   const winners = winnersResult.status === "fulfilled" ? winnersResult.value : null;
   const losers = losersResult.status === "fulfilled" ? losersResult.value : null;
 
@@ -75,11 +65,6 @@ async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | n
   const clubUrl = teamForm?.clubUrl ?? "";
 
   const squadValue = squad.reduce((sum, p) => sum + p.marketValue, 0);
-
-  // Injuries for this club
-  const injuries = (injuredData?.players ?? []).filter(
-    (p) => extractClubIdFromLogoUrl(p.clubLogoUrl) === clubId,
-  );
 
   // Form presence from aggregated analysis
   const formPresence: TeamDetailData["formPresence"] = [];
@@ -167,10 +152,8 @@ async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | n
     teamForm,
     squad: [...squad].sort((a, b) => b.marketValue - a.marketValue).map(({ recentForm: _, ...rest }) => rest),
     squadValue,
-    manager,
     formPresence,
     recentForm,
-    injuries,
     overperformers,
     underperformers,
     trendPlayers,
