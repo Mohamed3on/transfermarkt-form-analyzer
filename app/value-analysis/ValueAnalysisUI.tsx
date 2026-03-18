@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
+import { useState, useMemo, useCallback, useEffect, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { PlayerAutocomplete } from "@/components/PlayerAutocomplete";
 import { Combobox } from "@/components/Combobox";
@@ -18,7 +18,7 @@ import { LeagueBadge } from "@/components/LeagueBadge";
 import { VirtualList } from "@/components/VirtualList";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES, missedPct, uniqueFilterOptions } from "@/lib/filter-players";
 import { countComparisons, findValueCandidates, MIN_COMPARISON_COUNT } from "@/lib/value-analysis";
-import { applyStatsToggles } from "@/lib/stats-toggles";
+import { applyStatsToggles, toPlayerStats } from "@/lib/stats-toggles";
 import { formatReturnInfo, formatInjuryDuration, formatMarketValue, getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
 import { normalizeForSearch } from "@/lib/normalize";
 import { effectivePosition, strictlyOutperforms, canBeUnderperformerAgainst, canBeOutperformerAgainst } from "@/lib/positions";
@@ -518,27 +518,27 @@ function MvPlayerCard({ player, target, index, variant = "less", onSelect, injur
 /* ── Main Component ── */
 
 interface ValueAnalysisUIProps {
-  rawPlayerStats: PlayerStats[];
   initialData: MinutesValuePlayer[];
   injuryMap?: InjuryMap;
 }
 
 const MIN_DISCOVERY_MINUTES = 260;
 
-export function ValueAnalysisUI({ rawPlayerStats, initialData, injuryMap }: ValueAnalysisUIProps) {
+export function ValueAnalysisUI({ initialData, injuryMap }: ValueAnalysisUIProps) {
   const { params, update, push } = useQueryParams("/value-analysis");
+  const [, startTransition] = useTransition();
 
   const includePen = params.get("pen") === "1";
   const includeIntl = params.get("intl") === "1";
 
   const { allPlayers, underCandidates: rawUnderCandidates, overCandidates: rawOverCandidates } = useMemo(() => {
-    const allPlayers = applyStatsToggles(rawPlayerStats, { includePen, includeIntl });
+    const allPlayers = applyStatsToggles(initialData.map(toPlayerStats), { includePen, includeIntl });
     const under = findValueCandidates(allPlayers, { candidateOutperforms: false, minMinutes: MIN_DISCOVERY_MINUTES, sortAsc: false })
       .map((p) => ({ ...p, comparisonCount: p.count }));
     const over = findValueCandidates(allPlayers, { candidateOutperforms: true, sortAsc: true })
       .map((p) => ({ ...p, comparisonCount: p.count }));
     return { allPlayers, underCandidates: under, overCandidates: over };
-  }, [rawPlayerStats, includePen, includeIntl]);
+  }, [initialData, includePen, includeIntl]);
 
   const pointsLabel = includePen ? "G+A" : "npG+A";
 
@@ -664,10 +664,10 @@ export function ValueAnalysisUI({ rawPlayerStats, initialData, injuryMap }: Valu
             <ToggleGroupItem value="mins" className="px-4">Minutes</ToggleGroupItem>
           </ToggleGroup>
           <div className="w-px h-6 bg-border-subtle" />
-          <FilterButton active={includePen} onClick={() => update({ pen: includePen ? null : "1" })}>
+          <FilterButton active={includePen} onClick={() => startTransition(() => update({ pen: includePen ? null : "1" }))}>
             Include penalties
           </FilterButton>
-          <FilterButton active={includeIntl} onClick={() => update({ intl: includeIntl ? null : "1" })}>
+          <FilterButton active={includeIntl} onClick={() => startTransition(() => update({ intl: includeIntl ? null : "1" }))}>
             Include national team
           </FilterButton>
         </div>

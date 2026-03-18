@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
+import { getMinutesValueData } from "@/lib/fetch-minutes-value";
 import { getInjuredPlayers } from "@/lib/injured";
 import { DataLastUpdated } from "@/app/components/DataLastUpdated";
 import { ValueAnalysisUI } from "./ValueAnalysisUI";
@@ -34,13 +34,10 @@ export default async function ValueAnalysisPage() {
     if (m) injuryMap[m[1]] = { injury: p.injury, returnDate: p.returnDate, injurySince: p.injurySince };
   }
 
-  const rawPlayerStats = mvPlayers.map(toPlayerStats);
-
   return (
     <>
       <Suspense>
         <ValueAnalysisUI
-          rawPlayerStats={rawPlayerStats}
           initialData={mvPlayers}
           injuryMap={injuryMap}
         />
