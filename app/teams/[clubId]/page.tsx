@@ -143,6 +143,28 @@ export default async function TeamDetailPage({
     trendPlayers,
   } = data;
 
+  // Compute which form cells to highlight (most extreme rank across all periods)
+  const formHighlights = new Set<string>();
+  let formExtremeType: "best" | "worst" = "best";
+  {
+    const statKeys = ["points", "goalsScored", "goalsConceded", "goalDiff"] as const;
+    let extremeDist = Infinity;
+    for (const { period: p, ranks: r, totalTeams: t } of recentForm) {
+      for (const k of statKeys) {
+        const fromTop = r[k];
+        const fromBottom = t - r[k] + 1;
+        const dist = Math.min(fromTop, fromBottom);
+        if (dist < extremeDist) {
+          extremeDist = dist;
+          formExtremeType = fromTop <= fromBottom ? "best" : "worst";
+          formHighlights.clear();
+          formHighlights.add(`${p}:${k}`);
+        } else if (dist === extremeDist) {
+          formHighlights.add(`${p}:${k}`);
+        }
+      }
+    }
+  }
 
   const deltaLabel = teamForm
     ? teamForm.deltaPts > 0
@@ -291,15 +313,12 @@ export default async function TeamDetailPage({
         </section>
 
         <DetailDeck sections={[
-          { value: "squad", label: "Squad" },
           { value: "form", label: "Recent Form" },
+          { value: "squad", label: "Squad" },
           { value: "value", label: "Value Analysis" },
           { value: "injuries", label: "Injuries" },
         ]}>
-          {/* Tab 1: Squad */}
-          <SquadTab squad={squad} />
-
-          {/* Tab 2: Recent Form */}
+          {/* Tab 1: Recent Form */}
           <div>
             {recentForm.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border-subtle bg-elevated px-4 py-6 text-sm text-text-secondary">
@@ -327,6 +346,10 @@ export default async function TeamDetailPage({
                       {recentForm.map(({ period, stats, ranks, totalTeams }) => {
                         const games = stats.wins + stats.draws + stats.losses;
                         const ppg = games > 0 ? (stats.points / games).toFixed(2) : "—";
+                        const cellHighlight = (key: string) => {
+                          if (!formHighlights.has(`${period}:${key}`)) return "";
+                          return formExtremeType === "best" ? "bg-emerald-500/10" : "bg-red-500/10";
+                        };
                         const rankLabel = (r: number) => {
                           const fromBottom = totalTeams - r + 1;
                           const isTop = r <= 3;
@@ -348,16 +371,16 @@ export default async function TeamDetailPage({
                             <td className="px-3 py-2.5 text-right font-value text-text-primary">{stats.wins}</td>
                             <td className="px-3 py-2.5 text-right font-value text-text-primary">{stats.draws}</td>
                             <td className="px-3 py-2.5 text-right font-value text-text-primary">{stats.losses}</td>
-                            <td className="px-3 py-2.5 text-right font-value text-accent-blue whitespace-nowrap">
+                            <td className={`px-3 py-2.5 text-right font-value text-accent-blue whitespace-nowrap transition-colors ${cellHighlight("points")}`}>
                               {stats.points}{rankLabel(ranks.points)}
                             </td>
-                            <td className="px-3 py-2.5 text-right font-value text-text-primary whitespace-nowrap">
+                            <td className={`px-3 py-2.5 text-right font-value text-text-primary whitespace-nowrap transition-colors ${cellHighlight("goalsScored")}`}>
                               {stats.goalsScored}{rankLabel(ranks.goalsScored)}
                             </td>
-                            <td className="px-3 py-2.5 text-right font-value text-text-primary whitespace-nowrap">
+                            <td className={`px-3 py-2.5 text-right font-value text-text-primary whitespace-nowrap transition-colors ${cellHighlight("goalsConceded")}`}>
                               {stats.goalsConceded}{rankLabel(ranks.goalsConceded)}
                             </td>
-                            <td className={`px-3 py-2.5 text-right font-value whitespace-nowrap ${stats.goalDiff > 0 ? "text-emerald-400" : stats.goalDiff < 0 ? "text-red-400" : "text-text-primary"}`}>
+                            <td className={`px-3 py-2.5 text-right font-value whitespace-nowrap transition-colors ${stats.goalDiff > 0 ? "text-emerald-400" : stats.goalDiff < 0 ? "text-red-400" : "text-text-primary"} ${cellHighlight("goalDiff")}`}>
                               {stats.goalDiff > 0 ? "+" : ""}{stats.goalDiff}{rankLabel(ranks.goalDiff)}
                             </td>
                             <td className="hidden sm:table-cell px-3 py-2.5 text-right font-value text-text-secondary">{ppg}</td>
@@ -398,6 +421,9 @@ export default async function TeamDetailPage({
               </div>
             )}
           </div>
+
+          {/* Tab 2: Squad */}
+          <SquadTab squad={squad} />
 
           {/* Tab 3: Value Analysis */}
           <div className="space-y-8">

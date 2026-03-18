@@ -65,7 +65,6 @@ jobs:
         id: refresh
         run: |
           bun run scripts/refresh-minutes-value.ts
-          bun run scripts/refresh-injured.ts
 
       - name: Save player cache
         uses: actions/cache/save@v4
@@ -75,7 +74,7 @@ jobs:
 
       - name: Commit and push
         run: |
-          bash scripts/ci-push.sh "chore: refresh minutes-value data" data/minutes-value.json data/updated-at.txt data/injured.json
+          bash scripts/ci-push.sh "chore: refresh minutes-value data" data/minutes-value.json data/updated-at.txt
 
       - name: Alert on failure
         if: failure() && steps.refresh.outcome == 'failure'
