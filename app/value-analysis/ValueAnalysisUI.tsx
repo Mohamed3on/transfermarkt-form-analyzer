@@ -17,7 +17,8 @@ import { NationalityFlag } from "@/components/NationalityFlag";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { VirtualList } from "@/components/VirtualList";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES, missedPct, uniqueFilterOptions } from "@/lib/filter-players";
-import { countComparisons, MIN_COMPARISON_COUNT } from "@/lib/value-analysis";
+import { countComparisons, findValueCandidates, MIN_COMPARISON_COUNT } from "@/lib/value-analysis";
+import { applyStatsToggles } from "@/lib/fetch-minutes-value";
 import { formatReturnInfo, formatInjuryDuration, formatMarketValue, getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
 import { normalizeForSearch } from "@/lib/normalize";
 import { effectivePosition, strictlyOutperforms, canBeUnderperformerAgainst, canBeOutperformerAgainst } from "@/lib/positions";
@@ -517,17 +518,27 @@ function MvPlayerCard({ player, target, index, variant = "less", onSelect, injur
 /* ── Main Component ── */
 
 interface ValueAnalysisUIProps {
-  initialAllPlayers: PlayerStats[];
+  rawPlayerStats: PlayerStats[];
   initialData: MinutesValuePlayer[];
   injuryMap?: InjuryMap;
-  initialUnderperformers: (PlayerStats & { outperformedByCount: number })[];
-  initialOverperformers: (PlayerStats & { outperformsCount?: number })[];
-  includePen: boolean;
-  includeIntl: boolean;
 }
 
-export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, initialUnderperformers, initialOverperformers, includePen, includeIntl }: ValueAnalysisUIProps) {
+const MIN_DISCOVERY_MINUTES = 260;
+
+export function ValueAnalysisUI({ rawPlayerStats, initialData, injuryMap }: ValueAnalysisUIProps) {
   const { params, update, push } = useQueryParams("/value-analysis");
+
+  const includePen = params.get("pen") === "1";
+  const includeIntl = params.get("intl") === "1";
+
+  const { allPlayers, underCandidates: rawUnderCandidates, overCandidates: rawOverCandidates } = useMemo(() => {
+    const allPlayers = applyStatsToggles(rawPlayerStats, { includePen, includeIntl });
+    const under = findValueCandidates(allPlayers, { candidateOutperforms: false, minMinutes: MIN_DISCOVERY_MINUTES, sortAsc: false })
+      .map((p) => ({ ...p, comparisonCount: p.count }));
+    const over = findValueCandidates(allPlayers, { candidateOutperforms: true, sortAsc: true })
+      .map((p) => ({ ...p, comparisonCount: p.count }));
+    return { allPlayers, underCandidates: under, overCandidates: over };
+  }, [rawPlayerStats, includePen, includeIntl]);
 
   const pointsLabel = includePen ? "G+A" : "npG+A";
 
@@ -569,8 +580,8 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
 
   // ── G+A benchmark (computed client-side from data already on the page) ──
   const gaData = useMemo(
-    () => mode === "ga" && hasPlayer ? computeBenchmark(initialAllPlayers, urlId, urlName) : null,
-    [mode, hasPlayer, urlId, urlName, initialAllPlayers]
+    () => mode === "ga" && hasPlayer ? computeBenchmark(allPlayers, urlId, urlName) : null,
+    [mode, hasPlayer, urlId, urlName, allPlayers]
   );
   const gaHasResults = !!gaData?.targetPlayer;
   const targetMinutes = gaData?.targetPlayer?.minutes;
@@ -587,19 +598,9 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
     return gaData.outperformers;
   }, [gaData?.outperformers, benchTop5Only]);
 
-  // ── Discovery candidates (normalized to DiscoveryCandidate) ──
-  const underCandidates: DiscoveryCandidate[] = useMemo(
-    () => initialUnderperformers.map((p) => ({ ...p, comparisonCount: p.outperformedByCount })),
-    [initialUnderperformers]
-  );
-  const overCandidates: DiscoveryCandidate[] = useMemo(
-    () => initialOverperformers.map((p) => ({ ...p, comparisonCount: p.outperformsCount || 0 })),
-    [initialOverperformers]
-  );
-
-  // ── Discovery tab counts (adjusted for top-5 filter) ──
-  const underTabCount = underCandidates.length;
-  const overTabCount = overCandidates.length;
+  // ── Discovery tab counts ──
+  const underTabCount = rawUnderCandidates.length;
+  const overTabCount = rawOverCandidates.length;
 
   // ── Minutes player selection ──
   const minsSelected = useMemo(() => {
@@ -663,10 +664,10 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
             <ToggleGroupItem value="mins" className="px-4">Minutes</ToggleGroupItem>
           </ToggleGroup>
           <div className="w-px h-6 bg-border-subtle" />
-          <FilterButton active={includePen} onClick={() => push({ pen: includePen ? null : "1" })}>
+          <FilterButton active={includePen} onClick={() => update({ pen: includePen ? null : "1" })}>
             Include penalties
           </FilterButton>
-          <FilterButton active={includeIntl} onClick={() => push({ intl: includeIntl ? null : "1" })}>
+          <FilterButton active={includeIntl} onClick={() => update({ intl: includeIntl ? null : "1" })}>
             Include national team
           </FilterButton>
         </div>
@@ -675,7 +676,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
         <div className="mb-6 sm:mb-8">
           {mode === "ga" ? (
             <PlayerAutocomplete<PlayerStats>
-              players={initialAllPlayers}
+              players={allPlayers}
               value={query}
               onChange={(val) => {
                 setQuery(val);
@@ -718,7 +719,7 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
               <div className="rounded-xl p-5 mb-6 animate-fade-in bg-accent-cold-faint border border-accent-cold-glow">
                 <p className="font-medium text-accent-cold-soft">Player not found</p>
                 <p className="text-sm mt-1 text-text-secondary">
-                  Searched for &ldquo;{urlName || urlId}&rdquo; across {initialAllPlayers.length} players
+                  Searched for &ldquo;{urlName || urlId}&rdquo; across {allPlayers.length} players
                 </p>
               </div>
             )}
@@ -841,8 +842,8 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                 <TabsContent value="overpriced">
                   <DiscoverySection
                     variant="overpriced"
-                    candidates={underCandidates}
-                    allPlayers={initialAllPlayers}
+                    candidates={rawUnderCandidates}
+                    allPlayers={allPlayers}
                     sortBy={underSortBy}
                     onSortChange={(value) => update({ uSort: value === "count" ? null : value })}
                     filters={{ league: underLeagueFilter, club: underClubFilter, nationality: underNatFilter }}
@@ -857,8 +858,8 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
                 <TabsContent value="bargains">
                   <DiscoverySection
                     variant="bargains"
-                    candidates={overCandidates}
-                    allPlayers={initialAllPlayers}
+                    candidates={rawOverCandidates}
+                    allPlayers={allPlayers}
                     sortBy={overSortBy}
                     onSortChange={(value) => update({ oSort: value === "count" ? null : value })}
                     filters={{ league: overLeagueFilter, club: overClubFilter, nationality: overNatFilter }}

@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { getMinutesValueData, toPlayerStats, applyStatsToggles } from "@/lib/fetch-minutes-value";
+import { getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
 import { getInjuredPlayers } from "@/lib/injured";
-import { findValueCandidates } from "@/lib/value-analysis";
 import { DataLastUpdated } from "@/app/components/DataLastUpdated";
 import { ValueAnalysisUI } from "./ValueAnalysisUI";
 import { createPageMetadata } from "@/lib/metadata";
@@ -23,15 +22,7 @@ export const metadata = createPageMetadata({
 
 const SPIELER_RE = /\/spieler\/(\d+)/;
 
-export default async function ValueAnalysisPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = await searchParams;
-  const includePen = params.pen === "1";
-  const includeIntl = params.intl === "1";
-
+export default async function ValueAnalysisPage() {
   const [mvPlayers, injuredData] = await Promise.all([
     getMinutesValueData(),
     getInjuredPlayers(),
@@ -44,25 +35,14 @@ export default async function ValueAnalysisPage({
   }
 
   const rawPlayerStats = mvPlayers.map(toPlayerStats);
-  const allPlayerStats = applyStatsToggles(rawPlayerStats, { includePen, includeIntl });
-
-  const MIN_DISCOVERY_MINUTES = 260;
-  const underperformers = findValueCandidates(allPlayerStats, { candidateOutperforms: false, minMinutes: MIN_DISCOVERY_MINUTES, sortAsc: false })
-    .map(({ count, ...p }) => ({ ...p, outperformedByCount: count }));
-  const overperformers = findValueCandidates(allPlayerStats, { candidateOutperforms: true, sortAsc: true })
-    .map(({ count, ...p }) => ({ ...p, outperformsCount: count }));
 
   return (
     <>
       <Suspense>
         <ValueAnalysisUI
-          initialAllPlayers={allPlayerStats}
+          rawPlayerStats={rawPlayerStats}
           initialData={mvPlayers}
           injuryMap={injuryMap}
-          initialUnderperformers={underperformers}
-          initialOverperformers={overperformers}
-          includePen={includePen}
-          includeIntl={includeIntl}
         />
       </Suspense>
       <DiscoveryLinkGrid
