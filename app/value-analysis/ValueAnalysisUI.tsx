@@ -18,7 +18,7 @@ import { LeagueBadge } from "@/components/LeagueBadge";
 import { VirtualList } from "@/components/VirtualList";
 import { filterPlayersByLeagueAndClub, TOP_5_LEAGUES, missedPct, uniqueFilterOptions } from "@/lib/filter-players";
 import { countComparisons, findValueCandidates, MIN_COMPARISON_COUNT } from "@/lib/value-analysis";
-import { applyStatsToggles } from "@/lib/fetch-minutes-value";
+import { applyStatsToggles } from "@/lib/stats-toggles";
 import { formatReturnInfo, formatInjuryDuration, formatMarketValue, getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
 import { normalizeForSearch } from "@/lib/normalize";
 import { effectivePosition, strictlyOutperforms, canBeUnderperformerAgainst, canBeOutperformerAgainst } from "@/lib/positions";
