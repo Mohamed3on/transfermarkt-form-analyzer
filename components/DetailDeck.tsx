@@ -11,23 +11,20 @@ interface DetailDeckProps {
 export function DetailDeck({ sections, children }: DetailDeckProps) {
   const keys = useMemo(() => sections.map((s) => s.value), [sections]);
 
-  const [active, setActive] = useState(() => {
-    if (typeof window === "undefined") return keys[0];
-    const hash = window.location.hash.slice(1);
-    return keys.includes(hash) ? hash : keys[0];
-  });
+  const [active, setActive] = useState(keys[0]);
   const panels = useMemo(() => Children.toArray(children), [children]);
 
   useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (keys.includes(hash)) setActive(hash);
+
     const onHashChange = () => {
-      const hash = window.location.hash.slice(1);
-      if (keys.includes(hash) && hash !== active) {
-        setActive(hash);
-      }
+      const h = window.location.hash.slice(1);
+      if (keys.includes(h)) setActive(h);
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
-  }, [active, keys]);
+  }, [keys]);
 
   return (
     <section className="mt-8">
