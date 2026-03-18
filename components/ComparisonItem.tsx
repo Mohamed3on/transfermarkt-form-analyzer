@@ -7,9 +7,11 @@ import { getPlayerDetailHref } from "@/lib/format";
 export function ComparisonItem({
   player,
   positive,
+  count,
 }: {
   player: PlayerStats;
   positive: boolean;
+  count?: number;
 }) {
   return (
     <Link
@@ -29,6 +31,11 @@ export function ComparisonItem({
       <div className="shrink-0 text-right">
         <p className={`text-sm font-value ${positive ? "text-accent-hot" : "text-accent-cold-soft"}`}>{player.points} <span className="text-[10px] text-text-muted">npG+A</span></p>
         <p className="text-[11px] text-text-muted">{player.minutes?.toLocaleString() || "0"}&apos;</p>
+        {count != null && count > 0 && (
+          <p className={`text-[10px] ${positive ? "text-accent-hot/60" : "text-accent-cold-soft/60"}`}>
+            {positive ? `outscores ${count} pricier` : `outscored by ${count} cheaper`}
+          </p>
+        )}
       </div>
     </Link>
   );

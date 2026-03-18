@@ -119,8 +119,10 @@ async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | n
   const allOverperformers = findValueCandidates(comparisonPlayers, { candidateOutperforms: true, sortAsc: true });
   const allUnderperformers = findValueCandidates(comparisonPlayers, { candidateOutperforms: false, sortAsc: false });
 
-  const overperformers = allOverperformers.filter((p) => clubPlayerIds.has(p.playerId));
-  const underperformers = allUnderperformers.filter((p) => clubPlayerIds.has(p.playerId));
+  const overperformers = allOverperformers.filter((p) => clubPlayerIds.has(p.playerId))
+    .sort((a, b) => b.count - a.count);
+  const underperformers = allUnderperformers.filter((p) => clubPlayerIds.has(p.playerId))
+    .sort((a, b) => b.count - a.count);
 
   // Trend players from repeat winners/losers
   const trendPlayers: TeamDetailData["trendPlayers"] = [];

@@ -442,7 +442,7 @@ export default async function TeamDetailPage({
               ) : (
                 <div className="space-y-3">
                   {overperformers.map((p) => (
-                    <ComparisonItem key={p.playerId} player={p} positive />
+                    <ComparisonItem key={p.playerId} player={p} positive count={p.count} />
                   ))}
                 </div>
               )}
@@ -463,7 +463,7 @@ export default async function TeamDetailPage({
               ) : (
                 <div className="space-y-3">
                   {underperformers.map((p) => (
-                    <ComparisonItem key={p.playerId} player={p} positive={false} />
+                    <ComparisonItem key={p.playerId} player={p} positive={false} count={p.count} />
                   ))}
                 </div>
               )}
