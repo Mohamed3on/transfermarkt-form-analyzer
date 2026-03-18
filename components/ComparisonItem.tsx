@@ -33,7 +33,7 @@ export function ComparisonItem({
         <p className="text-[11px] text-text-muted">{player.minutes?.toLocaleString() || "0"}&apos;</p>
         {count != null && count > 0 && (
           <p className={`text-[10px] ${positive ? "text-accent-hot/60" : "text-accent-cold-soft/60"}`}>
-            {positive ? `outscores ${count} pricier` : `outscored by ${count} cheaper`}
+            {positive ? `outscores ${count} peers` : `outscored by ${count} peers`}
           </p>
         )}
       </div>
