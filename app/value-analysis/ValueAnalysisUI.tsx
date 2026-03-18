@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useTransition, type ReactNode } from "react";
+import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { PlayerAutocomplete } from "@/components/PlayerAutocomplete";
 import { Combobox } from "@/components/Combobox";
@@ -518,27 +518,38 @@ function MvPlayerCard({ player, target, index, variant = "less", onSelect, injur
 /* ── Main Component ── */
 
 interface ValueAnalysisUIProps {
+  initialAllPlayers: PlayerStats[];
   initialData: MinutesValuePlayer[];
   injuryMap?: InjuryMap;
+  initialUnderperformers: (PlayerStats & { outperformedByCount: number })[];
+  initialOverperformers: (PlayerStats & { outperformsCount?: number })[];
 }
 
 const MIN_DISCOVERY_MINUTES = 260;
 
-export function ValueAnalysisUI({ initialData, injuryMap }: ValueAnalysisUIProps) {
+export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, initialUnderperformers, initialOverperformers }: ValueAnalysisUIProps) {
   const { params, update, push } = useQueryParams("/value-analysis");
-  const [, startTransition] = useTransition();
 
   const includePen = params.get("pen") === "1";
   const includeIntl = params.get("intl") === "1";
+  const isDefault = !includePen && !includeIntl;
 
-  const { allPlayers, underCandidates: rawUnderCandidates, overCandidates: rawOverCandidates } = useMemo(() => {
-    const allPlayers = applyStatsToggles(initialData.map(toPlayerStats), { includePen, includeIntl });
-    const under = findValueCandidates(allPlayers, { candidateOutperforms: false, minMinutes: MIN_DISCOVERY_MINUTES, sortAsc: false })
+  const allPlayers = useMemo(() => {
+    if (isDefault) return initialAllPlayers;
+    return applyStatsToggles(initialData.map(toPlayerStats), { includePen, includeIntl });
+  }, [isDefault, initialAllPlayers, initialData, includePen, includeIntl]);
+
+  const rawUnderCandidates: DiscoveryCandidate[] = useMemo(() => {
+    if (isDefault) return initialUnderperformers.map((p) => ({ ...p, comparisonCount: p.outperformedByCount }));
+    return findValueCandidates(allPlayers, { candidateOutperforms: false, minMinutes: MIN_DISCOVERY_MINUTES, sortAsc: false })
       .map((p) => ({ ...p, comparisonCount: p.count }));
-    const over = findValueCandidates(allPlayers, { candidateOutperforms: true, sortAsc: true })
+  }, [isDefault, initialUnderperformers, allPlayers]);
+
+  const rawOverCandidates: DiscoveryCandidate[] = useMemo(() => {
+    if (isDefault) return initialOverperformers.map((p) => ({ ...p, comparisonCount: p.outperformsCount || 0 }));
+    return findValueCandidates(allPlayers, { candidateOutperforms: true, sortAsc: true })
       .map((p) => ({ ...p, comparisonCount: p.count }));
-    return { allPlayers, underCandidates: under, overCandidates: over };
-  }, [initialData, includePen, includeIntl]);
+  }, [isDefault, initialOverperformers, allPlayers]);
 
   const pointsLabel = includePen ? "G+A" : "npG+A";
 
@@ -664,10 +675,10 @@ export function ValueAnalysisUI({ initialData, injuryMap }: ValueAnalysisUIProps
             <ToggleGroupItem value="mins" className="px-4">Minutes</ToggleGroupItem>
           </ToggleGroup>
           <div className="w-px h-6 bg-border-subtle" />
-          <FilterButton active={includePen} onClick={() => startTransition(() => update({ pen: includePen ? null : "1" }))}>
+          <FilterButton active={includePen} onClick={() => update({ pen: includePen ? null : "1" })}>
             Include penalties
           </FilterButton>
-          <FilterButton active={includeIntl} onClick={() => startTransition(() => update({ intl: includeIntl ? null : "1" }))}>
+          <FilterButton active={includeIntl} onClick={() => update({ intl: includeIntl ? null : "1" })}>
             Include national team
           </FilterButton>
         </div>
