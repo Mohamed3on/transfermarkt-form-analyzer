@@ -5,6 +5,8 @@ import type { MinutesValuePlayer, PlayerStats } from "@/app/types";
 import { BASE_URL } from "./constants";
 import { fetchPage } from "./fetch";
 import { parseMarketValue } from "./parse-market-value";
+import { toPlayerStats, applyStatsToggles } from "./stats-toggles";
+export { toPlayerStats, applyStatsToggles };
 
 const MV_BASE = `${BASE_URL}/spieler-statistik/wertvollstespieler/marktwertetop`;
 
@@ -14,8 +16,6 @@ export const EMPTY_PLAYER_STATS: Omit<MinutesValuePlayer, "name" | "position" | 
   totalMatches: 0, goals: 0, assists: 0, penaltyGoals: 0, penaltyMisses: 0,
   intlGoals: 0, intlAssists: 0, intlMinutes: 0, intlAppearances: 0, intlPenaltyGoals: 0, intlCareerCaps: 0,
 };
-import { toPlayerStats, applyStatsToggles } from "./stats-toggles";
-export { toPlayerStats, applyStatsToggles };
 
 export async function getPlayerStatsData(): Promise<PlayerStats[]> {
   const players = await getMinutesValueData();
