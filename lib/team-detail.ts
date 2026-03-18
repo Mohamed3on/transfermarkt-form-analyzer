@@ -103,7 +103,7 @@ async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | n
           points: rankBy((t) => t.points),
           goalDiff: rankBy((t) => t.goalDiff),
           goalsScored: rankBy((t) => t.goalsScored),
-          goalsConceded: rankBy((t) => t.goalsConceded, false),
+          goalsConceded: rankBy((t) => -t.goalsConceded),
         },
       });
     }
