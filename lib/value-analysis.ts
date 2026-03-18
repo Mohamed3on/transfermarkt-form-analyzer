@@ -50,6 +50,7 @@ export function findValueCandidates(
     if (player.minutes === undefined) continue;
     if (minMinutes !== undefined && player.minutes < minMinutes) continue;
     if (candidateOutperforms ? isDefensivePosition(pos(player)) : !isAttackingPosition(pos(player))) continue;
+    if (candidateOutperforms && player.goals - player.penaltyGoals <= 0) continue;
 
     const count = countComparisons(player, players, candidateOutperforms);
     if (count >= MIN_COMPARISON_COUNT) candidates.push({ ...player, count });
