@@ -141,32 +141,37 @@ async function fetchLeagueData(league: (typeof LEAGUES)[number]): Promise<TeamFo
 export const getTeamFormData = unstable_cache(
   async () => {
     const MAX_ATTEMPTS = 3;
-    let allTeams: TeamFormEntry[] = [];
+    const allTeams: TeamFormEntry[] = [];
+    let pending = [...LEAGUES];
 
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      const results = await Promise.allSettled(LEAGUES.map(fetchLeagueData));
-      const failed = results
-        .map((r, i) => (r.status === "rejected" ? LEAGUES[i].name : null))
-        .filter(Boolean);
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS && pending.length > 0; attempt++) {
+      const results = await Promise.allSettled(pending.map(fetchLeagueData));
+      const nextPending: typeof pending = [];
 
-      if (failed.length === 0) {
-        allTeams = results
-          .map((r) => (r as PromiseFulfilledResult<TeamFormEntry[]>).value)
-          .flat();
-        break;
-      }
+      results.forEach((r, i) => {
+        if (r.status === "fulfilled") {
+          allTeams.push(...r.value);
+        } else {
+          nextPending.push(pending[i]);
+        }
+      });
 
-      console.warn(
-        `team-form attempt ${attempt}/${MAX_ATTEMPTS}: missing leagues: ${failed.join(", ")}`
-      );
+      pending = nextPending;
 
-      if (attempt === MAX_ATTEMPTS) {
-        throw new Error(
-          `Failed to fetch all 5 leagues after ${MAX_ATTEMPTS} attempts. Missing: ${failed.join(", ")}`
+      if (pending.length > 0) {
+        console.warn(
+          `team-form attempt ${attempt}/${MAX_ATTEMPTS}: missing leagues: ${pending.map((l) => l.name).join(", ")}`
         );
+        if (attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, 2000 * attempt));
+        }
       }
+    }
 
-      await new Promise((r) => setTimeout(r, 2000 * attempt));
+    if (pending.length > 0) {
+      throw new Error(
+        `Failed to fetch all 5 leagues after ${MAX_ATTEMPTS} attempts. Missing: ${pending.map((l) => l.name).join(", ")}`
+      );
     }
 
     const overperformers = [...allTeams]
