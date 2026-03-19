@@ -14,11 +14,10 @@ import { RankBadge } from "@/components/RankBadge";
 import { formatValueStr, getTeamDetailHref, ordinal } from "@/lib/format";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { managerQueryOptions } from "@/lib/hooks/use-manager-query";
+import { splitPerformers } from "@/lib/team-form";
 
 export interface TeamFormResponse {
   success: boolean;
-  overperformers: TeamFormEntry[];
-  underperformers: TeamFormEntry[];
   allTeams: TeamFormEntry[];
   leagues: string[];
 }
@@ -338,18 +337,10 @@ export function TeamFormUI({ initialData, formLeaders }: TeamFormUIProps) {
     ? requestedLeague
     : "all";
 
-  // Filter teams based on selected league
-  // When a league is selected, show ALL teams in that league (not just the top 20 cross-league)
-  const { filteredOverperformers, filteredUnderperformers } = useMemo(() => {
-    if (selectedLeague === "all") {
-      return { filteredOverperformers: data.overperformers, filteredUnderperformers: data.underperformers };
-    }
-    const leagueTeams = data.allTeams.filter((t) => t.league === selectedLeague);
-    return {
-      filteredOverperformers: leagueTeams.filter((t) => t.deltaPts > 0).sort((a, b) => b.deltaPts - a.deltaPts || b.marketValueNum - a.marketValueNum),
-      filteredUnderperformers: leagueTeams.filter((t) => t.deltaPts < 0).sort((a, b) => a.deltaPts - b.deltaPts || b.marketValueNum - a.marketValueNum),
-    };
-  }, [data, selectedLeague]);
+  const { overperformers: filteredOverperformers, underperformers: filteredUnderperformers } = useMemo(() => {
+    const teams = selectedLeague === "all" ? data.allTeams : data.allTeams.filter((t) => t.league === selectedLeague);
+    return splitPerformers(teams, selectedLeague === "all" ? 20 : undefined);
+  }, [data.allTeams, selectedLeague]);
 
   return (
     <>

@@ -138,6 +138,15 @@ async function fetchLeagueData(league: (typeof LEAGUES)[number]): Promise<TeamFo
   }
 }
 
+export function splitPerformers(teams: TeamFormEntry[], limit?: number) {
+  const over = teams.filter((t) => t.deltaPts > 0).sort((a, b) => b.deltaPts - a.deltaPts || b.marketValueNum - a.marketValueNum);
+  const under = teams.filter((t) => t.deltaPts < 0).sort((a, b) => a.deltaPts - b.deltaPts || b.marketValueNum - a.marketValueNum);
+  return {
+    overperformers: limit ? over.slice(0, limit) : over,
+    underperformers: limit ? under.slice(0, limit) : under,
+  };
+}
+
 export const getTeamFormData = unstable_cache(
   async () => {
     const MAX_ATTEMPTS = 3;
@@ -174,20 +183,8 @@ export const getTeamFormData = unstable_cache(
       );
     }
 
-    const overperformers = [...allTeams]
-      .filter((t) => t.deltaPts > 0)
-      .sort((a, b) => b.deltaPts - a.deltaPts || b.marketValueNum - a.marketValueNum)
-      .slice(0, 20);
-
-    const underperformers = [...allTeams]
-      .filter((t) => t.deltaPts < 0)
-      .sort((a, b) => a.deltaPts - b.deltaPts || b.marketValueNum - a.marketValueNum)
-      .slice(0, 20);
-
     return {
       success: true,
-      overperformers,
-      underperformers,
       allTeams,
       leagues: LEAGUES.map((l) => l.name),
     };

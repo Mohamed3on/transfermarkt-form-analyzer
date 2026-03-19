@@ -25,7 +25,7 @@ export default async function FormPage() {
 
   // Build clubId → deltaPts map from expected-position data
   const deltaMap: Record<string, number> = {};
-  for (const t of [...teamForm.overperformers, ...teamForm.underperformers]) {
+  for (const t of teamForm.allTeams) {
     deltaMap[t.clubId] = t.deltaPts;
   }
 

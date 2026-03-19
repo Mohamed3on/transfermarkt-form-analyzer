@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAnalysis } from "@/lib/form-analysis";
-import { getTeamFormData } from "@/lib/team-form";
+import { getTeamFormData, splitPerformers } from "@/lib/team-form";
 import { applyStatsToggles, getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
 import { findValueCandidates } from "@/lib/value-analysis";
 import { getInjuredPlayers } from "@/lib/injured";
@@ -569,8 +569,10 @@ export default async function Home() {
   const bottomMaxCount = aggregatedBottom[0]?.count ?? 0;
   const worstFormTeams = aggregatedBottom.filter((t) => t.count === bottomMaxCount);
 
+  const { overperformers, underperformers } = splitPerformers(teamFormData?.allTeams ?? [], 20);
+
   const managerByClubId = new Map<string, ManagerInfo | null>();
-  for (const team of [...(teamFormData?.overperformers ?? []), ...(teamFormData?.underperformers ?? [])]) {
+  for (const team of [...overperformers, ...underperformers]) {
     if (!team.clubId) continue;
     managerByClubId.set(team.clubId, team.manager ?? null);
   }
@@ -597,13 +599,13 @@ export default async function Home() {
     clubId ? (managerByClubId.get(clubId) ?? undefined) : undefined;
 
   const mostOverperformingTeams = pickWithTies(
-    teamFormData?.overperformers ?? [],
+    overperformers,
     (team) => team.deltaPts,
     "top",
     { sort: (a, b) => b.points - a.points || b.marketValueNum - a.marketValueNum },
   );
   const mostUnderperformingTeams = pickWithTies(
-    teamFormData?.underperformers ?? [],
+    underperformers,
     (team) => team.deltaPts,
     "bottom",
     { sort: (a, b) => a.points - b.points || a.marketValueNum - b.marketValueNum },
