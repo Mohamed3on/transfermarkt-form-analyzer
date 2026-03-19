@@ -532,24 +532,26 @@ export function ValueAnalysisUI({ initialAllPlayers, initialData, injuryMap, ini
 
   const includePen = params.get("pen") === "1";
   const includeIntl = params.get("intl") === "1";
-  const isDefault = !includePen && !includeIntl;
 
-  const allPlayers = useMemo(() => {
-    if (isDefault) return initialAllPlayers;
-    return applyStatsToggles(initialData.map(toPlayerStats), { includePen, includeIntl });
-  }, [isDefault, initialAllPlayers, initialData, includePen, includeIntl]);
+  const rawPlayerStats = useMemo(() => initialData.map(toPlayerStats), [initialData]);
 
-  const rawUnderCandidates: DiscoveryCandidate[] = useMemo(() => {
-    if (isDefault) return initialUnderperformers.map((p) => ({ ...p, comparisonCount: p.outperformedByCount }));
-    return findValueCandidates(allPlayers, { candidateOutperforms: false, minMinutes: MIN_DISCOVERY_MINUTES, sortAsc: false })
-      .map((p) => ({ ...p, comparisonCount: p.count }));
-  }, [isDefault, initialUnderperformers, allPlayers]);
-
-  const rawOverCandidates: DiscoveryCandidate[] = useMemo(() => {
-    if (isDefault) return initialOverperformers.map((p) => ({ ...p, comparisonCount: p.outperformsCount || 0 }));
-    return findValueCandidates(allPlayers, { candidateOutperforms: true, sortAsc: true })
-      .map((p) => ({ ...p, comparisonCount: p.count }));
-  }, [isDefault, initialOverperformers, allPlayers]);
+  const { allPlayers, rawUnderCandidates, rawOverCandidates } = useMemo(() => {
+    if (!includePen && !includeIntl) {
+      return {
+        allPlayers: initialAllPlayers,
+        rawUnderCandidates: initialUnderperformers.map((p) => ({ ...p, comparisonCount: p.outperformedByCount })),
+        rawOverCandidates: initialOverperformers.map((p) => ({ ...p, comparisonCount: p.outperformsCount || 0 })),
+      };
+    }
+    const players = applyStatsToggles(rawPlayerStats, { includePen, includeIntl });
+    return {
+      allPlayers: players,
+      rawUnderCandidates: findValueCandidates(players, { candidateOutperforms: false, minMinutes: MIN_DISCOVERY_MINUTES, sortAsc: false })
+        .map((p) => ({ ...p, comparisonCount: p.count })),
+      rawOverCandidates: findValueCandidates(players, { candidateOutperforms: true, sortAsc: true })
+        .map((p) => ({ ...p, comparisonCount: p.count })),
+    };
+  }, [rawPlayerStats, includePen, includeIntl, initialAllPlayers, initialUnderperformers, initialOverperformers]);
 
   const pointsLabel = includePen ? "G+A" : "npG+A";
 
