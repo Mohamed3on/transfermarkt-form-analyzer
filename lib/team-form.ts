@@ -189,7 +189,6 @@ export const getTeamFormData = unstable_cache(
       overperformers,
       underperformers,
       allTeams,
-      totalTeams: allTeams.length,
       leagues: LEAGUES.map((l) => l.name),
     };
   },

@@ -19,7 +19,7 @@ export interface TeamFormResponse {
   success: boolean;
   overperformers: TeamFormEntry[];
   underperformers: TeamFormEntry[];
-  totalTeams: number;
+  allTeams: TeamFormEntry[];
   leagues: string[];
 }
 
@@ -178,8 +178,8 @@ function TeamListsGrid({
   underperformers: TeamFormEntry[];
   formLeaders?: Record<string, { type: "top" | "bottom"; count: number }>;
 }) {
-  const allTeams = useMemo(() => [...overperformers, ...underperformers], [overperformers, underperformers]);
-  const clubIds = useMemo(() => [...new Set(allTeams.map((t) => t.clubId).filter(Boolean))], [allTeams]);
+  const displayedTeams = useMemo(() => [...overperformers, ...underperformers], [overperformers, underperformers]);
+  const clubIds = useMemo(() => [...new Set(displayedTeams.map((t) => t.clubId).filter(Boolean))], [displayedTeams]);
 
   const managerQueries = useQueries({
     queries: clubIds.map((clubId) => managerQueryOptions(clubId)),
@@ -339,19 +339,17 @@ export function TeamFormUI({ initialData, formLeaders }: TeamFormUIProps) {
     : "all";
 
   // Filter teams based on selected league
-  const filteredOverperformers = useMemo(
-    () => selectedLeague === "all"
-      ? data.overperformers
-      : data.overperformers.filter((team) => team.league === selectedLeague),
-    [data.overperformers, selectedLeague]
-  );
-
-  const filteredUnderperformers = useMemo(
-    () => selectedLeague === "all"
-      ? data.underperformers
-      : data.underperformers.filter((team) => team.league === selectedLeague),
-    [data.underperformers, selectedLeague]
-  );
+  // When a league is selected, show ALL teams in that league (not just the top 20 cross-league)
+  const { filteredOverperformers, filteredUnderperformers } = useMemo(() => {
+    if (selectedLeague === "all") {
+      return { filteredOverperformers: data.overperformers, filteredUnderperformers: data.underperformers };
+    }
+    const leagueTeams = data.allTeams.filter((t) => t.league === selectedLeague);
+    return {
+      filteredOverperformers: leagueTeams.filter((t) => t.deltaPts > 0).sort((a, b) => b.deltaPts - a.deltaPts || b.marketValueNum - a.marketValueNum),
+      filteredUnderperformers: leagueTeams.filter((t) => t.deltaPts < 0).sort((a, b) => a.deltaPts - b.deltaPts || b.marketValueNum - a.marketValueNum),
+    };
+  }, [data, selectedLeague]);
 
   return (
     <>
