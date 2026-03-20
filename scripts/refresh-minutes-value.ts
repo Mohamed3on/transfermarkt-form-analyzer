@@ -1,6 +1,6 @@
 import { writeFile, readFile, mkdir } from "fs/promises";
 import { join } from "path";
-import { fetchMinutesValueRaw, fetchU23MostValuableRaw, fetchO30MostValuableRaw } from "@/lib/fetch-minutes-value";
+import { fetchMinutesValueRaw, fetchO30MostValuableRaw, fetchTopForwardsRaw } from "@/lib/fetch-minutes-value";
 import { fetchTopScorersRaw, fetchYearlyScorersRaw } from "@/lib/fetch-top-scorers";
 import { derivePositionStats, fetchPlayerMinutesRaw } from "@/lib/fetch-player-minutes";
 import { extractClubIdFromLogoUrl } from "@/lib/format";
@@ -46,10 +46,10 @@ async function fetchMVWithRetry(maxAttempts = 6): Promise<MinutesValuePlayer[]> 
 async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
   console.log("[refresh] Fetching player lists...");
 
-  const [mvPlayers, u23Players, o30Players, seasonScorers, yearlyScorers] = await Promise.all([
+  const [mvPlayers, o30Players, topForwards, seasonScorers, yearlyScorers] = await Promise.all([
     fetchMVWithRetry(),
-    fetchU23MostValuableRaw().catch(() => [] as MinutesValuePlayer[]),
     fetchO30MostValuableRaw().catch(() => [] as MinutesValuePlayer[]),
+    fetchTopForwardsRaw().catch(() => [] as MinutesValuePlayer[]),
     fetchTopScorersRaw().catch(() => [] as MinutesValuePlayer[]),
     fetchYearlyScorersRaw().catch(() => [] as MinutesValuePlayer[]),
   ]);
@@ -57,8 +57,8 @@ async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
   if (mvPlayers.length === 0) {
     throw new Error("0 players from MV pages after 6 attempts — rate-limited.");
   }
-  if (u23Players.length === 0) console.warn("[refresh] U23 MV unavailable — continuing without");
   if (o30Players.length === 0) console.warn("[refresh] O30 MV unavailable — continuing without");
+  if (topForwards.length === 0) console.warn("[refresh] top forwards unavailable — continuing without");
   if (seasonScorers.length === 0) console.warn("[refresh] season scorers unavailable — continuing without");
   if (yearlyScorers.length === 0) console.warn("[refresh] yearly scorers unavailable — continuing without");
 
@@ -66,8 +66,8 @@ async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
   const players: MinutesValuePlayer[] = [];
   for (const { label, list } of [
     { label: "MV", list: mvPlayers },
-    { label: "U23 MV", list: u23Players },
     { label: "O30 MV", list: o30Players },
+    { label: "top forwards", list: topForwards },
     { label: "season scorers", list: seasonScorers },
     { label: "yearly scorers", list: yearlyScorers },
   ]) {

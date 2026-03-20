@@ -95,11 +95,11 @@ async function fetchMVPages(queryString: string, pages: number): Promise<Minutes
 export const fetchMinutesValueRaw = () =>
   fetchMVPages("altersklasse=alle&ausrichtung=alle&land_id=0&yt0=Show", 20);
 
-export const fetchU23MostValuableRaw = () =>
-  fetchMVPages("altersklasse=u23&ausrichtung=alle&spielerposition_id=alle&land_id=0&kontinent_id=0&jahrgang=0&jahr=0&yt0=Show", 10);
-
 export const fetchO30MostValuableRaw = () =>
   fetchMVPages("altersklasse=o30&ausrichtung=alle&spielerposition_id=alle&land_id=0&kontinent_id=0&jahrgang=0&jahr=0&yt0=Show", 3);
+
+export const fetchTopForwardsRaw = () =>
+  fetchMVPages("ausrichtung=Sturm&spielerposition_id=alle&altersklasse=alle&jahrgang=0&land_id=0&kontinent_id=0&jahr=0&yt0=Show", 10);
 
 /** Reads pre-built JSON data committed to the repo. */
 export async function getMinutesValueData(): Promise<MinutesValuePlayer[]> {
