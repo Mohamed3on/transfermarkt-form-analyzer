@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 interface BenchmarkCardProps {
@@ -60,9 +61,9 @@ export function BenchmarkCard({
           </div>
           {/* Mobile name + subtitle */}
           <div className="flex-1 min-w-0 sm:hidden">
-            <a href={href} target="_blank" rel="noopener noreferrer" className="font-bold text-lg hover:underline block truncate text-accent-gold">
+            <Link href={href} className="font-bold text-lg hover:underline block truncate text-accent-gold">
               {name}
-            </a>
+            </Link>
             <div className="flex items-center gap-2 mt-0.5 text-xs text-text-secondary">
               {subtitle}
             </div>
@@ -71,9 +72,9 @@ export function BenchmarkCard({
 
         {/* Desktop name + subtitle + stats */}
         <div className="hidden sm:block flex-1 min-w-0">
-          <a href={href} target="_blank" rel="noopener noreferrer" className="font-bold text-xl hover:underline block truncate text-accent-gold">
+          <Link href={href} className="font-bold text-xl hover:underline block truncate text-accent-gold">
             {name}
-          </a>
+          </Link>
           <div className="flex items-center gap-2 mt-1 text-sm text-text-secondary">
             {subtitle}
           </div>
