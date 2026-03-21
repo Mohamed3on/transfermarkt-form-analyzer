@@ -270,7 +270,7 @@ function enrichRecentForm(players: MinutesValuePlayer[], clubs: ClubMap): void {
 async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<void> {
   const fetched = players.filter((p) => cache[p.playerId]);
   const zeroCount = fetched.filter((p) => p.goals === 0 && p.assists === 0 && p.minutes === 0).length;
-  if (fetched.length > 50 && zeroCount / fetched.length > 0.8) {
+  if (fetched.length > 50 && zeroCount / fetched.length > 0.3) {
     throw new Error(`${zeroCount}/${fetched.length} players have zero stats — scraping issue.`);
   }
 
@@ -278,7 +278,7 @@ async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<vo
     const existing: MinutesValuePlayer[] = JSON.parse(await readFile(OUT_PATH, "utf-8"));
     const oldGA = existing.reduce((s, p) => s + p.goals + p.assists, 0);
     const newGA = players.reduce((s, p) => s + p.goals + p.assists, 0);
-    if (oldGA > 100 && newGA < oldGA * 0.5) {
+    if (oldGA > 100 && newGA < oldGA * 0.85) {
       throw new Error(`Stats regressed: G+A ${oldGA} → ${newGA} (${Math.round((newGA / oldGA) * 100)}%).`);
     }
     console.log(`[refresh] G+A: ${oldGA} → ${newGA} (${newGA >= oldGA ? "+" : ""}${newGA - oldGA})`);
