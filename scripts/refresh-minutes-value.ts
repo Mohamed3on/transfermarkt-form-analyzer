@@ -269,21 +269,31 @@ function enrichRecentForm(players: MinutesValuePlayer[], clubs: ClubMap): void {
 
 async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<void> {
   const fetched = players.filter((p) => cache[p.playerId]);
-  const zeroCount = fetched.filter((p) => p.goals === 0 && p.assists === 0 && p.minutes === 0).length;
-  if (fetched.length > 50 && zeroCount / fetched.length > 0.3) {
-    throw new Error(`${zeroCount}/${fetched.length} players have zero stats — scraping issue.`);
+  const zeroStats = fetched.filter((p) => p.goals === 0 && p.assists === 0 && p.minutes === 0);
+  const zeroMV = players.filter((p) => p.marketValue <= 0);
+  console.log(`[refresh] Validation: ${zeroStats.length}/${fetched.length} zero-stats, ${zeroMV.length}/${players.length} zero-MV`);
+  if (fetched.length > 50 && zeroStats.length / fetched.length > 0.3) {
+    throw new Error(`${zeroStats.length}/${fetched.length} players have zero stats — scraping issue.`);
+  }
+  if (zeroMV.length > players.length * 0.1) {
+    throw new Error(`${zeroMV.length}/${players.length} players have no market value — scraping issue.`);
   }
 
   try {
     const existing: MinutesValuePlayer[] = JSON.parse(await readFile(OUT_PATH, "utf-8"));
     const oldGA = existing.reduce((s, p) => s + p.goals + p.assists, 0);
     const newGA = players.reduce((s, p) => s + p.goals + p.assists, 0);
+    const oldCount = existing.length;
+    const newCount = players.filter((p) => p.marketValue > 0).length;
+    console.log(`[refresh] G+A: ${oldGA} → ${newGA} (${newGA >= oldGA ? "+" : ""}${newGA - oldGA}), players: ${oldCount} → ${newCount} (${newCount >= oldCount ? "+" : ""}${newCount - oldCount})`);
     if (oldGA > 100 && newGA < oldGA * 0.85) {
       throw new Error(`Stats regressed: G+A ${oldGA} → ${newGA} (${Math.round((newGA / oldGA) * 100)}%).`);
     }
-    console.log(`[refresh] G+A: ${oldGA} → ${newGA} (${newGA >= oldGA ? "+" : ""}${newGA - oldGA})`);
+    if (oldCount > 100 && newCount < oldCount * 0.85) {
+      throw new Error(`Player count regressed: ${oldCount} → ${newCount} (${Math.round((newCount / oldCount) * 100)}%).`);
+    }
   } catch (e) {
-    if (e instanceof Error && e.message.startsWith("Stats regressed")) throw e;
+    if (e instanceof Error && (e.message.startsWith("Stats regressed") || e.message.startsWith("Player count"))) throw e;
   }
 }
 
