@@ -288,6 +288,7 @@ export interface PlayerStatsResult {
   contractExpiry?: string;
   gamesMissed: number;
   positionStats?: { positionId: number; position: string; minutes: number; goals: number; assists: number; appearances: number }[];
+  nationality?: string;
   nationalityFlagUrl?: string;
   leagueLogoUrl?: string;
   recentForm?: RecentGameStats[];

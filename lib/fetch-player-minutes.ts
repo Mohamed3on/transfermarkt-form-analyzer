@@ -206,9 +206,10 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const isOnLoan = ribbonText === "on loan";
   const isNewSigning = ribbonText === "new arrival" || ribbonText === "winter signing" || isOnLoan;
 
-  // Nationality flag URL from profile header
+  // Nationality from profile header
   const natFlagImg = $("span[itemprop='nationality'] img.flaggenrahmen").first();
   const nationalityFlagUrl = (natFlagImg.attr("src") || "").replace(/\/(tiny|verysmall)\//, "/medium/") || "";
+  const nationality = natFlagImg.attr("title") || "";
 
   // League logo URL from profile header
   const leagueLinkImg = $(".data-header__league-link img").first();
@@ -241,7 +242,7 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const age = ageMatch ? parseInt(ageMatch[1]) : 0;
 
   // Parse stats + league from ceapi
-  const shared = { club, clubLogoUrl, intlCareerCaps, isCurrentIntl, isNewSigning, isOnLoan, contractExpiry, nationalityFlagUrl, leagueLogoUrl, marketValue, marketValueDisplay, age };
+  const shared = { club, clubLogoUrl, intlCareerCaps, isCurrentIntl, isNewSigning, isOnLoan, contractExpiry, nationality, nationalityFlagUrl, leagueLogoUrl, marketValue, marketValueDisplay, age };
 
   if (!ceapiRes.ok) {
     return { ...ZERO_STATS, ...shared };
