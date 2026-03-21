@@ -27,9 +27,7 @@ export async function GET() {
       name: c.name,
       logoUrl: c.logoUrl,
     }));
-    return NextResponse.json({ players: playerIndex, teams: teamIndex }, {
-      headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
-    });
+    return NextResponse.json({ players: playerIndex, teams: teamIndex });
   } catch (error) {
     console.error("[API /players/search] Failed to build search index:", error);
     return NextResponse.json({ error: "Failed to load player search data" }, { status: 500 });
