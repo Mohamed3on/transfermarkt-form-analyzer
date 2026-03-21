@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { extractClubIdFromLogoUrl, formatMarketValue, getPlayerDetailHref, getTeamDetailHref } from "@/lib/format";
+import { formatMarketValue, getPlayerDetailHref } from "@/lib/format";
+import { ClubLink } from "@/components/ClubLink";
 import { InfoTip } from "@/app/components/InfoTip";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import type { MarketValueMover, MarketValueMoversResult } from "@/app/types";
@@ -69,20 +70,7 @@ function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMov
               </Badge>
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-              {(() => {
-                const clubId = extractClubIdFromLogoUrl(latest.clubLogoUrl);
-                return clubId ? (
-                  <Link href={getTeamDetailHref(clubId)} className="inline-flex items-center gap-1 text-xs sm:text-sm text-text-secondary hover:text-text-primary transition-colors">
-                    {latest.clubLogoUrl && <img src={latest.clubLogoUrl} alt={latest.club} className="w-4 h-4 sm:w-5 sm:h-5 object-contain bg-white rounded p-0.5" />}
-                    {latest.club}
-                  </Link>
-                ) : (
-                  <>
-                    {latest.clubLogoUrl && <img src={latest.clubLogoUrl} alt={latest.club} className="w-4 h-4 sm:w-5 sm:h-5 object-contain bg-white rounded p-0.5" />}
-                    <span className="text-xs sm:text-sm text-text-secondary">{latest.club}</span>
-                  </>
-                );
-              })()}
+              <ClubLink club={latest.club} clubLogoUrl={latest.clubLogoUrl} className="text-xs sm:text-sm text-text-secondary" logoSize="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="text-text-muted">·</span>
               <span className="text-xs text-text-muted">{latest.position}</span>
               <span className="text-text-muted">·</span>
@@ -161,20 +149,7 @@ function PeriodPlayerRow({ player, isRepeat, variant }: { player: MarketValueMov
           )}
         </div>
         <div className="flex items-center gap-1 mt-0.5">
-          {(() => {
-            const clubId = extractClubIdFromLogoUrl(player.clubLogoUrl);
-            return clubId ? (
-              <Link href={getTeamDetailHref(clubId)} className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-text-primary transition-colors truncate">
-                {player.clubLogoUrl && <img src={player.clubLogoUrl} alt={player.club} className="w-3.5 h-3.5 object-contain bg-white rounded p-px" />}
-                {player.club}
-              </Link>
-            ) : (
-              <>
-                {player.clubLogoUrl && <img src={player.clubLogoUrl} alt={player.club} className="w-3.5 h-3.5 object-contain bg-white rounded p-px" />}
-                <span className="text-xs text-text-muted truncate">{player.club}</span>
-              </>
-            );
-          })()}
+          <ClubLink club={player.club} clubLogoUrl={player.clubLogoUrl} className="text-xs text-text-muted truncate" />
           {player.age > 0 && (
             <>
               <span className="text-text-muted">·</span>
