@@ -58,12 +58,12 @@ export function fetchTopScorersRaw(): Promise<MinutesValuePlayer[]> {
   return fetchPlayerList(paginateUrls(baseUrl, 10), "topScorers");
 }
 
-/** Yearly top scorers (10 pages, ~250 players). Uses current year. */
+/** Yearly top scorers (5 pages, ~125 players). Uses current year. */
 export function fetchYearlyScorersRaw(): Promise<MinutesValuePlayer[]> {
   const year = new Date().getFullYear();
   const basePath = `${BASE_URL}/spieler-statistik/jahrestorschuetzen/statistik/stat/ajax/yw1/jahr/${year}/selectedOptionKey/6/monatVon/01/monatBis/12/altersklasse//land_id//ausrichtung/alle/spielerposition_id/alle/art/2/plus/1/galerie/0`;
   const referer = `${BASE_URL}/spieler-statistik/jahrestorschuetzen/statistik/stat/plus/1/galerie/0?jahr=${year}&selectedOptionKey=6&monatVon=01&monatBis=12&altersklasse=&land_id=&ausrichtung=alle&spielerposition_id=alle&art=2`;
-  return fetchPlayerList(paginateUrls(basePath, 10), "yearlyScorers", {
+  return fetchPlayerList(paginateUrls(basePath, 5), "yearlyScorers", {
     "X-Requested-With": "XMLHttpRequest",
     Referer: referer,
     Accept: "*/*",
