@@ -8,9 +8,9 @@ import { fetchPage, setMaxConcurrent } from "@/lib/fetch";
 import { BASE_URL } from "@/lib/constants";
 import type { MinutesValuePlayer, PlayerStatsResult } from "@/app/types";
 
-setMaxConcurrent(20); // Script has its own adaptive backoff; no need for the default 4-slot limiter
+setMaxConcurrent(50); // Script has its own adaptive backoff; no need for the default 4-slot limiter
 const CONCURRENCY = { max: 50, min: 10 };
-const DELAY = { base: 200, multiplier: 2 };
+const DELAY = { base: 100, multiplier: 2 };
 const FAILURE_THRESHOLD = 0.3;
 const CLEAN_BATCHES_TO_RAMP = 3;
 const MAX_RETRY_ROUNDS = 8;
