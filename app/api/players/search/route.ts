@@ -10,7 +10,6 @@ export async function GET() {
       readFile(join(process.cwd(), "data", "clubs.json"), "utf-8").catch(() => "{}"),
     ]);
     const playerIndex = players.map((p) => ({
-      type: "player" as const,
       id: p.playerId,
       name: p.name,
       club: p.club,
@@ -22,7 +21,6 @@ export async function GET() {
     }));
     const clubs: Record<string, { name: string; logoUrl: string }> = JSON.parse(clubsRaw);
     const teamIndex = Object.entries(clubs).map(([id, c]) => ({
-      type: "team" as const,
       id,
       name: c.name,
       logoUrl: c.logoUrl,
