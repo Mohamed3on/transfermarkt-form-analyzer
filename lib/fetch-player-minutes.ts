@@ -92,6 +92,10 @@ interface AggregatedStats {
   positionStats: { positionId: number; position: string; minutes: number; goals: number; assists: number; appearances: number }[];
 }
 
+/** CEAPI competition type IDs */
+const COMP_TYPE_INTERNATIONAL = 11;
+const COMP_TYPE_DOMESTIC_LEAGUE = 1;
+
 /** States that count as "missed" (injury, suspension, absence — but not "not in squad") */
 const MISSED_STATES = new Set(["injured", "absent", "suspended"]);
 
@@ -105,13 +109,11 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
   for (const g of games) {
     if (g.gameInformation.seasonId !== seasonId) continue;
     const gs = g.statistics.goalStatistics;
-    const pts = g.statistics.playingTimeStatistics;
-    const mins = pts.playedMinutes ?? 0;
+    const mins = g.statistics.playingTimeStatistics.playedMinutes ?? 0;
     const state = g.statistics.generalStatistics.participationState ?? "";
     if (MISSED_STATES.has(state)) gamesMissed++;
     const posId = g.statistics.generalStatistics.positionId;
-    const isIntl = g.gameInformation.competitionTypeId === 11;
-    if (isIntl) {
+    if (g.gameInformation.competitionTypeId === COMP_TYPE_INTERNATIONAL) {
       intlGoals += gs.goalsScoredTotal ?? 0;
       intlAssists += gs.assists ?? 0;
       intlPenaltyGoals += gs.penaltyShooterGoalsScored ?? 0;
@@ -148,7 +150,7 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
             : undefined,
         });
       }
-      if (!league && g.gameInformation.competitionTypeId === 1) {
+      if (!league && g.gameInformation.competitionTypeId === COMP_TYPE_DOMESTIC_LEAGUE) {
         league = LEAGUE_NAMES[g.gameInformation.competitionId] ?? "";
       }
     }

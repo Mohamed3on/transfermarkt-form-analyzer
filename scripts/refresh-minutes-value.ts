@@ -2,7 +2,7 @@ import { writeFile, readFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { fetchMinutesValueRaw, fetchO30MostValuableRaw, fetchTopForwardsRaw } from "@/lib/fetch-minutes-value";
 import { fetchTopScorersRaw, fetchYearlyScorersRaw } from "@/lib/fetch-top-scorers";
-import { derivePositionStats, fetchPlayerMinutesRaw } from "@/lib/fetch-player-minutes";
+import { fetchPlayerMinutesRaw } from "@/lib/fetch-player-minutes";
 import { extractClubIdFromLogoUrl } from "@/lib/format";
 import { fetchPage, setMaxConcurrent } from "@/lib/fetch";
 import { BASE_URL } from "@/lib/constants";
@@ -177,7 +177,7 @@ function mergeStats(players: MinutesValuePlayer[], cache: Cache): void {
     if (s.contractExpiry) p.contractExpiry = s.contractExpiry;
     if (s.playedPosition) p.playedPosition = s.playedPosition;
     if (s.recentForm?.length) p.recentForm = s.recentForm;
-    if (s.rawGames?.length) p.positionStats = derivePositionStats(s.rawGames);
+    if (s.positionStats?.length) p.positionStats = s.positionStats;
     if (s.marketValue) { p.marketValue = s.marketValue; p.marketValueDisplay = s.marketValueDisplay; }
     if (s.age) p.age = s.age;
 
