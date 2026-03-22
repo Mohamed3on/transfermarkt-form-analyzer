@@ -7,6 +7,8 @@ const POSITION_CLASS_MAP: Record<string, PositionClass> = {
   "Second Striker": "forward",
   "Attacking Midfield": "attacking-midfield",
   "Central Midfield": "central-midfield",
+  "Right Midfield": "central-midfield",
+  "Left Midfield": "central-midfield",
   "Defensive Midfield": "defensive-midfield",
 };
 const POSITION_CLASS_RANK: Record<PositionClass, number> = {
