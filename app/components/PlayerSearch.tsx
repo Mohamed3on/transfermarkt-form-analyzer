@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/command";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { formatMarketValue } from "@/lib/format";
+import { normalizeForSearch } from "@/lib/normalize";
 
 interface SearchPlayer {
   id: string;
@@ -93,25 +94,40 @@ export function PlayerSearch() {
     if (!open) setQuery("");
   }, [open]);
 
+  // Pre-compute normalized strings once when index changes (not on every keystroke)
+  const normalizedIndex = useMemo(() => {
+    if (!index) return null;
+    return {
+      players: index.players.map((p) => ({
+        name: normalizeForSearch(p.name),
+        club: normalizeForSearch(p.club),
+        league: normalizeForSearch(p.league),
+        nationality: normalizeForSearch(p.nationality),
+        position: normalizeForSearch(p.position),
+      })),
+      teams: index.teams.map((t) => normalizeForSearch(t.name)),
+    };
+  }, [index]);
+
   const results = useMemo((): ScoredResult[] => {
-    if (!index || query.length === 0) return [];
-    const q = query.toLowerCase();
+    if (!index || !normalizedIndex || query.length === 0) return [];
+    const q = normalizeForSearch(query);
     const scored: ScoredResult[] = [];
 
     // Score: lower = better. name startsWith (0) > name contains (1) > secondary field (2)
-    for (const p of index.players) {
-      const name = p.name.toLowerCase();
-      const score = name.startsWith(q) ? 0
-        : name.includes(q) ? 1
-        : p.club.toLowerCase().includes(q) || p.league.toLowerCase().includes(q)
-          || p.nationality.toLowerCase().includes(q) || p.position.toLowerCase().includes(q) ? 2
+    for (let i = 0; i < index.players.length; i++) {
+      const n = normalizedIndex.players[i];
+      const score = n.name.startsWith(q) ? 0
+        : n.name.includes(q) ? 1
+        : n.club.includes(q) || n.league.includes(q)
+          || n.nationality.includes(q) || n.position.includes(q) ? 2
         : -1;
-      if (score >= 0) scored.push({ type: "player", data: p, score });
+      if (score >= 0) scored.push({ type: "player", data: index.players[i], score });
     }
-    for (const t of index.teams) {
-      const name = t.name.toLowerCase();
+    for (let i = 0; i < index.teams.length; i++) {
+      const name = normalizedIndex.teams[i];
       const score = name.startsWith(q) ? 0 : name.includes(q) ? 1 : -1;
-      if (score >= 0) scored.push({ type: "team", data: t, score });
+      if (score >= 0) scored.push({ type: "team", data: index.teams[i], score });
     }
 
     scored.sort((a, b) => {
@@ -123,7 +139,7 @@ export function PlayerSearch() {
     });
 
     return scored.slice(0, 8);
-  }, [index, query]);
+  }, [index, normalizedIndex, query]);
 
   const handleSelect = (path: string) => {
     setOpen(false);

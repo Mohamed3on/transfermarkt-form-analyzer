@@ -1,4 +1,4 @@
-export type PositionClass = "cf" | "forward" | "attacking-midfield" | "central-midfield" | "other";
+export type PositionClass = "cf" | "forward" | "attacking-midfield" | "central-midfield" | "defensive-midfield" | "other";
 
 const POSITION_CLASS_MAP: Record<string, PositionClass> = {
   "Centre-Forward": "cf",
@@ -7,13 +7,15 @@ const POSITION_CLASS_MAP: Record<string, PositionClass> = {
   "Second Striker": "forward",
   "Attacking Midfield": "attacking-midfield",
   "Central Midfield": "central-midfield",
+  "Defensive Midfield": "defensive-midfield",
 };
 const POSITION_CLASS_RANK: Record<PositionClass, number> = {
   other: 1,
-  "central-midfield": 2,
-  "attacking-midfield": 3,
-  forward: 4,
-  cf: 5,
+  "defensive-midfield": 2,
+  "central-midfield": 3,
+  "attacking-midfield": 4,
+  forward: 5,
+  cf: 6,
 };
 const DEFENSIVE_POSITIONS = new Set<string>([
   "Goalkeeper",
@@ -95,9 +97,7 @@ export function getPositionClassRank(position: string): number {
 }
 
 export function canBeUnderperformerAgainst(candidatePosition: string, targetPosition: string): boolean {
-  if (isDefensivePosition(candidatePosition) && !isDefensivePosition(targetPosition)) {
-    return false;
-  }
+  if (candidatePosition === "Goalkeeper") return false;
   return getPositionClassRank(candidatePosition) >= getPositionClassRank(targetPosition);
 }
 
