@@ -1,5 +1,5 @@
 import { getAnalysis } from "@/lib/form-analysis";
-import { getTeamFormData } from "@/lib/team-form";
+import { getTeamFormData, splitPerformers } from "@/lib/team-form";
 import { AnalyzerUI } from "@/app/components/AnalyzerUI";
 import { createPageMetadata } from "@/lib/metadata";
 import { DiscoveryLinkGrid } from "@/app/components/DiscoveryLinkGrid";
@@ -23,11 +23,11 @@ export const metadata = createPageMetadata({
 export default async function FormPage() {
   const [data, teamForm] = await Promise.all([getAnalysis(), getTeamFormData()]);
 
-  // Build clubId → deltaPts map from expected-position data
+  // Only show points gap badge for top 20 over/underperformers
+  const { overperformers, underperformers } = splitPerformers(teamForm.allTeams, 20);
   const deltaMap: Record<string, number> = {};
-  for (const t of teamForm.allTeams) {
-    deltaMap[t.clubId] = t.deltaPts;
-  }
+  for (const t of overperformers) deltaMap[t.clubId] = t.deltaPts;
+  for (const t of underperformers) deltaMap[t.clubId] = t.deltaPts;
 
   return (
     <>
