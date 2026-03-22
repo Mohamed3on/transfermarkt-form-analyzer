@@ -7,13 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetTitle,
-  SheetClose,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Menu, HelpCircle } from "lucide-react";
 import { PlayerSearch } from "./PlayerSearch";
@@ -37,7 +31,7 @@ async function refreshPage(pathname: string) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tags: config?.tags, path: pathname }),
-      })
+      }),
     );
   }
 
@@ -55,17 +49,37 @@ async function refreshPage(pathname: string) {
 
 function RefreshIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <svg
+      className={className}
+      aria-hidden="true"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
     </svg>
   );
 }
 
 function SpinnerIcon({ className }: { className?: string }) {
   return (
-    <svg className={cn("animate-spin", className)} aria-hidden="true" fill="none" viewBox="0 0 24 24">
+    <svg
+      className={cn("animate-spin", className)}
+      aria-hidden="true"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
     </svg>
   );
 }
@@ -120,10 +134,12 @@ export function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 xl:flex">
-          {navItems.filter((i) => !("desktopHidden" in i && i.desktopHidden)).map(({ href, label }) => {
-            const isActive = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
-            return (
-              isActive ? (
+          {navItems
+            .filter((i) => !("desktopHidden" in i && i.desktopHidden))
+            .map(({ href, label }) => {
+              const isActive =
+                pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+              return isActive ? (
                 <Button
                   key={href}
                   variant="ghost"
@@ -144,9 +160,8 @@ export function Header() {
                 >
                   <Link href={href}>{label}</Link>
                 </Button>
-              )
-            );
-          })}
+              );
+            })}
         </nav>
 
         {/* Right side */}
@@ -195,16 +210,14 @@ export function Header() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="w-64 border-border-subtle bg-background"
-            >
+            <SheetContent side="right" className="w-64 border-border-subtle bg-background">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <nav className="mt-8 flex flex-col gap-1">
-                {[...navItems, { href: "/how-it-works", label: "How It Works" } as const].map(({ href, label }) => {
-                  const isActive = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
-                  return (
-                    isActive ? (
+                {[...navItems, { href: "/how-it-works", label: "How It Works" } as const].map(
+                  ({ href, label }) => {
+                    const isActive =
+                      pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+                    return isActive ? (
                       <span
                         key={href}
                         aria-current="page"
@@ -218,15 +231,15 @@ export function Header() {
                           href={href}
                           className={cn(
                             "rounded-md px-3 py-2.5 text-base font-medium transition-colors",
-                            "text-text-secondary hover:bg-elevated hover:text-text-primary"
+                            "text-text-secondary hover:bg-elevated hover:text-text-primary",
                           )}
                         >
                           {label}
                         </Link>
                       </SheetClose>
-                    )
-                  );
-                })}
+                    );
+                  },
+                )}
               </nav>
             </SheetContent>
           </Sheet>

@@ -10,11 +10,32 @@ export { toPlayerStats, applyStatsToggles };
 
 const MV_BASE = `${BASE_URL}/spieler-statistik/wertvollstespieler/marktwertetop`;
 
-export const EMPTY_PLAYER_STATS: Omit<MinutesValuePlayer, "name" | "position" | "imageUrl" | "profileUrl" | "playerId"> = {
-  age: 0, club: "", clubLogoUrl: "", league: "", nationality: "", nationalityFlagUrl: "",
-  marketValue: 0, marketValueDisplay: "-", minutes: 0, clubMatches: 0, intlMatches: 0,
-  totalMatches: 0, goals: 0, assists: 0, penaltyGoals: 0, penaltyMisses: 0,
-  intlGoals: 0, intlAssists: 0, intlMinutes: 0, intlAppearances: 0, intlPenaltyGoals: 0, intlCareerCaps: 0,
+export const EMPTY_PLAYER_STATS: Omit<
+  MinutesValuePlayer,
+  "name" | "position" | "imageUrl" | "profileUrl" | "playerId"
+> = {
+  age: 0,
+  club: "",
+  clubLogoUrl: "",
+  league: "",
+  nationality: "",
+  nationalityFlagUrl: "",
+  marketValue: 0,
+  marketValueDisplay: "-",
+  minutes: 0,
+  clubMatches: 0,
+  intlMatches: 0,
+  totalMatches: 0,
+  goals: 0,
+  assists: 0,
+  penaltyGoals: 0,
+  penaltyMisses: 0,
+  intlGoals: 0,
+  intlAssists: 0,
+  intlMinutes: 0,
+  intlAppearances: 0,
+  intlPenaltyGoals: 0,
+  intlCareerCaps: 0,
 };
 
 export async function getPlayerStatsData(): Promise<PlayerStats[]> {
@@ -34,7 +55,10 @@ function parseMarketValueRow($: cheerio.CheerioAPI, row: any): Partial<MinutesVa
   const profileUrl = nameLink.attr("href") || "";
   const position = inlineTable.find("tr").eq(1).find("td").text().trim();
   const imgEl = inlineTable.find("img").first();
-  const imageUrl = (imgEl.attr("data-src") || imgEl.attr("src") || "").replace("/small/", "/header/");
+  const imageUrl = (imgEl.attr("data-src") || imgEl.attr("src") || "").replace(
+    "/small/",
+    "/header/",
+  );
 
   const playerIdMatch = profileUrl.match(/\/spieler\/(\d+)/);
   const playerId = playerIdMatch ? playerIdMatch[1] : "";
@@ -45,7 +69,8 @@ function parseMarketValueRow($: cheerio.CheerioAPI, row: any): Partial<MinutesVa
   const natCell = $(cells[3]);
   const natImg = natCell.find("img").first();
   const nationality = natImg.attr("title") || "";
-  const nationalityFlagUrl = (natImg.attr("src") || "").replace(/\/(tiny|verysmall)\//, "/medium/") || "";
+  const nationalityFlagUrl =
+    (natImg.attr("src") || "").replace(/\/(tiny|verysmall)\//, "/medium/") || "";
 
   const clubCell = $(cells[4]);
   const clubLink = clubCell.find("a").first();
@@ -56,7 +81,20 @@ function parseMarketValueRow($: cheerio.CheerioAPI, row: any): Partial<MinutesVa
   const marketValue = parseMarketValue(mvDisplay);
 
   if (!name || !playerId) return null;
-  return { name, position, age, club, league, nationality, nationalityFlagUrl, marketValue, marketValueDisplay: mvDisplay, imageUrl, profileUrl, playerId };
+  return {
+    name,
+    position,
+    age,
+    club,
+    league,
+    nationality,
+    nationalityFlagUrl,
+    marketValue,
+    marketValueDisplay: mvDisplay,
+    imageUrl,
+    profileUrl,
+    playerId,
+  };
 }
 
 /** Scrape market-value listing pages with a given query string. */
@@ -83,8 +121,11 @@ async function fetchMVPages(queryString: string, pages: number): Promise<Minutes
     players.push({
       ...EMPTY_PLAYER_STATS,
       ...mv,
-      name: mv.name || "", position: mv.position || "",
-      imageUrl: mv.imageUrl || "", profileUrl: mv.profileUrl || "", playerId,
+      name: mv.name || "",
+      position: mv.position || "",
+      imageUrl: mv.imageUrl || "",
+      profileUrl: mv.profileUrl || "",
+      playerId,
     });
   }
 
@@ -96,10 +137,16 @@ export const fetchMinutesValueRaw = () =>
   fetchMVPages("altersklasse=alle&ausrichtung=alle&land_id=0&yt0=Show", 20);
 
 export const fetchO30MostValuableRaw = () =>
-  fetchMVPages("altersklasse=o30&ausrichtung=alle&spielerposition_id=alle&land_id=0&kontinent_id=0&jahrgang=0&jahr=0&yt0=Show", 3);
+  fetchMVPages(
+    "altersklasse=o30&ausrichtung=alle&spielerposition_id=alle&land_id=0&kontinent_id=0&jahrgang=0&jahr=0&yt0=Show",
+    3,
+  );
 
 export const fetchTopForwardsRaw = () =>
-  fetchMVPages("ausrichtung=Sturm&spielerposition_id=alle&altersklasse=alle&jahrgang=0&land_id=0&kontinent_id=0&jahr=0&yt0=Show", 10);
+  fetchMVPages(
+    "ausrichtung=Sturm&spielerposition_id=alle&altersklasse=alle&jahrgang=0&land_id=0&kontinent_id=0&jahr=0&yt0=Show",
+    10,
+  );
 
 /** Reads pre-built JSON data committed to the repo. */
 export async function getMinutesValueData(): Promise<MinutesValuePlayer[]> {

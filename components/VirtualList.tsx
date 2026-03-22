@@ -11,7 +11,13 @@ interface VirtualListProps<T> {
   renderItem: (item: T, index: number) => ReactNode;
 }
 
-export function VirtualList<T>({ items, estimateSize, gap = 0, keyExtractor, renderItem }: VirtualListProps<T>) {
+export function VirtualList<T>({
+  items,
+  estimateSize,
+  gap = 0,
+  keyExtractor,
+  renderItem,
+}: VirtualListProps<T>) {
   const listRef = useRef<HTMLDivElement>(null);
   const virtualizer = useWindowVirtualizer({
     count: items.length,

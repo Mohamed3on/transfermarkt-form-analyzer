@@ -21,7 +21,15 @@ function npga(p: MinutesValuePlayer): number {
   return p.goals - (p.penaltyGoals ?? 0) + p.assists;
 }
 
-function SquadPlayerRow({ player, rank, sortBy }: { player: MinutesValuePlayer; rank: number; sortBy: SortKey }) {
+function SquadPlayerRow({
+  player,
+  rank,
+  sortBy,
+}: {
+  player: MinutesValuePlayer;
+  rank: number;
+  sortBy: SortKey;
+}) {
   const playerNpga = npga(player);
   const penGoals = player.penaltyGoals ?? 0;
   const penMisses = player.penaltyMisses ?? 0;
@@ -35,7 +43,12 @@ function SquadPlayerRow({ player, rank, sortBy }: { player: MinutesValuePlayer; 
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-black/20 text-xs font-value text-text-muted">
         {rank}
       </div>
-      <PlayerAvatar imageUrl={player.imageUrl} name={player.name} size="sm" className="border border-border-subtle" />
+      <PlayerAvatar
+        imageUrl={player.imageUrl}
+        name={player.name}
+        size="sm"
+        className="border border-border-subtle"
+      />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm text-text-primary">{player.name}</p>
         <p className="mt-0.5 text-xs text-text-secondary">
@@ -57,19 +70,25 @@ function SquadPlayerRow({ player, rank, sortBy }: { player: MinutesValuePlayer; 
         </div>
         {sortBy === "pen" && penAttempts > 0 && (
           <div>
-            <p className="text-sm font-value text-text-primary">{penGoals}/{penAttempts}</p>
+            <p className="text-sm font-value text-text-primary">
+              {penGoals}/{penAttempts}
+            </p>
             <p className="text-[10px] text-text-muted">pen</p>
           </div>
         )}
         <div>
-          <p className="text-sm font-value text-accent-blue">{player.minutes.toLocaleString()}&apos;</p>
+          <p className="text-sm font-value text-accent-blue">
+            {player.minutes.toLocaleString()}&apos;
+          </p>
           <p className="text-[10px] text-text-muted">mins</p>
         </div>
       </div>
       {/* Mobile stats */}
       <div className="flex shrink-0 items-center gap-3 text-right sm:hidden">
         <span className="text-sm font-value text-accent-hot">{playerNpga}</span>
-        <span className="text-xs font-value text-text-muted">{player.minutes.toLocaleString()}&apos;</span>
+        <span className="text-xs font-value text-text-muted">
+          {player.minutes.toLocaleString()}&apos;
+        </span>
       </div>
     </Link>
   );
@@ -84,11 +103,20 @@ export function SquadTab({ squad }: { squad: MinutesValuePlayer[] }) {
     list.sort((a, b) => {
       let diff: number;
       switch (sortBy) {
-        case "mins": diff = b.minutes - a.minutes; break;
-        case "games": diff = b.totalMatches - a.totalMatches; break;
-        case "ga": diff = npga(b) - npga(a) || a.minutes - b.minutes; break;
-        case "pen": diff = (b.penaltyGoals ?? 0) - (a.penaltyGoals ?? 0); break;
-        default: diff = b.marketValue - a.marketValue;
+        case "mins":
+          diff = b.minutes - a.minutes;
+          break;
+        case "games":
+          diff = b.totalMatches - a.totalMatches;
+          break;
+        case "ga":
+          diff = npga(b) - npga(a) || a.minutes - b.minutes;
+          break;
+        case "pen":
+          diff = (b.penaltyGoals ?? 0) - (a.penaltyGoals ?? 0);
+          break;
+        default:
+          diff = b.marketValue - a.marketValue;
       }
       return sortAsc ? -diff : diff;
     });
@@ -110,7 +138,10 @@ export function SquadTab({ squad }: { squad: MinutesValuePlayer[] }) {
           type="single"
           value={sortBy}
           onValueChange={(v) => {
-            if (!v) { setSortAsc(!sortAsc); return; }
+            if (!v) {
+              setSortAsc(!sortAsc);
+              return;
+            }
             setSortBy(v as SortKey);
             setSortAsc(false);
           }}
@@ -123,9 +154,7 @@ export function SquadTab({ squad }: { squad: MinutesValuePlayer[] }) {
               className="px-2.5 py-2 sm:py-1 text-[10px] sm:text-xs font-medium uppercase tracking-wide rounded-none border-0 flex items-center gap-1 text-text-muted data-[state=on]:bg-elevated data-[state=on]:text-text-primary"
             >
               {label}
-              {sortBy === key && (
-                <span className="text-[10px]">{sortAsc ? "▲" : "▼"}</span>
-              )}
+              {sortBy === key && <span className="text-[10px]">{sortAsc ? "▲" : "▼"}</span>}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>

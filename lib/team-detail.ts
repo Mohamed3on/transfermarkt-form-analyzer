@@ -1,10 +1,5 @@
 import { cache } from "react";
-import type {
-  AggregatedTeam,
-  MinutesValuePlayer,
-  TeamFormEntry,
-  TeamStats,
-} from "@/app/types";
+import type { AggregatedTeam, MinutesValuePlayer, TeamFormEntry, TeamStats } from "@/app/types";
 import { getMinutesValueData, applyStatsToggles, toPlayerStats } from "@/lib/fetch-minutes-value";
 import { getTeamFormData } from "@/lib/team-form";
 import { getAnalysis } from "@/lib/form-analysis";
@@ -31,7 +26,11 @@ export interface TeamDetailData {
   }[];
   overperformers: ValueCandidate[];
   underperformers: ValueCandidate[];
-  trendPlayers: { player: MinutesValuePlayer; type: "winner" | "loser"; appearances: MarketValueMover[] }[];
+  trendPlayers: {
+    player: MinutesValuePlayer;
+    type: "winner" | "loser";
+    appearances: MarketValueMover[];
+  }[];
 }
 
 async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | null> {
@@ -116,12 +115,20 @@ async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | n
   });
   const clubPlayerIds = new Set(squad.map((p) => p.playerId));
 
-  const allOverperformers = findValueCandidates(comparisonPlayers, { candidateOutperforms: true, sortAsc: true });
-  const allUnderperformers = findValueCandidates(comparisonPlayers, { candidateOutperforms: false, sortAsc: false });
+  const allOverperformers = findValueCandidates(comparisonPlayers, {
+    candidateOutperforms: true,
+    sortAsc: true,
+  });
+  const allUnderperformers = findValueCandidates(comparisonPlayers, {
+    candidateOutperforms: false,
+    sortAsc: false,
+  });
 
-  const overperformers = allOverperformers.filter((p) => clubPlayerIds.has(p.playerId))
+  const overperformers = allOverperformers
+    .filter((p) => clubPlayerIds.has(p.playerId))
     .sort((a, b) => b.count - a.count);
-  const underperformers = allUnderperformers.filter((p) => clubPlayerIds.has(p.playerId))
+  const underperformers = allUnderperformers
+    .filter((p) => clubPlayerIds.has(p.playerId))
     .sort((a, b) => b.count - a.count);
 
   // Trend players from repeat winners/losers
@@ -151,7 +158,9 @@ async function computeTeamDetailData(clubId: string): Promise<TeamDetailData | n
     league,
     clubUrl,
     teamForm,
-    squad: [...squad].sort((a, b) => b.marketValue - a.marketValue).map(({ recentForm: _, ...rest }) => rest),
+    squad: [...squad]
+      .sort((a, b) => b.marketValue - a.marketValue)
+      .map(({ recentForm: _, ...rest }) => rest),
     squadValue,
     formPresence,
     recentForm,

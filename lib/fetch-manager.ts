@@ -92,11 +92,16 @@ async function fetchManagerInfoUncached(clubId: string): Promise<ManagerInfo | n
   const minMatches = firstManager.matches;
   const since1995 = allManagers.filter((m) => {
     const appointed = parseDate(m.appointedDate);
-    return appointed && appointed.getFullYear() >= 1995 && m.matches >= minMatches && m.ppg !== null;
+    return (
+      appointed && appointed.getFullYear() >= 1995 && m.matches >= minMatches && m.ppg !== null
+    );
   });
 
   const sorted = [...since1995].sort((a, b) => (b.ppg ?? 0) - (a.ppg ?? 0));
-  const rank = sorted.findIndex((m) => m.name === firstManager.name && m.appointedDate === firstManager.appointedDate) + 1;
+  const rank =
+    sorted.findIndex(
+      (m) => m.name === firstManager.name && m.appointedDate === firstManager.appointedDate,
+    ) + 1;
 
   const bestManager = sorted.length > 0 ? toTrivia(sorted[0]) : undefined;
   const worstManager = sorted.length > 0 ? toTrivia(sorted[sorted.length - 1]) : undefined;
@@ -116,8 +121,7 @@ async function fetchManagerInfoUncached(clubId: string): Promise<ManagerInfo | n
 }
 
 export const getManagerInfo = (clubId: string) =>
-  unstable_cache(
-    () => fetchManagerInfoUncached(clubId),
-    [`manager-${clubId}`],
-    { revalidate: 86400, tags: ["manager"] }
-  )();
+  unstable_cache(() => fetchManagerInfoUncached(clubId), [`manager-${clubId}`], {
+    revalidate: 86400,
+    tags: ["manager"],
+  })();

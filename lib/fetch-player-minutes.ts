@@ -64,7 +64,6 @@ function currentSeasonId(): number {
   return now.getMonth() >= 7 ? year : year - 1;
 }
 
-
 /** Transfermarkt CEAPI positionId → display name */
 export const POSITION_NAMES: Record<number, string> = {
   1: "Goalkeeper",
@@ -83,13 +82,29 @@ export const POSITION_NAMES: Record<number, string> = {
 };
 
 interface AggregatedStats {
-  goals: number; assists: number; minutes: number; appearances: number; penaltyGoals: number; penaltyMisses: number;
-  intlGoals: number; intlAssists: number; intlMinutes: number; intlAppearances: number; intlPenaltyGoals: number;
+  goals: number;
+  assists: number;
+  minutes: number;
+  appearances: number;
+  penaltyGoals: number;
+  penaltyMisses: number;
+  intlGoals: number;
+  intlAssists: number;
+  intlMinutes: number;
+  intlAppearances: number;
+  intlPenaltyGoals: number;
   league: string;
   recentForm: RecentGameStats[];
   playedPosition: string;
   gamesMissed: number;
-  positionStats: { positionId: number; position: string; minutes: number; goals: number; assists: number; appearances: number }[];
+  positionStats: {
+    positionId: number;
+    position: string;
+    minutes: number;
+    goals: number;
+    assists: number;
+    appearances: number;
+  }[];
 }
 
 /** CEAPI competition type IDs */
@@ -101,8 +116,17 @@ const MISSED_STATES = new Set(["injured", "absent", "suspended"]);
 
 function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
   const seasonId = currentSeasonId();
-  let goals = 0, assists = 0, minutes = 0, appearances = 0, penaltyGoals = 0, penaltyMisses = 0;
-  let intlGoals = 0, intlAssists = 0, intlMinutes = 0, intlAppearances = 0, intlPenaltyGoals = 0;
+  let goals = 0,
+    assists = 0,
+    minutes = 0,
+    appearances = 0,
+    penaltyGoals = 0,
+    penaltyMisses = 0;
+  let intlGoals = 0,
+    intlAssists = 0,
+    intlMinutes = 0,
+    intlAppearances = 0,
+    intlPenaltyGoals = 0;
   let gamesMissed = 0;
   let league = "";
   const recentDomestic: RecentGameStats[] = [];
@@ -160,19 +184,41 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
   const recentForm = recentDomestic.slice(0, 10);
   const positionStats = derivePositionStats(games);
   const playedPosition = positionStats[0]?.position ?? "";
-  return { goals, assists, minutes, appearances, penaltyGoals, penaltyMisses, intlGoals, intlAssists, intlMinutes, intlAppearances, intlPenaltyGoals, league, recentForm, playedPosition, gamesMissed, positionStats };
+  return {
+    goals,
+    assists,
+    minutes,
+    appearances,
+    penaltyGoals,
+    penaltyMisses,
+    intlGoals,
+    intlAssists,
+    intlMinutes,
+    intlAppearances,
+    intlPenaltyGoals,
+    league,
+    recentForm,
+    playedPosition,
+    gamesMissed,
+    positionStats,
+  };
 }
 
 /** Derive per-position stats from raw CEAPI games (server-only). */
-export function derivePositionStats(rawGames: CeapiGame[]): NonNullable<PlayerStatsResult["positionStats"]> {
+export function derivePositionStats(
+  rawGames: CeapiGame[],
+): NonNullable<PlayerStatsResult["positionStats"]> {
   const season = currentSeasonId();
-  const byPos: Record<number, { minutes: number; goals: number; assists: number; appearances: number }> = {};
+  const byPos: Record<
+    number,
+    { minutes: number; goals: number; assists: number; appearances: number }
+  > = {};
   for (const g of rawGames) {
     if (g.gameInformation.seasonId !== season) continue;
     const mins = g.statistics.playingTimeStatistics.playedMinutes ?? 0;
     const posId = g.statistics.generalStatistics.positionId;
     if (mins > 0 && posId) {
-      const ps = byPos[posId] ??= { minutes: 0, goals: 0, assists: 0, appearances: 0 };
+      const ps = (byPos[posId] ??= { minutes: 0, goals: 0, assists: 0, appearances: 0 });
       ps.minutes += mins;
       ps.goals += g.statistics.goalStatistics.goalsScoredTotal ?? 0;
       ps.assists += g.statistics.goalStatistics.assists ?? 0;
@@ -180,7 +226,11 @@ export function derivePositionStats(rawGames: CeapiGame[]): NonNullable<PlayerSt
     }
   }
   return Object.entries(byPos)
-    .map(([id, ps]) => ({ positionId: Number(id), position: POSITION_NAMES[Number(id)] ?? `Position ${id}`, ...ps }))
+    .map(([id, ps]) => ({
+      positionId: Number(id),
+      position: POSITION_NAMES[Number(id)] ?? `Position ${id}`,
+      ...ps,
+    }))
     .sort((a, b) => b.minutes - a.minutes);
 }
 
@@ -210,12 +260,14 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
 
   // Nationality from profile header
   const natFlagImg = $("span[itemprop='nationality'] img.flaggenrahmen").first();
-  const nationalityFlagUrl = (natFlagImg.attr("src") || "").replace(/\/(tiny|verysmall)\//, "/medium/") || "";
+  const nationalityFlagUrl =
+    (natFlagImg.attr("src") || "").replace(/\/(tiny|verysmall)\//, "/medium/") || "";
   const nationality = natFlagImg.attr("title") || "";
 
   // League logo URL from profile header
   const leagueLinkImg = $(".data-header__league-link img").first();
-  const leagueLogoUrl = (leagueLinkImg.attr("src") || "").replace(/\/(verytiny|tiny)\//, "/header/") || "";
+  const leagueLogoUrl =
+    (leagueLinkImg.attr("src") || "").replace(/\/(verytiny|tiny)\//, "/header/") || "";
 
   // Parse senior international caps from profile header (Caps/Goals: N)
   // The team label varies: "Current international", "Former International", "National player"
@@ -224,7 +276,7 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const capsUl = capsLi.closest("ul");
   const natTeamName = capsUl.find("a[href*='/startseite/verein/']").first().attr("title") || "";
   const isSeniorTeam = !!natTeamName && !/U\d/i.test(natTeamName);
-  const intlCareerCaps = isSeniorTeam ? (parseInt(capsLi.find("a").first().text().trim()) || 0) : 0;
+  const intlCareerCaps = isSeniorTeam ? parseInt(capsLi.find("a").first().text().trim()) || 0 : 0;
   const ntLabel = capsUl.find(".data-header__label").first().text().trim().toLowerCase();
   const isCurrentIntl = isSeniorTeam && ntLabel.includes("current international");
 
@@ -244,7 +296,21 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const age = ageMatch ? parseInt(ageMatch[1]) : 0;
 
   // Parse stats + league from ceapi
-  const shared = { club, clubLogoUrl, intlCareerCaps, isCurrentIntl, isNewSigning, isOnLoan, contractExpiry, nationality, nationalityFlagUrl, leagueLogoUrl, marketValue, marketValueDisplay, age };
+  const shared = {
+    club,
+    clubLogoUrl,
+    intlCareerCaps,
+    isCurrentIntl,
+    isNewSigning,
+    isOnLoan,
+    contractExpiry,
+    nationality,
+    nationalityFlagUrl,
+    leagueLogoUrl,
+    marketValue,
+    marketValueDisplay,
+    age,
+  };
 
   if (!ceapiRes.ok) {
     return { ...ZERO_STATS, ...shared };

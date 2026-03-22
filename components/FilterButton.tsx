@@ -4,7 +4,12 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { toggleVariants } from "@/components/ui/toggle-group";
 
-export function FilterButton({ active, onClick, children, className }: {
+export function FilterButton({
+  active,
+  onClick,
+  children,
+  className,
+}: {
   active: boolean;
   onClick: () => void;
   children: ReactNode;
@@ -15,7 +20,11 @@ export function FilterButton({ active, onClick, children, className }: {
       type="button"
       data-state={active ? "on" : "off"}
       onClick={onClick}
-      className={cn(toggleVariants({ size: "sm", variant: "outline" }), "gap-1.5 rounded-lg", className)}
+      className={cn(
+        toggleVariants({ size: "sm", variant: "outline" }),
+        "gap-1.5 rounded-lg",
+        className,
+      )}
     >
       {children}
     </button>

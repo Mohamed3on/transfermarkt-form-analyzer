@@ -18,7 +18,12 @@ export function ComparisonItem({
       href={getPlayerDetailHref(player.playerId)}
       className="group flex items-center gap-3 rounded-2xl border border-border-subtle bg-elevated p-3 transition-transform duration-200 hover:-translate-y-px hover:border-border-medium hover:bg-card-hover motion-reduce:transform-none"
     >
-      <PlayerAvatar imageUrl={player.imageUrl} name={player.name} size="sm" className="border border-border-subtle" />
+      <PlayerAvatar
+        imageUrl={player.imageUrl}
+        name={player.name}
+        size="sm"
+        className="border border-border-subtle"
+      />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-text-primary">{player.name}</p>
         <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-text-secondary">
@@ -29,10 +34,18 @@ export function ComparisonItem({
         </p>
       </div>
       <div className="shrink-0 text-right">
-        <p className={`text-sm font-value ${positive ? "text-accent-hot" : "text-accent-cold-soft"}`}>{player.points} <span className="text-[10px] text-text-muted">npG+A</span></p>
-        <p className="text-[11px] text-text-muted">{player.minutes?.toLocaleString() || "0"}&apos;</p>
+        <p
+          className={`text-sm font-value ${positive ? "text-accent-hot" : "text-accent-cold-soft"}`}
+        >
+          {player.points} <span className="text-[10px] text-text-muted">npG+A</span>
+        </p>
+        <p className="text-[11px] text-text-muted">
+          {player.minutes?.toLocaleString() || "0"}&apos;
+        </p>
         {count != null && count > 0 && (
-          <p className={`text-[10px] ${positive ? "text-accent-hot/60" : "text-accent-cold-soft/60"}`}>
+          <p
+            className={`text-[10px] ${positive ? "text-accent-hot/60" : "text-accent-cold-soft/60"}`}
+          >
             {positive ? `outscores ${count} peers` : `outscored by ${count} peers`}
           </p>
         )}

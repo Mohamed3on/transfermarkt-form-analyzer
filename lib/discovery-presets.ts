@@ -30,8 +30,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "players",
     title: "Top Valued Loan Players",
     navLabel: "Top valued loans",
-    description:
-      "Players on loan sorted by market value.",
+    description: "Players on loan sorted by market value.",
     sourcePath: "/players",
     query: { signing: "loan", sort: "value" },
   },
@@ -40,8 +39,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "players",
     title: "Highest Scoring Loan Players",
     navLabel: "Highest scoring loans",
-    description:
-      "Players on loan sorted by goals plus assists (G+A).",
+    description: "Players on loan sorted by goals plus assists (G+A).",
     sourcePath: "/players",
     query: { signing: "loan", sort: "ga" },
   },
@@ -50,8 +48,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "players",
     title: "Top Valued New Signings",
     navLabel: "Top valued signings",
-    description:
-      "New signings sorted by market value.",
+    description: "New signings sorted by market value.",
     sourcePath: "/players",
     query: { signing: "transfer", sort: "value" },
   },
@@ -60,8 +57,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "players",
     title: "Highest Scoring New Signings",
     navLabel: "Highest scoring signings",
-    description:
-      "New signings sorted by goals plus assists (G+A).",
+    description: "New signings sorted by goals plus assists (G+A).",
     sourcePath: "/players",
     query: { signing: "transfer", sort: "ga" },
   },
@@ -70,8 +66,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "players",
     title: "Top 5 League Most Valuable Players",
     navLabel: "Top 5 most valuable",
-    description:
-      "Most valuable players from the top 5 leagues.",
+    description: "Most valuable players from the top 5 leagues.",
     sourcePath: "/players",
     query: { league: "top5", sort: "value" },
   },
@@ -80,8 +75,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "players",
     title: "Top 5 League Most Productive Players",
     navLabel: "Top 5 by G+A",
-    description:
-      "Top 5 league players sorted by goals plus assists (G+A).",
+    description: "Top 5 league players sorted by goals plus assists (G+A).",
     sourcePath: "/players",
     query: { league: "top5", sort: "ga" },
   },
@@ -91,8 +85,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "value-analysis",
     title: "Most Overpriced Players",
     navLabel: "Overpriced players",
-    description:
-      "Players flagged as expensive relative to output.",
+    description: "Players flagged as expensive relative to output.",
     sourcePath: "/value-analysis",
     query: { mode: "ga" },
   },
@@ -101,8 +94,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "value-analysis",
     title: "Best Bargain Players",
     navLabel: "Best bargains",
-    description:
-      "Lower-cost players outperforming higher-cost peers.",
+    description: "Lower-cost players outperforming higher-cost peers.",
     sourcePath: "/value-analysis",
     query: { mode: "ga", dTab: "bargains" },
   },
@@ -111,8 +103,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "value-analysis",
     title: "Top 5 League Overpriced Players",
     navLabel: "Top 5 overpriced",
-    description:
-      "Overpriced players in the top 5 leagues.",
+    description: "Overpriced players in the top 5 leagues.",
     sourcePath: "/value-analysis",
     query: { mode: "ga", dTop5: "1" },
   },
@@ -121,8 +112,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "value-analysis",
     title: "Top 5 League Bargain Players",
     navLabel: "Top 5 bargains",
-    description:
-      "Bargain players in the top 5 leagues.",
+    description: "Bargain players in the top 5 leagues.",
     sourcePath: "/value-analysis",
     query: { mode: "ga", dTab: "bargains", dTop5: "1" },
   },
@@ -131,8 +121,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "value-analysis",
     title: "Expensive Players With Fewest Minutes",
     navLabel: "Fewest minutes",
-    description:
-      "High-value players sorted by lowest minutes.",
+    description: "High-value players sorted by lowest minutes.",
     sourcePath: "/value-analysis",
     query: { mode: "mins" },
   },
@@ -141,8 +130,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "value-analysis",
     title: "Expensive Players With Fewest Minutes (Excluding Injuries)",
     navLabel: "Fewest minutes (fit)",
-    description:
-      "High-value players with few minutes, excluding injured players.",
+    description: "High-value players with few minutes, excluding injured players.",
     sourcePath: "/value-analysis",
     query: { mode: "mins", maxMiss: "25" },
   },
@@ -152,8 +140,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "injured",
     title: "Highest Value Injured Players",
     navLabel: "Highest value injuries",
-    description:
-      "Injured players sorted by market value.",
+    description: "Injured players sorted by market value.",
     sourcePath: "/injured",
     query: { tab: "players" },
   },
@@ -162,8 +149,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "injured",
     title: "Clubs With Biggest Injury Value Losses",
     navLabel: "Biggest club losses",
-    description:
-      "Teams ranked by total market value unavailable through injuries.",
+    description: "Teams ranked by total market value unavailable through injuries.",
     sourcePath: "/injured",
     query: { tab: "teams" },
   },
@@ -172,8 +158,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "injured",
     title: "Clubs With Most Injured Players",
     navLabel: "Most injuries by club",
-    description:
-      "Clubs sorted by number of injured players.",
+    description: "Clubs sorted by number of injured players.",
     sourcePath: "/injured",
     query: { tab: "teams", tSort: "count" },
   },
@@ -182,8 +167,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "injured",
     title: "Most Expensive Injury Types",
     navLabel: "Costliest injury types",
-    description:
-      "Injury categories ranked by total sidelined market value.",
+    description: "Injury categories ranked by total sidelined market value.",
     sourcePath: "/injured",
     query: { tab: "injuries" },
   },
@@ -192,8 +176,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "injured",
     title: "Most Common Injury Types",
     navLabel: "Most common injury types",
-    description:
-      "Injury categories sorted by player count.",
+    description: "Injury categories sorted by player count.",
     sourcePath: "/injured",
     query: { tab: "injuries", iSort: "count" },
   },
@@ -203,8 +186,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "expected-position",
     title: "Value vs Table (All Leagues)",
     navLabel: "All leagues",
-    description:
-      "Overperformers and underperformers across all tracked leagues.",
+    description: "Overperformers and underperformers across all tracked leagues.",
     sourcePath: "/expected-position",
     query: {},
   },
@@ -213,8 +195,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "expected-position",
     title: "Value vs Table (Premier League)",
     navLabel: "Premier League",
-    description:
-      "Premier League teams vs value-adjusted expectation.",
+    description: "Premier League teams vs value-adjusted expectation.",
     sourcePath: "/expected-position",
     query: { league: "Premier League" },
   },
@@ -223,8 +204,7 @@ export const DISCOVERY_PRESETS: DiscoveryPreset[] = [
     section: "expected-position",
     title: "Value vs Table (La Liga)",
     navLabel: "La Liga",
-    description:
-      "La Liga teams vs value-adjusted expectation.",
+    description: "La Liga teams vs value-adjusted expectation.",
     sourcePath: "/expected-position",
     query: { league: "La Liga" },
   },

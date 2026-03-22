@@ -1,8 +1,17 @@
 export const TOP_5_LEAGUES = ["Premier League", "LaLiga", "Bundesliga", "Serie A", "Ligue 1"];
 
 /** Build sorted Combobox options from a list of items, with an "All ..." default. */
-export function uniqueFilterOptions<T>(items: T[], accessor: (item: T) => string | undefined, allLabel: string) {
-  return [{ value: "all", label: allLabel }, ...Array.from(new Set(items.map(accessor).filter(Boolean))).sort().map((v) => ({ value: v!, label: v! }))];
+export function uniqueFilterOptions<T>(
+  items: T[],
+  accessor: (item: T) => string | undefined,
+  allLabel: string,
+) {
+  return [
+    { value: "all", label: allLabel },
+    ...Array.from(new Set(items.map(accessor).filter(Boolean)))
+      .sort()
+      .map((v) => ({ value: v!, label: v! })),
+  ];
 }
 
 import type { ComboboxGroup } from "@/components/Combobox";
@@ -15,16 +24,25 @@ export function buildLeagueGroups(players: { league: string }[]): ComboboxGroup[
   const top5 = [...counts.keys()].filter((l) => TOP_5_LEAGUES.includes(l)).sort(byCount);
   const other = [...counts.keys()].filter((l) => !TOP_5_LEAGUES.includes(l)).sort(byCount);
   return [
-    { options: [{ value: "all", label: "All leagues" }, { value: "top5", label: "Top 5 leagues" }] },
-    ...(top5.length ? [{ heading: "Top 5", options: top5.map((l) => ({ value: l, label: l })) }] : []),
-    ...(other.length ? [{ heading: "Other", options: other.map((l) => ({ value: l, label: l })) }] : []),
+    {
+      options: [
+        { value: "all", label: "All leagues" },
+        { value: "top5", label: "Top 5 leagues" },
+      ],
+    },
+    ...(top5.length
+      ? [{ heading: "Top 5", options: top5.map((l) => ({ value: l, label: l })) }]
+      : []),
+    ...(other.length
+      ? [{ heading: "Other", options: other.map((l) => ({ value: l, label: l })) }]
+      : []),
   ];
 }
 
 export function filterPlayersByLeagueAndClub<T extends { league: string; club: string }>(
   players: T[],
   leagueFilter: string,
-  clubFilter: string
+  clubFilter: string,
 ): T[] {
   return players.filter((player) => {
     if (leagueFilter === "top5") {
@@ -39,30 +57,47 @@ export function filterTop5<T extends { league: string }>(players: T[]): T[] {
   return players.filter((p) => TOP_5_LEAGUES.includes(p.league));
 }
 
-export function getFormMinutes(player: { minutes: number; recentForm?: { minutes: number }[] }, window: "season" | number): number {
+export function getFormMinutes(
+  player: { minutes: number; recentForm?: { minutes: number }[] },
+  window: "season" | number,
+): number {
   if (window === "season") return player.minutes;
   return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.minutes, 0);
 }
 
-export function getFormNpga(player: { recentForm?: { goals: number; assists: number; penaltyGoals: number }[] }, window: number): number {
-  return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.goals - (g.penaltyGoals ?? 0) + g.assists, 0);
+export function getFormNpga(
+  player: { recentForm?: { goals: number; assists: number; penaltyGoals: number }[] },
+  window: number,
+): number {
+  return (player.recentForm ?? [])
+    .slice(0, window)
+    .reduce((s, g) => s + g.goals - (g.penaltyGoals ?? 0) + g.assists, 0);
 }
 
 export function getFormGoals(player: { recentForm?: { goals: number }[] }, window: number): number {
   return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.goals, 0);
 }
 
-export function getFormAssists(player: { recentForm?: { assists: number }[] }, window: number): number {
+export function getFormAssists(
+  player: { recentForm?: { assists: number }[] },
+  window: number,
+): number {
   return (player.recentForm ?? []).slice(0, window).reduce((s, g) => s + g.assists, 0);
 }
 
 /** Single-pass form stats for a window — avoids 4 separate traversals. */
 export function getFormStats(
-  player: { recentForm?: { goals: number; assists: number; penaltyGoals: number; minutes: number }[] },
+  player: {
+    recentForm?: { goals: number; assists: number; penaltyGoals: number; minutes: number }[];
+  },
   window: number,
 ): { goals: number; assists: number; penaltyGoals: number; npga: number; minutes: number } {
   const games = (player.recentForm ?? []).slice(0, window);
-  let goals = 0, assists = 0, penaltyGoals = 0, npga = 0, minutes = 0;
+  let goals = 0,
+    assists = 0,
+    penaltyGoals = 0,
+    npga = 0,
+    minutes = 0;
   for (const g of games) {
     goals += g.goals;
     assists += g.assists;
@@ -74,7 +109,11 @@ export function getFormStats(
 }
 
 /** Fraction of games missed (0–1). Players with 0 matches and 0 minutes are treated as 100% unavailable. */
-export function missedPct(p: { totalMatches: number; minutes: number; gamesMissed?: number }): number {
+export function missedPct(p: {
+  totalMatches: number;
+  minutes: number;
+  gamesMissed?: number;
+}): number {
   const missed = p.gamesMissed ?? 0;
   const total = p.totalMatches + missed;
   if (total === 0) return p.minutes === 0 ? 1 : 0;

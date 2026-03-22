@@ -117,7 +117,11 @@ export function PlayerAutocomplete<T extends PlayerOption>({
                 handleSelect(player);
               }}
             >
-              <PlayerAvatar imageUrl={player.imageUrl} name={player.name} className="w-8 h-8 rounded-md shrink-0 bg-card" />
+              <PlayerAvatar
+                imageUrl={player.imageUrl}
+                name={player.name}
+                className="w-8 h-8 rounded-md shrink-0 bg-card"
+              />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate text-text-primary">{player.name}</div>
                 <div className="text-xs truncate text-text-secondary">

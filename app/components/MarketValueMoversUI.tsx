@@ -45,8 +45,13 @@ function formatPeriodLabel(date: string): string {
   return month === "01" ? `Jan ${year}` : `Jul ${year}`;
 }
 
-
-function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMover[]; variant: Variant }) {
+function RepeatMoverCard({
+  appearances,
+  variant,
+}: {
+  appearances: MarketValueMover[];
+  variant: Variant;
+}) {
   const cfg = VARIANT_CONFIG[variant];
   const sorted = [...appearances].sort((a, b) => b.period.localeCompare(a.period));
   const latest = sorted[0];
@@ -56,7 +61,12 @@ function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMov
     <Card className="overflow-hidden">
       <CardContent className="p-0">
         <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
-          <PlayerAvatar imageUrl={latest.imageUrl} name={latest.name || "?"} size="lg" className="shrink-0" />
+          <PlayerAvatar
+            imageUrl={latest.imageUrl}
+            name={latest.name || "?"}
+            size="lg"
+            className="shrink-0"
+          />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <Link
@@ -70,7 +80,12 @@ function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMov
               </Badge>
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-              <ClubLink club={latest.club} clubLogoUrl={latest.clubLogoUrl} className="text-xs sm:text-sm text-text-secondary" logoSize="w-4 h-4 sm:w-5 sm:h-5" />
+              <ClubLink
+                club={latest.club}
+                clubLogoUrl={latest.clubLogoUrl}
+                className="text-xs sm:text-sm text-text-secondary"
+                logoSize="w-4 h-4 sm:w-5 sm:h-5"
+              />
               <span className="text-text-muted">·</span>
               <span className="text-xs text-text-muted">{latest.position}</span>
               <span className="text-text-muted">·</span>
@@ -104,12 +119,19 @@ function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMov
                       className={cn("h-full rounded transition-all", cfg.barBg)}
                       style={{ width: `${Math.max(barWidth, 4)}%` }}
                     />
-                    <span className={cn("absolute inset-0 flex items-center px-2 text-xs font-value", cfg.color)}>
-                      {cfg.prefix}{formatMarketValue(entry.absoluteChange)}
+                    <span
+                      className={cn(
+                        "absolute inset-0 flex items-center px-2 text-xs font-value",
+                        cfg.color,
+                      )}
+                    >
+                      {cfg.prefix}
+                      {formatMarketValue(entry.absoluteChange)}
                     </span>
                   </div>
                   <span className="text-[10px] sm:text-xs text-text-muted w-10 sm:w-12 text-right shrink-0 font-value">
-                    {variant === "losers" ? "-" : "+"}{entry.relativeChange.toFixed(0)}%
+                    {variant === "losers" ? "-" : "+"}
+                    {entry.relativeChange.toFixed(0)}%
                   </span>
                 </div>
               );
@@ -121,35 +143,56 @@ function RepeatMoverCard({ appearances, variant }: { appearances: MarketValueMov
   );
 }
 
-function PeriodPlayerRow({ player, isRepeat, variant }: { player: MarketValueMover; isRepeat: boolean; variant: Variant }) {
+function PeriodPlayerRow({
+  player,
+  isRepeat,
+  variant,
+}: {
+  player: MarketValueMover;
+  isRepeat: boolean;
+  variant: Variant;
+}) {
   const cfg = VARIANT_CONFIG[variant];
   return (
     <div
       className={cn(
         "flex items-center gap-2 sm:gap-3 py-1.5 sm:py-2",
-        isRepeat && cn(cfg.highlightBg, "-mx-2 px-2 sm:-mx-3 sm:px-3 rounded")
+        isRepeat && cn(cfg.highlightBg, "-mx-2 px-2 sm:-mx-3 sm:px-3 rounded"),
       )}
     >
-      <PlayerAvatar imageUrl={player.imageUrl} name={player.name || "?"} size="sm" className="shrink-0" />
+      <PlayerAvatar
+        imageUrl={player.imageUrl}
+        name={player.name || "?"}
+        size="sm"
+        className="shrink-0"
+      />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <Link
             href={getPlayerDetailHref(player.playerId)}
             className={cn(
               "text-sm font-semibold truncate transition-colors hover:text-accent-hot",
-              isRepeat ? cfg.color : "text-text-primary"
+              isRepeat ? cfg.color : "text-text-primary",
             )}
           >
             {player.name}
           </Link>
           {isRepeat && (
-            <Badge variant={variant === "losers" ? "destructive" : "default"} className="text-[9px] px-1 py-0 h-3.5 shrink-0" title={`Value ${variant === "losers" ? "dropped" : "rose"} in 2+ consecutive Transfermarkt updates`}>
+            <Badge
+              variant={variant === "losers" ? "destructive" : "default"}
+              className="text-[9px] px-1 py-0 h-3.5 shrink-0"
+              title={`Value ${variant === "losers" ? "dropped" : "rose"} in 2+ consecutive Transfermarkt updates`}
+            >
               Repeat mover
             </Badge>
           )}
         </div>
         <div className="flex items-center gap-1 mt-0.5">
-          <ClubLink club={player.club} clubLogoUrl={player.clubLogoUrl} className="text-xs text-text-muted truncate" />
+          <ClubLink
+            club={player.club}
+            clubLogoUrl={player.clubLogoUrl}
+            className="text-xs text-text-muted truncate"
+          />
           {player.age > 0 && (
             <>
               <span className="text-text-muted">·</span>
@@ -159,16 +202,28 @@ function PeriodPlayerRow({ player, isRepeat, variant }: { player: MarketValueMov
         </div>
       </div>
       <div className="text-right shrink-0">
-        <div className={cn("text-sm font-value", cfg.color)}>{cfg.prefix}{formatMarketValue(player.absoluteChange)}</div>
+        <div className={cn("text-sm font-value", cfg.color)}>
+          {cfg.prefix}
+          {formatMarketValue(player.absoluteChange)}
+        </div>
         <div className="text-[10px] text-text-muted font-value">
-          {variant === "losers" ? "-" : "+"}{player.relativeChange.toFixed(1)}%
+          {variant === "losers" ? "-" : "+"}
+          {player.relativeChange.toFixed(1)}%
         </div>
       </div>
     </div>
   );
 }
 
-function PeriodSection({ period, repeatIds, variant }: { period: { date: string; movers: MarketValueMover[] }; repeatIds: Set<string>; variant: Variant }) {
+function PeriodSection({
+  period,
+  repeatIds,
+  variant,
+}: {
+  period: { date: string; movers: MarketValueMover[] };
+  repeatIds: Set<string>;
+  variant: Variant;
+}) {
   const cfg = VARIANT_CONFIG[variant];
   const sorted = [...period.movers].sort((a, b) => b.absoluteChange - a.absoluteChange);
   const hasRepeats = sorted.some((m) => repeatIds.has(m.playerId));
@@ -186,7 +241,12 @@ function PeriodSection({ period, repeatIds, variant }: { period: { date: string;
       <Card>
         <CardContent className="px-2 py-1.5 sm:px-3 sm:py-2 divide-y divide-border-subtle">
           {sorted.map((m) => (
-            <PeriodPlayerRow key={m.playerId} player={m} isRepeat={repeatIds.has(m.playerId)} variant={variant} />
+            <PeriodPlayerRow
+              key={m.playerId}
+              player={m}
+              isRepeat={repeatIds.has(m.playerId)}
+              variant={variant}
+            />
           ))}
         </CardContent>
       </Card>
@@ -220,22 +280,33 @@ export function MarketValueMoversUI({ data, variant }: MarketValueMoversUIProps)
               <h2 className="text-sm sm:text-base font-pixel font-bold text-text-primary">
                 {cfg.sectionTitle}
               </h2>
-              <span className="text-xs text-text-muted font-value">
-                {repeatMovers.length}
-              </span>
+              <span className="text-xs text-text-muted font-value">{repeatMovers.length}</span>
             </div>
             <p className="text-xs text-text-muted mt-0.5 flex items-center gap-1.5">
               <span>{cfg.sectionSubtitle}</span>
               <InfoTip>
-                <p>These players have had their Transfermarkt market value {variant === "losers" ? "reduced" : "increased"} in <strong>2 or more consecutive</strong> valuation updates.</p>
-                <p className="mt-1.5">Transfermarkt updates market values periodically throughout the season. The bar chart shows the change at each update date.</p>
-                <p className="mt-1.5">Ranked by total absolute change — bigger swings rank higher.</p>
+                <p>
+                  These players have had their Transfermarkt market value{" "}
+                  {variant === "losers" ? "reduced" : "increased"} in{" "}
+                  <strong>2 or more consecutive</strong> valuation updates.
+                </p>
+                <p className="mt-1.5">
+                  Transfermarkt updates market values periodically throughout the season. The bar
+                  chart shows the change at each update date.
+                </p>
+                <p className="mt-1.5">
+                  Ranked by total absolute change — bigger swings rank higher.
+                </p>
               </InfoTip>
             </p>
           </div>
           <div className="space-y-3">
             {repeatMovers.map((appearances) => (
-              <RepeatMoverCard key={appearances[0].playerId} appearances={appearances} variant={variant} />
+              <RepeatMoverCard
+                key={appearances[0].playerId}
+                appearances={appearances}
+                variant={variant}
+              />
             ))}
           </div>
         </section>
@@ -247,17 +318,18 @@ export function MarketValueMoversUI({ data, variant }: MarketValueMoversUIProps)
             <h2 className="text-sm sm:text-base font-pixel font-bold text-text-secondary">
               {cfg.breakdownTitle}
             </h2>
-            <span className="text-xs text-text-muted font-value">
-              {periods.length} dates
-            </span>
+            <span className="text-xs text-text-muted font-value">{periods.length} dates</span>
           </div>
-          <p className="text-xs text-text-muted mt-0.5">
-            Top movers since each date
-          </p>
+          <p className="text-xs text-text-muted mt-0.5">Top movers since each date</p>
         </div>
         <div className="space-y-4">
           {periods.map((period) => (
-            <PeriodSection key={period.date} period={period} repeatIds={repeatIds} variant={variant} />
+            <PeriodSection
+              key={period.date}
+              period={period}
+              repeatIds={repeatIds}
+              variant={variant}
+            />
           ))}
         </div>
       </section>

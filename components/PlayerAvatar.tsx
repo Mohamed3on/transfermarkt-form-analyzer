@@ -34,7 +34,15 @@ export function PlayerAvatar({ imageUrl, name, size, className, style }: PlayerA
       style={style}
     />
   ) : (
-    <div className={cn(sizeClass, "rounded-lg flex items-center justify-center font-bold bg-elevated text-text-muted", textClass, className)} style={style}>
+    <div
+      className={cn(
+        sizeClass,
+        "rounded-lg flex items-center justify-center font-bold bg-elevated text-text-muted",
+        textClass,
+        className,
+      )}
+      style={style}
+    >
       {name.charAt(0)}
     </div>
   );

@@ -8,7 +8,10 @@ export function DebouncedInput({
   onChange,
   delay = 300,
   ...props
-}: { value: string; onChange: (value: string) => void; delay?: number } & Omit<React.ComponentProps<typeof Input>, "value" | "onChange">) {
+}: { value: string; onChange: (value: string) => void; delay?: number } & Omit<
+  React.ComponentProps<typeof Input>,
+  "value" | "onChange"
+>) {
   const [value, setValue] = useState(externalValue);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 

@@ -1,4 +1,10 @@
-export type PositionClass = "cf" | "forward" | "attacking-midfield" | "central-midfield" | "defensive-midfield" | "other";
+export type PositionClass =
+  | "cf"
+  | "forward"
+  | "attacking-midfield"
+  | "central-midfield"
+  | "defensive-midfield"
+  | "other";
 
 const POSITION_CLASS_MAP: Record<string, PositionClass> = {
   "Centre-Forward": "cf",
@@ -44,7 +50,7 @@ const BROAD_POSITION_MAP: Record<string, BroadPositionGroup> = {
   "Left-Back": "defenders",
   "Right-Back": "defenders",
   "Centre-Back": "defenders",
-  "Goalkeeper": "goalkeepers",
+  Goalkeeper: "goalkeepers",
 };
 
 export function getBroadPositionGroup(position: string): BroadPositionGroup {
@@ -98,12 +104,18 @@ export function getPositionClassRank(position: string): number {
   return POSITION_CLASS_RANK[getPositionClass(position)];
 }
 
-export function canBeUnderperformerAgainst(candidatePosition: string, targetPosition: string): boolean {
+export function canBeUnderperformerAgainst(
+  candidatePosition: string,
+  targetPosition: string,
+): boolean {
   if (candidatePosition === "Goalkeeper") return false;
   return getPositionClassRank(candidatePosition) >= getPositionClassRank(targetPosition);
 }
 
-export function canBeOutperformerAgainst(candidatePosition: string, targetPosition: string): boolean {
+export function canBeOutperformerAgainst(
+  candidatePosition: string,
+  targetPosition: string,
+): boolean {
   return getPositionClassRank(candidatePosition) <= getPositionClassRank(targetPosition);
 }
 
@@ -121,6 +133,7 @@ export function strictlyOutperforms(
   b: { points: number; minutes?: number },
 ): boolean {
   if (a.minutes === undefined || b.minutes === undefined) return a.points > b.points;
-  return a.points >= b.points && a.minutes <= b.minutes &&
-    (a.points > b.points || a.minutes < b.minutes);
+  return (
+    a.points >= b.points && a.minutes <= b.minutes && (a.points > b.points || a.minutes < b.minutes)
+  );
 }

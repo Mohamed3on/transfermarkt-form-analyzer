@@ -8,7 +8,12 @@ interface PageMetadataInput {
   keywords?: string[];
 }
 
-export function createPageMetadata({ title, description, path, keywords = [] }: PageMetadataInput): Metadata {
+export function createPageMetadata({
+  title,
+  description,
+  path,
+  keywords = [],
+}: PageMetadataInput): Metadata {
   const fullTitle = `${title} | ${SITE_NAME}`;
 
   return {

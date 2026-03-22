@@ -6,10 +6,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
  * Fire fetches for all keys in parallel, accumulating results as each resolves.
  * Returns results array and a Set of still-pending keys.
  */
-export function useProgressiveFetch<T>(
-  keys: string[],
-  fetchFn: (key: string) => Promise<T>,
-) {
+export function useProgressiveFetch<T>(keys: string[], fetchFn: (key: string) => Promise<T>) {
   const [results, setResults] = useState<T[]>([]);
   const [pending, setPending] = useState<Set<string>>(new Set());
   const stableKey = useMemo(() => keys.join("\0"), [keys]);
@@ -24,7 +21,8 @@ export function useProgressiveFetch<T>(
     let cancelled = false;
 
     for (const key of currentKeys) {
-      fetchRef.current(key)
+      fetchRef
+        .current(key)
         .then((result) => {
           if (cancelled) return;
           setResults((prev) => [...prev, result]);
@@ -40,7 +38,9 @@ export function useProgressiveFetch<T>(
         });
     }
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [stableKey]);
 
   return { results, pending };

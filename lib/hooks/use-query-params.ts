@@ -17,7 +17,7 @@ export function useQueryParams(basePath: string) {
       const qs = next.toString();
       return qs ? `${basePath}?${qs}` : basePath;
     },
-    [params, basePath]
+    [params, basePath],
   );
 
   // Shallow URL update — no server re-render
@@ -25,7 +25,7 @@ export function useQueryParams(basePath: string) {
     (updates: Record<string, string | null>) => {
       window.history.pushState(null, "", buildUrl(updates));
     },
-    [buildUrl]
+    [buildUrl],
   );
 
   // Full navigation — triggers server re-render
@@ -33,7 +33,7 @@ export function useQueryParams(basePath: string) {
     (updates: Record<string, string | null>) => {
       router.push(buildUrl(updates), { scroll: false });
     },
-    [router, buildUrl]
+    [router, buildUrl],
   );
 
   return { params, update, push };

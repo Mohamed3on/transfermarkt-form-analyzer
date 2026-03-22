@@ -15,7 +15,16 @@ interface PlayerSubtitleProps {
   nationality?: string;
 }
 
-export function PlayerSubtitle({ position, playedPosition, club, clubLogoUrl, clubId, age, nationalityFlagUrl, nationality }: PlayerSubtitleProps) {
+export function PlayerSubtitle({
+  position,
+  playedPosition,
+  club,
+  clubLogoUrl,
+  clubId,
+  age,
+  nationalityFlagUrl,
+  nationality,
+}: PlayerSubtitleProps) {
   const clubContent = (
     <span className="inline-flex items-center gap-1">
       {clubLogoUrl && <ClubLogo src={clubLogoUrl} />}
@@ -34,7 +43,10 @@ export function PlayerSubtitle({ position, playedPosition, club, clubLogoUrl, cl
       )}
       <span className="opacity-40">•</span>
       {clubId ? (
-        <Link href={getTeamDetailHref(clubId)} className="inline-flex items-center gap-1 hover:underline">
+        <Link
+          href={getTeamDetailHref(clubId)}
+          className="inline-flex items-center gap-1 hover:underline"
+        >
           {clubLogoUrl && <ClubLogo src={clubLogoUrl} />}
           {club}
         </Link>

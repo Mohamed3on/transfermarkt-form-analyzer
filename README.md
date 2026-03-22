@@ -16,33 +16,33 @@ Football scouting dashboards built on Transfermarkt data.
 
 ## Main Routes
 
-| Route | Purpose |
-| --- | --- |
-| `/` | Home and navigation |
-| `/discover` | Curated board links (shareable filtered views) |
-| `/form` | 5/10/15/20-match form analysis |
-| `/expected-position` | Squad value vs table over/underperformance |
-| `/players` | Player explorer with filters and sorting |
-| `/value-analysis` | Value efficiency, bargains, and minutes lens |
-| `/injured` | Injury impact dashboards |
+| Route                | Purpose                                        |
+| -------------------- | ---------------------------------------------- |
+| `/`                  | Home and navigation                            |
+| `/discover`          | Curated board links (shareable filtered views) |
+| `/form`              | 5/10/15/20-match form analysis                 |
+| `/expected-position` | Squad value vs table over/underperformance     |
+| `/players`           | Player explorer with filters and sorting       |
+| `/value-analysis`    | Value efficiency, bargains, and minutes lens   |
+| `/injured`           | Injury impact dashboards                       |
 
 ## API Routes
 
-| Endpoint | Method | Notes |
-| --- | --- | --- |
-| `/api/analyze` | `GET` | Form analysis data |
-| `/api/expected-position` | `GET` | Team value vs table data |
-| `/api/players` | `GET` | Player dataset for explorer tables |
-| `/api/minutes-value` | `GET` | Minutes/value dataset |
-| `/api/player-form?id=<id>` | `GET` | Target player comparisons |
-| `/api/player-form?name=<name>` | `GET` | Same as above via name search |
-| `/api/underperformers` | `GET` | Discovery candidates (value laggards) |
-| `/api/overperformers` | `GET` | Discovery candidates (value bargains) |
-| `/api/injured` | `GET` | Full injury dataset |
-| `/api/injured?league=<code>` | `GET` | League-specific injury data |
-| `/api/manager/[clubId]` | `GET` | Manager profile + context |
-| `/api/revalidate` | `POST` | Revalidate cached tags/paths |
-| `/api/refresh-data` | `POST` | Trigger GitHub workflow refresh |
+| Endpoint                       | Method | Notes                                 |
+| ------------------------------ | ------ | ------------------------------------- |
+| `/api/analyze`                 | `GET`  | Form analysis data                    |
+| `/api/expected-position`       | `GET`  | Team value vs table data              |
+| `/api/players`                 | `GET`  | Player dataset for explorer tables    |
+| `/api/minutes-value`           | `GET`  | Minutes/value dataset                 |
+| `/api/player-form?id=<id>`     | `GET`  | Target player comparisons             |
+| `/api/player-form?name=<name>` | `GET`  | Same as above via name search         |
+| `/api/underperformers`         | `GET`  | Discovery candidates (value laggards) |
+| `/api/overperformers`          | `GET`  | Discovery candidates (value bargains) |
+| `/api/injured`                 | `GET`  | Full injury dataset                   |
+| `/api/injured?league=<code>`   | `GET`  | League-specific injury data           |
+| `/api/manager/[clubId]`        | `GET`  | Manager profile + context             |
+| `/api/revalidate`              | `POST` | Revalidate cached tags/paths          |
+| `/api/refresh-data`            | `POST` | Trigger GitHub workflow refresh       |
 
 ## Local Development
 
@@ -66,10 +66,10 @@ bun run refresh:minutes-value
 
 ## Environment Variables
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
+| Variable               | Required    | Purpose                                 |
+| ---------------------- | ----------- | --------------------------------------- |
 | `NEXT_PUBLIC_SITE_URL` | Recommended | Canonical base URL for sitemap/metadata |
-| `GITHUB_TOKEN` | Optional | Required only for `/api/refresh-data` |
+| `GITHUB_TOKEN`         | Optional    | Required only for `/api/refresh-data`   |
 
 ## Caching And Refresh
 

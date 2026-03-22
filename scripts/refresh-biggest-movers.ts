@@ -61,7 +61,9 @@ async function fetchWithRetry(url: string, referer: string, label: string): Prom
     } else {
       const html = await response.text();
       if (html.length > 500) return html;
-      console.warn(`[${label}] Rate limited (${html.length}b), retry ${attempt + 1}/${MAX_RETRIES}`);
+      console.warn(
+        `[${label}] Rate limited (${html.length}b), retry ${attempt + 1}/${MAX_RETRIES}`,
+      );
     }
     if (attempt < MAX_RETRIES - 1) {
       const jitter = Math.random() * 500;
@@ -93,13 +95,17 @@ function parsePeriodMovers(html: string, date: string): MarketValueMover[] {
 
     const $clubCell = cells.eq(2);
     const club = $clubCell.find("a").attr("title") || "";
-    const clubLogoUrl = $clubCell.find("img").attr("data-src") || $clubCell.find("img").attr("src") || "";
+    const clubLogoUrl =
+      $clubCell.find("img").attr("data-src") || $clubCell.find("img").attr("src") || "";
 
     const nationality = cells.eq(3).find("img").first().attr("title") || "";
     const age = parseInt(cells.eq(4).text().trim(), 10) || 0;
 
     const $valueCell = cells.eq(5);
-    const currentValueText = $valueCell.text().replace(/\u00a0/g, "").trim();
+    const currentValueText = $valueCell
+      .text()
+      .replace(/\u00a0/g, "")
+      .trim();
     const currentValue = parseMarketValue(currentValueText);
     const prevTitle = $valueCell.find("span").attr("title") || "";
     const prevMatch = prevTitle.match(/€[\d.]+\s*(bn|m|k)?/i);
@@ -113,10 +119,20 @@ function parsePeriodMovers(html: string, date: string): MarketValueMover[] {
 
     if (name && playerId && previousValue > 0) {
       players.push({
-        name, position, age, club, clubLogoUrl, nationality,
-        currentValue, previousValue, absoluteChange, relativeChange,
-        imageUrl, profileUrl: `${BASE_URL}${href}`,
-        playerId, period: date,
+        name,
+        position,
+        age,
+        club,
+        clubLogoUrl,
+        nationality,
+        currentValue,
+        previousValue,
+        absoluteChange,
+        relativeChange,
+        imageUrl,
+        profileUrl: `${BASE_URL}${href}`,
+        playerId,
+        period: date,
       });
     }
   });
@@ -161,11 +177,16 @@ function getPeriodDates(): string[] {
   return dates;
 }
 
-async function fetchAllPeriods(dates: string[], cfg: DirectionConfig): Promise<Map<string, MarketValueMover[]>> {
+async function fetchAllPeriods(
+  dates: string[],
+  cfg: DirectionConfig,
+): Promise<Map<string, MarketValueMover[]>> {
   const results = await Promise.allSettled(
     dates.map((d) =>
-      fetchWithRetry(buildUrl(d, cfg), buildReferer(d, cfg), cfg.label).then((html) => parsePeriodMovers(html, d))
-    )
+      fetchWithRetry(buildUrl(d, cfg), buildReferer(d, cfg), cfg.label).then((html) =>
+        parsePeriodMovers(html, d),
+      ),
+    ),
   );
   const map = new Map<string, MarketValueMover[]>();
   results.forEach((r, i) => {
@@ -184,7 +205,9 @@ async function fetchAllPeriods(dates: string[], cfg: DirectionConfig): Promise<M
 async function processDirection(direction: Direction): Promise<void> {
   const cfg = DIRECTION_CONFIG[direction];
   const allDates = getPeriodDates();
-  console.log(`[${cfg.label}] Fetching ${allDates.length} periods: ${allDates[0]} → ${allDates.at(-1)}`);
+  console.log(
+    `[${cfg.label}] Fetching ${allDates.length} periods: ${allDates[0]} → ${allDates.at(-1)}`,
+  );
 
   const periodResults = await fetchAllPeriods(allDates, cfg);
   const processedPeriods: { date: string; movers: MarketValueMover[] }[] = [];
@@ -205,7 +228,9 @@ async function processDirection(direction: Direction): Promise<void> {
   }
 
   const repeats = [...moversByPlayer.values()].filter((a) => a.length >= 2);
-  console.log(`[${cfg.label}] ${repeats.length} repeat(s) across ${processedPeriods.length} periods`);
+  console.log(
+    `[${cfg.label}] ${repeats.length} repeat(s) across ${processedPeriods.length} periods`,
+  );
   await writeResult({ repeatMovers: repeats, periods: processedPeriods }, cfg);
 }
 

@@ -1,7 +1,13 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import type { AnalysisResult, PeriodAnalysis, QualifiedTeam, AggregatedTeam, ManagerInfo } from "@/app/types";
+import type {
+  AnalysisResult,
+  PeriodAnalysis,
+  QualifiedTeam,
+  AggregatedTeam,
+  ManagerInfo,
+} from "@/app/types";
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,7 +27,9 @@ function formatStatValue(category: string, value: number): string {
   return `${value}`;
 }
 
-function groupEntries(entries: AggregatedTeam["entries"]): { category: string; periodValues: { period: number; value: number }[] }[] {
+function groupEntries(
+  entries: AggregatedTeam["entries"],
+): { category: string; periodValues: { period: number; value: number }[] }[] {
   const map = new Map<string, { period: number; value: number }[]>();
   for (const { category, period, value } of entries) {
     const existing = map.get(category);
@@ -97,8 +105,21 @@ function AggregatedTeamCard({
           </div>
           <div className="flex items-center flex-wrap gap-1.5 text-xs sm:text-sm text-text-secondary">
             {getLeagueUrl(team.league) ? (
-              <a href={getLeagueUrl(team.league)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline shrink-0">
-                {getLeagueLogoUrl(team.league) && <img src={getLeagueLogoUrl(team.league)} alt="" width={16} height={16} className="w-4 h-4 object-contain shrink-0 rounded-sm bg-white/90 p-px" />}
+              <a
+                href={getLeagueUrl(team.league)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 hover:underline shrink-0"
+              >
+                {getLeagueLogoUrl(team.league) && (
+                  <img
+                    src={getLeagueLogoUrl(team.league)}
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="w-4 h-4 object-contain shrink-0 rounded-sm bg-white/90 p-px"
+                  />
+                )}
                 {team.league}
               </a>
             ) : (
@@ -108,9 +129,13 @@ function AggregatedTeamCard({
               <span className="font-value text-text-muted">· {ordinal(team.leaguePosition)}</span>
             )}
             {deltaPts != null && (
-              <a href="/expected-position" className={`inline-flex items-center gap-0.5 font-value text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full transition-all duration-150 hover:scale-105 hover:brightness-125 ${deltaPts > 0 ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}>
-                {deltaPts > 0 ? "+" : ""}{deltaPts} points gap <span className="text-[8px] opacity-60">→</span>
-              </a>
+              <Link
+                href="/expected-position"
+                className={`inline-flex items-center gap-0.5 font-value text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full transition-all duration-150 hover:scale-105 hover:brightness-125 ${deltaPts > 0 ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}
+              >
+                {deltaPts > 0 ? "+" : ""}
+                {deltaPts} points gap <span className="text-[8px] opacity-60">→</span>
+              </Link>
             )}
           </div>
         </div>
@@ -118,7 +143,8 @@ function AggregatedTeamCard({
           variant="outline"
           className={`shrink-0 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${isTop ? "bg-accent-hot-glow text-accent-hot border-accent-hot" : "bg-accent-cold-glow text-accent-cold border-accent-cold"}`}
         >
-          <span className="font-value">{team.count}</span>&nbsp;{team.count === 1 ? "category" : "categories"} led
+          <span className="font-value">{team.count}</span>&nbsp;
+          {team.count === 1 ? "category" : "categories"} led
         </Badge>
       </div>
 
@@ -126,10 +152,20 @@ function AggregatedTeamCard({
       <div className="mt-3 space-y-1">
         {grouped.map(({ category, periodValues }) => (
           <div key={category} className="text-xs sm:text-sm text-text-muted">
-            <span className={`font-semibold ${isTop ? "text-accent-hot" : "text-accent-cold"}`}>{category}</span>
-            <span className="text-text-secondary"> · {periodValues.map(({ period, value }) => (
-              <span key={period}>{period !== periodValues[0].period && ", "}<span className="font-value">{formatStatValue(category, value)}</span> <span className="text-text-muted">in last {period}</span></span>
-            ))}</span>
+            <span className={`font-semibold ${isTop ? "text-accent-hot" : "text-accent-cold"}`}>
+              {category}
+            </span>
+            <span className="text-text-secondary">
+              {" "}
+              ·{" "}
+              {periodValues.map(({ period, value }) => (
+                <span key={period}>
+                  {period !== periodValues[0].period && ", "}
+                  <span className="font-value">{formatStatValue(category, value)}</span>{" "}
+                  <span className="text-text-muted">in last {period}</span>
+                </span>
+              ))}
+            </span>
           </div>
         ))}
       </div>
@@ -150,7 +186,15 @@ function AggregatedTeamCard({
   );
 }
 
-function AggregatedSection({ teams, type, deltaMap }: { teams: AggregatedTeam[]; type: "top" | "bottom"; deltaMap?: Record<string, number> }) {
+function AggregatedSection({
+  teams,
+  type,
+  deltaMap,
+}: {
+  teams: AggregatedTeam[];
+  type: "top" | "bottom";
+  deltaMap?: Record<string, number>;
+}) {
   const clubIds = useMemo(() => teams.map((t) => t.clubId).filter(Boolean), [teams]);
 
   const managerQueries = useQueries({
@@ -220,9 +264,7 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
     >
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <div className="flex items-center gap-2 sm:gap-3">
-          <span className="text-2xl sm:text-3xl font-value text-text-primary">
-            {period.period}
-          </span>
+          <span className="text-2xl sm:text-3xl font-value text-text-primary">{period.period}</span>
           <span className="text-sm sm:text-base text-text-secondary">matches</span>
         </div>
         <Badge
@@ -242,7 +284,8 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
         {period.topTeams.length > 0 ? (
           <div>
             <h4 className="text-sm font-semibold mb-3 flex items-center gap-2 text-accent-hot">
-              <span aria-hidden="true">↑</span> <span>Leading 2+ Categories ({period.topTeams.length})</span>
+              <span aria-hidden="true">↑</span>{" "}
+              <span>Leading 2+ Categories ({period.topTeams.length})</span>
             </h4>
             <div className="space-y-2">
               {period.topTeams.map((t) => (
@@ -259,7 +302,8 @@ function PeriodCard({ period, index }: { period: PeriodAnalysis; index: number }
         {period.bottomTeams.length > 0 ? (
           <div>
             <h4 className="text-sm font-semibold mb-3 flex items-center gap-2 text-accent-cold">
-              <span aria-hidden="true">↓</span> <span>Trailing 2+ Categories ({period.bottomTeams.length})</span>
+              <span aria-hidden="true">↓</span>{" "}
+              <span>Trailing 2+ Categories ({period.bottomTeams.length})</span>
             </h4>
             <div className="space-y-2">
               {period.bottomTeams.map((t) => (
@@ -284,18 +328,36 @@ function CompactTeamCard({ team, type }: { team: QualifiedTeam; type: "top" | "b
     <Card className="p-3 bg-elevated hover-lift">
       <div className="flex items-center gap-3">
         {team.logoUrl && (
-          <Image src={team.logoUrl} alt={team.name} width={28} height={28} sizes="28px" className="object-contain" unoptimized />
+          <Image
+            src={team.logoUrl}
+            alt={team.name}
+            width={28}
+            height={28}
+            sizes="28px"
+            className="object-contain"
+            unoptimized
+          />
         )}
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-sm truncate text-text-primary">
             {team.clubId ? (
-              <Link href={getTeamDetailHref(team.clubId)} className={`hover:underline ${isTop ? "text-accent-hot" : "text-accent-cold"}`}>
+              <Link
+                href={getTeamDetailHref(team.clubId)}
+                className={`hover:underline ${isTop ? "text-accent-hot" : "text-accent-cold"}`}
+              >
                 {team.name}
               </Link>
-            ) : team.name}
+            ) : (
+              team.name
+            )}
           </div>
           <div className="text-xs text-text-muted">
-            {ordinal(team.leaguePosition)} place · <span className="font-value">{team.stats.points}</span> pts · goal diff: <span className="font-value">{team.stats.goalDiff > 0 ? "+" : ""}{team.stats.goalDiff}</span>
+            {ordinal(team.leaguePosition)} place ·{" "}
+            <span className="font-value">{team.stats.points}</span> pts · goal diff:{" "}
+            <span className="font-value">
+              {team.stats.goalDiff > 0 ? "+" : ""}
+              {team.stats.goalDiff}
+            </span>
           </div>
         </div>
       </div>
@@ -318,13 +380,22 @@ function LeaderCard({
     { label: "Points", value: `${leaders.points.value}`, teams: leaders.points.teams },
     { label: "Goal Difference", value: `${gd > 0 ? "+" : ""}${gd}`, teams: leaders.goalDiff.teams },
     { label: "Goals For", value: `${leaders.goalsScored.value}`, teams: leaders.goalsScored.teams },
-    { label: "Goals Against", value: `${leaders.goalsConceded.value}`, teams: leaders.goalsConceded.teams },
+    {
+      label: "Goals Against",
+      value: `${leaders.goalsConceded.value}`,
+      teams: leaders.goalsConceded.teams,
+    },
   ];
 
   return (
     <Card className="h-full p-3 sm:p-4 bg-elevated">
-      <h4 className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 flex items-center gap-2 ${accentClass}`}>
-        <span className={`w-2 h-2 rounded-full ${isTop ? "bg-accent-hot shadow-[0_0_8px_var(--accent-hot)]" : "bg-accent-cold shadow-[0_0_8px_var(--accent-cold)]"}`} aria-hidden="true" />
+      <h4
+        className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 flex items-center gap-2 ${accentClass}`}
+      >
+        <span
+          className={`w-2 h-2 rounded-full ${isTop ? "bg-accent-hot shadow-[0_0_8px_var(--accent-hot)]" : "bg-accent-cold shadow-[0_0_8px_var(--accent-cold)]"}`}
+          aria-hidden="true"
+        />
         {isTop ? "Best In Class" : "Worst In Class"}
         <InfoTip className="ml-0.5">
           {isTop
@@ -334,12 +405,13 @@ function LeaderCard({
       </h4>
       <div className="space-y-1.5 sm:space-y-2">
         {rows.map((row) => (
-          <div key={row.label} className="text-xs sm:text-sm py-0.5 sm:py-1 border-b border-b-border-subtle">
+          <div
+            key={row.label}
+            className="text-xs sm:text-sm py-0.5 sm:py-1 border-b border-b-border-subtle"
+          >
             <div className="flex justify-between items-start gap-2">
               <span className="shrink-0 text-text-muted">{row.label}</span>
-              <span className={`font-value shrink-0 ${accentClass}`}>
-                {row.value}
-              </span>
+              <span className={`font-value shrink-0 ${accentClass}`}>{row.value}</span>
             </div>
             <div className="text-[10px] sm:text-xs mt-0.5 leading-relaxed text-text-secondary">
               {row.teams.join(", ")}
@@ -351,17 +423,22 @@ function LeaderCard({
   );
 }
 
-export function AnalyzerUI({ initialData, deltaMap }: { initialData: AnalysisResult; deltaMap?: Record<string, number> }) {
+export function AnalyzerUI({
+  initialData,
+  deltaMap,
+}: {
+  initialData: AnalysisResult;
+  deltaMap?: Record<string, number>;
+}) {
   const [periodsOpen, setPeriodsOpen] = useState(false);
-  const hasAggregated = initialData.aggregatedTop.length > 0 || initialData.aggregatedBottom.length > 0;
+  const hasAggregated =
+    initialData.aggregatedTop.length > 0 || initialData.aggregatedBottom.length > 0;
 
   return (
     <div className="space-y-8">
       {/* Hero Section — Aggregated View */}
       {hasAggregated ? (
-        <div
-          className="rounded-2xl p-4 sm:p-6 animate-scale-in relative overflow-hidden border border-accent-hot bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] shadow-[var(--shadow-glow-hot)]"
-        >
+        <div className="rounded-2xl p-4 sm:p-6 animate-scale-in relative overflow-hidden border border-accent-hot bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] shadow-[var(--shadow-glow-hot)]">
           <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl opacity-20 bg-accent-hot" />
 
           <div className="relative">
@@ -373,23 +450,41 @@ export function AnalyzerUI({ initialData, deltaMap }: { initialData: AnalysisRes
                 <h2 className="text-xl sm:text-2xl font-pixel text-text-primary text-balance flex items-center gap-2">
                   Aggregated Form Leaders
                   <InfoTip>
-                    <p>We track 4 categories — <strong>points, goal difference, goals scored, and goals conceded</strong> — across 4 time windows (last 5, 10, 15, and 20 matches).</p>
-                    <p className="mt-1.5">Teams that lead or trail <strong>2 or more categories</strong> across any window appear here, ranked by total categories led.</p>
-                    <p className="mt-1.5 text-text-muted">Data covers all competitions, not just the league.</p>
+                    <p>
+                      We track 4 categories —{" "}
+                      <strong>points, goal difference, goals scored, and goals conceded</strong> —
+                      across 4 time windows (last 5, 10, 15, and 20 matches).
+                    </p>
+                    <p className="mt-1.5">
+                      Teams that lead or trail <strong>2 or more categories</strong> across any
+                      window appear here, ranked by total categories led.
+                    </p>
+                    <p className="mt-1.5 text-text-muted">
+                      Data covers all competitions, not just the league.
+                    </p>
                   </InfoTip>
                 </h2>
                 <p className="text-sm sm:text-base text-text-secondary">
-                  Teams leading or trailing the most categories across their last 5, 10, 15, and 20 matches.
+                  Teams leading or trailing the most categories across their last 5, 10, 15, and 20
+                  matches.
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
               {initialData.aggregatedTop.length > 0 && (
-                <AggregatedSection teams={initialData.aggregatedTop} type="top" deltaMap={deltaMap} />
+                <AggregatedSection
+                  teams={initialData.aggregatedTop}
+                  type="top"
+                  deltaMap={deltaMap}
+                />
               )}
               {initialData.aggregatedBottom.length > 0 && (
-                <AggregatedSection teams={initialData.aggregatedBottom} type="bottom" deltaMap={deltaMap} />
+                <AggregatedSection
+                  teams={initialData.aggregatedBottom}
+                  type="bottom"
+                  deltaMap={deltaMap}
+                />
               )}
             </div>
           </div>
@@ -400,7 +495,9 @@ export function AnalyzerUI({ initialData, deltaMap }: { initialData: AnalysisRes
             No Clear Form Leader
           </h2>
           <p className="text-sm sm:text-base text-text-secondary">
-            No team dominates 2+ categories (points, goal difference, goals scored, goals conceded) across any time window right now. Check the per-window breakdown below for individual leaders.
+            No team dominates 2+ categories (points, goal difference, goals scored, goals conceded)
+            across any time window right now. Check the per-window breakdown below for individual
+            leaders.
           </p>
         </Card>
       )}
@@ -410,21 +507,37 @@ export function AnalyzerUI({ initialData, deltaMap }: { initialData: AnalysisRes
         <CollapsibleTrigger asChild>
           <button
             className="flex w-full items-center gap-3 text-text-secondary cursor-pointer group"
-            aria-label={periodsOpen ? "Collapse per-period breakdown" : "Expand per-period breakdown"}
+            aria-label={
+              periodsOpen ? "Collapse per-period breakdown" : "Expand per-period breakdown"
+            }
           >
             <span className="w-1 h-6 rounded-full bg-accent-blue" aria-hidden="true" />
             <span className="text-lg font-pixel">By Number of Matches</span>
-            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ease-out ${periodsOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+            <ChevronDown
+              className={`w-5 h-5 transition-transform duration-200 ease-out ${periodsOpen ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            />
             <span className="flex-1 h-px bg-border-subtle" />
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
           <p className="text-sm mt-4 mb-4 text-text-muted flex items-center gap-1.5 flex-wrap">
-            <span>Each window shows which team leads or trails each category. Smaller windows (5 matches) capture short-term momentum; larger windows (20 matches) show sustained form.</span>
+            <span>
+              Each window shows which team leads or trails each category. Smaller windows (5
+              matches) capture short-term momentum; larger windows (20 matches) show sustained form.
+            </span>
             <InfoTip>
-              <p>A team needs to lead or trail <strong>2 or more categories</strong> within a single window to be highlighted.</p>
-              <p className="mt-1.5">Categories: points, goal difference, goals scored, goals conceded.</p>
-              <p className="mt-1.5">&ldquo;Clear Standouts&rdquo; means at least one team dominates 2+ categories in that window.</p>
+              <p>
+                A team needs to lead or trail <strong>2 or more categories</strong> within a single
+                window to be highlighted.
+              </p>
+              <p className="mt-1.5">
+                Categories: points, goal difference, goals scored, goals conceded.
+              </p>
+              <p className="mt-1.5">
+                &ldquo;Clear Standouts&rdquo; means at least one team dominates 2+ categories in
+                that window.
+              </p>
             </InfoTip>
           </p>
           <div className="space-y-4">

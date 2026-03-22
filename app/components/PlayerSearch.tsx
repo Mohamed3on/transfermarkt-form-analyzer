@@ -117,11 +117,16 @@ export function PlayerSearch() {
     // Score: lower = better. name startsWith (0) > name contains (1) > secondary field (2)
     for (let i = 0; i < index.players.length; i++) {
       const n = normalizedIndex.players[i];
-      const score = n.name.startsWith(q) ? 0
-        : n.name.includes(q) ? 1
-        : n.club.includes(q) || n.league.includes(q)
-          || n.nationality.includes(q) || n.position.includes(q) ? 2
-        : -1;
+      const score = n.name.startsWith(q)
+        ? 0
+        : n.name.includes(q)
+          ? 1
+          : n.club.includes(q) ||
+              n.league.includes(q) ||
+              n.nationality.includes(q) ||
+              n.position.includes(q)
+            ? 2
+            : -1;
       if (score >= 0) scored.push({ type: "player", data: index.players[i], score });
     }
     for (let i = 0; i < index.teams.length; i++) {
@@ -163,9 +168,7 @@ export function PlayerSearch() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="top-[30%] translate-y-0 gap-0 overflow-hidden rounded-2xl border-border-subtle/60 bg-[var(--bg-card)] p-0 shadow-2xl shadow-black/40 sm:max-w-xl [&>button]:hidden">
           <DialogTitle className="sr-only">Search</DialogTitle>
-          <DialogDescription className="sr-only">
-            Search for players or teams
-          </DialogDescription>
+          <DialogDescription className="sr-only">Search for players or teams</DialogDescription>
           <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search players or teams..."
@@ -178,7 +181,9 @@ export function PlayerSearch() {
               {query.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 py-12 text-text-muted">
                   <Search className="h-5 w-5 opacity-30" />
-                  <p className="text-sm">{index ? "Search 700+ players and 400+ teams" : "Loading\u2026"}</p>
+                  <p className="text-sm">
+                    {index ? "Search 700+ players and 400+ teams" : "Loading\u2026"}
+                  </p>
                   <p className="text-xs opacity-50">Try a name, club, league, or nationality</p>
                 </div>
               ) : results.length === 0 ? (
@@ -187,7 +192,8 @@ export function PlayerSearch() {
                 <CommandGroup>
                   {results.map((r) => {
                     const prefix = r.type === "player" ? "p" : "t";
-                    const href = r.type === "player" ? `/players/${r.data.id}` : `/teams/${r.data.id}`;
+                    const href =
+                      r.type === "player" ? `/players/${r.data.id}` : `/teams/${r.data.id}`;
                     return (
                       <CommandItem
                         key={`${prefix}-${r.data.id}`}
@@ -196,14 +202,24 @@ export function PlayerSearch() {
                         className="gap-3 rounded-xl px-3 py-2.5 data-[selected=true]:bg-white/5"
                       >
                         {r.type === "player" ? (
-                          <PlayerAvatar name={r.data.name} imageUrl={r.data.imageUrl} className="h-9 w-9 rounded-lg border border-border-subtle/50" />
+                          <PlayerAvatar
+                            name={r.data.name}
+                            imageUrl={r.data.imageUrl}
+                            className="h-9 w-9 rounded-lg border border-border-subtle/50"
+                          />
                         ) : (
-                          <img src={r.data.logoUrl} alt={r.data.name} className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain p-0.5" />
+                          <img
+                            src={r.data.logoUrl}
+                            alt={r.data.name}
+                            className="h-9 w-9 shrink-0 rounded-lg bg-white object-contain p-0.5"
+                          />
                         )}
                         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                           <span className="truncate text-sm text-text-primary">{r.data.name}</span>
                           {r.type === "player" && (
-                            <span className="truncate text-xs text-text-muted">{r.data.position} · {r.data.club}</span>
+                            <span className="truncate text-xs text-text-muted">
+                              {r.data.position} · {r.data.club}
+                            </span>
                           )}
                         </div>
                         <span className="font-value text-xs text-text-muted">

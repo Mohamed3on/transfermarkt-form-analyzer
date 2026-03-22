@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import type { PlayerStats } from "@/app/types";
 import { getPlayerStatsData, applyStatsToggles } from "@/lib/fetch-minutes-value";
-import { canBeOutperformerAgainst, canBeUnderperformerAgainst, effectivePosition as pos, strictlyOutperforms } from "@/lib/positions";
+import {
+  canBeOutperformerAgainst,
+  canBeUnderperformerAgainst,
+  effectivePosition as pos,
+  strictlyOutperforms,
+} from "@/lib/positions";
 import { normalizeForSearch } from "@/lib/normalize";
 
 function findPlayerByName(players: PlayerStats[], searchName: string): PlayerStats | null {
@@ -11,13 +16,19 @@ function findPlayerByName(players: PlayerStats[], searchName: string): PlayerSta
 
 function findUnderperformers(players: PlayerStats[], target: PlayerStats): PlayerStats[] {
   return players.filter(
-    (p) => p.playerId !== target.playerId && p.marketValue >= target.marketValue && strictlyOutperforms(target, p)
+    (p) =>
+      p.playerId !== target.playerId &&
+      p.marketValue >= target.marketValue &&
+      strictlyOutperforms(target, p),
   );
 }
 
 function findOutperformers(players: PlayerStats[], target: PlayerStats): PlayerStats[] {
   return players.filter(
-    (p) => p.playerId !== target.playerId && p.marketValue <= target.marketValue && strictlyOutperforms(p, target)
+    (p) =>
+      p.playerId !== target.playerId &&
+      p.marketValue <= target.marketValue &&
+      strictlyOutperforms(p, target),
   );
 }
 
@@ -36,21 +47,26 @@ export async function GET(request: Request) {
     const rawPlayers = await getPlayerStatsData();
     const allPlayers = applyStatsToggles(rawPlayers, { includePen, includeIntl });
 
-    const targetPlayer = (playerId && allPlayers.find((p) => p.playerId === playerId))
-      || (playerName && findPlayerByName(allPlayers, playerName))
-      || null;
+    const targetPlayer =
+      (playerId && allPlayers.find((p) => p.playerId === playerId)) ||
+      (playerName && findPlayerByName(allPlayers, playerName)) ||
+      null;
 
     if (!targetPlayer) {
-      return NextResponse.json({
-        error: "Player not found",
-        searchedName: playerName || playerId,
-        totalPlayers: allPlayers.length,
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          error: "Player not found",
+          searchedName: playerName || playerId,
+          totalPlayers: allPlayers.length,
+        },
+        { status: 404 },
+      );
     }
 
     const tp = pos(targetPlayer);
-    const underperformers = findUnderperformers(allPlayers, targetPlayer)
-      .filter((p) => canBeUnderperformerAgainst(pos(p), tp));
+    const underperformers = findUnderperformers(allPlayers, targetPlayer).filter((p) =>
+      canBeUnderperformerAgainst(pos(p), tp),
+    );
     const outperformers = findOutperformers(allPlayers, targetPlayer)
       .filter((p) => canBeOutperformerAgainst(pos(p), tp))
       .sort((a, b) => b.points - a.points || a.marketValue - b.marketValue);

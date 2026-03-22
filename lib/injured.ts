@@ -66,7 +66,7 @@ export async function fetchInjuredPlayersUncached(): Promise<{
       const html = await fetchPage(url);
       const $ = cheerio.load(html);
       return { players: parseInjuredPlayers($, league.name), league: league.name };
-    })
+    }),
   );
 
   const allPlayers: InjuredPlayer[] = [];
@@ -93,8 +93,7 @@ export async function fetchInjuredPlayersUncached(): Promise<{
   };
 }
 
-export const getInjuredPlayers = unstable_cache(
-  fetchInjuredPlayersUncached,
-  ["injured-players"],
-  { revalidate: 7200, tags: ["injured"] }
-);
+export const getInjuredPlayers = unstable_cache(fetchInjuredPlayersUncached, ["injured-players"], {
+  revalidate: 7200,
+  tags: ["injured"],
+});

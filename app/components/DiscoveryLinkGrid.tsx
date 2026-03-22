@@ -27,13 +27,11 @@ export function DiscoveryLinkGrid({
   currentAliases = [],
 }: DiscoveryLinkGridProps) {
   const presets = section ? getDiscoveryPresetsBySection(section) : DISCOVERY_PRESETS;
-  const currentHrefSet = new Set([
-    ...(currentPath ? [currentPath] : []),
-    ...currentAliases,
-  ]);
-  const filteredPresets = currentHrefSet.size > 0
-    ? presets.filter((preset) => !currentHrefSet.has(getPresetTargetHref(preset)))
-    : presets;
+  const currentHrefSet = new Set([...(currentPath ? [currentPath] : []), ...currentAliases]);
+  const filteredPresets =
+    currentHrefSet.size > 0
+      ? presets.filter((preset) => !currentHrefSet.has(getPresetTargetHref(preset)))
+      : presets;
   const visiblePresets = maxItems ? filteredPresets.slice(0, maxItems) : filteredPresets;
 
   if (visiblePresets.length === 0) return null;
@@ -45,10 +43,7 @@ export function DiscoveryLinkGrid({
 
       <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
         {visiblePresets.map((preset) => (
-          <article
-            key={preset.slug}
-            className="rounded-lg border border-border-subtle bg-card p-3"
-          >
+          <article key={preset.slug} className="rounded-lg border border-border-subtle bg-card p-3">
             <h3 className="text-sm font-medium text-text-primary">{preset.title}</h3>
             <p className="mt-1 text-xs text-text-muted">{preset.description}</p>
             <div className="mt-2 flex items-center gap-3 text-xs">

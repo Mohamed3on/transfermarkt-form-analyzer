@@ -194,7 +194,14 @@ export interface MinutesValuePlayer {
   isOnLoan?: boolean;
   contractExpiry?: string;
   gamesMissed?: number;
-  positionStats?: { positionId: number; position: string; minutes: number; goals: number; assists: number; appearances: number }[];
+  positionStats?: {
+    positionId: number;
+    position: string;
+    minutes: number;
+    goals: number;
+    assists: number;
+    appearances: number;
+  }[];
   nationalityFlagUrl?: string;
   leagueLogoUrl?: string;
   recentForm?: RecentGameStats[];
@@ -211,12 +218,21 @@ export interface CeapiGame {
     date?: { dateTimeUTC?: string };
   };
   clubsInformation?: {
-    club?: { venue?: "home" | "away"; goalsTotal?: number | null; opponentGoalsTotal?: number | null };
+    club?: {
+      venue?: "home" | "away";
+      goalsTotal?: number | null;
+      opponentGoalsTotal?: number | null;
+    };
     opponent?: { clubId?: string };
   };
   statistics: {
     generalStatistics: { positionId?: number | null; participationState?: string | null };
-    goalStatistics: { goalsScoredTotal?: number | null; assists?: number | null; penaltyShooterGoalsScored?: number | null; penaltyShooterMisses?: number | null };
+    goalStatistics: {
+      goalsScoredTotal?: number | null;
+      assists?: number | null;
+      penaltyShooterGoalsScored?: number | null;
+      penaltyShooterMisses?: number | null;
+    };
     playingTimeStatistics: { playedMinutes?: number | null };
   };
 }
@@ -287,7 +303,14 @@ export interface PlayerStatsResult {
   playedPosition: string;
   contractExpiry?: string;
   gamesMissed: number;
-  positionStats?: { positionId: number; position: string; minutes: number; goals: number; assists: number; appearances: number }[];
+  positionStats?: {
+    positionId: number;
+    position: string;
+    minutes: number;
+    goals: number;
+    assists: number;
+    appearances: number;
+  }[];
   nationality?: string;
   nationalityFlagUrl?: string;
   leagueLogoUrl?: string;

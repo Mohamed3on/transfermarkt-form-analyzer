@@ -42,13 +42,8 @@ export interface WorstHitResult {
   scope: WorstHitScope;
 }
 
-function getReasonFromGroups(
-  clubId: string,
-  groups: TeamInjuryGroup[],
-): WorstHitReason {
-  const mine = groups.find(
-    (g) => extractClubIdFromLogoUrl(g.clubLogoUrl) === clubId,
-  );
+function getReasonFromGroups(clubId: string, groups: TeamInjuryGroup[]): WorstHitReason {
+  const mine = groups.find((g) => extractClubIdFromLogoUrl(g.clubLogoUrl) === clubId);
   if (!mine) return null;
 
   const maxCount = Math.max(...groups.map((g) => g.count));

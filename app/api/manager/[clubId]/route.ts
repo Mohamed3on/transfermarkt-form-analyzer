@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { getManagerInfo } from "@/lib/fetch-manager";
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ clubId: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ clubId: string }> }) {
   const { clubId } = await params;
   try {
     const manager = await getManagerInfo(clubId);

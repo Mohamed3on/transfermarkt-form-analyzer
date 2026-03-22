@@ -13,6 +13,7 @@ export async function getPlayerRecentMatches(
   return fallbackMatches.map((match) => ({
     ...match,
     competitionName:
-      match.competitionName || (match.competitionId ? LEAGUE_NAMES[match.competitionId] : undefined),
+      match.competitionName ||
+      (match.competitionId ? LEAGUE_NAMES[match.competitionId] : undefined),
   }));
 }

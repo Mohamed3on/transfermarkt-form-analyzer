@@ -27,14 +27,16 @@ interface TeamFormUIProps {
   formLeaders?: Record<string, { type: "top" | "bottom"; count: number }>;
 }
 
-
-
-function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: string; onValueChange: (value: string) => void }) {
+function LeagueFilter({
+  selectedLeague,
+  onValueChange,
+}: {
+  selectedLeague: string;
+  onValueChange: (value: string) => void;
+}) {
   return (
     <div className="mb-4 sm:mb-6">
-      <p className="text-sm font-medium mb-3 text-text-secondary">
-        Filter by league:
-      </p>
+      <p className="text-sm font-medium mb-3 text-text-secondary">Filter by league:</p>
       <ToggleGroup
         type="single"
         value={selectedLeague}
@@ -49,20 +51,28 @@ function LeagueFilter({ selectedLeague, onValueChange }: { selectedLeague: strin
         </ToggleGroupItem>
 
         {LEAGUES.map((league) => (
-            <ToggleGroupItem
-              key={league.code}
-              value={league.name}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 flex items-center gap-2 border border-border-subtle text-text-secondary hover:text-text-primary hover:bg-card-hover active:scale-[0.97]"
-              style={selectedLeague === league.name ? {
-                backgroundColor: league.hex,
-                borderColor: league.hex,
-                color: league.textOnBg === "text-black" ? "#000" : "#fff",
-                boxShadow: `0 0 12px ${league.hex}40`,
-              } : undefined}
-            >
-              <img src={getLeagueLogoUrl(league.name)} alt="" className="w-4 h-4 object-contain rounded-sm bg-white p-px" />
-              {league.name}
-            </ToggleGroupItem>
+          <ToggleGroupItem
+            key={league.code}
+            value={league.name}
+            className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 flex items-center gap-2 border border-border-subtle text-text-secondary hover:text-text-primary hover:bg-card-hover active:scale-[0.97]"
+            style={
+              selectedLeague === league.name
+                ? {
+                    backgroundColor: league.hex,
+                    borderColor: league.hex,
+                    color: league.textOnBg === "text-black" ? "#000" : "#fff",
+                    boxShadow: `0 0 12px ${league.hex}40`,
+                  }
+                : undefined
+            }
+          >
+            <img
+              src={getLeagueLogoUrl(league.name)}
+              alt=""
+              className="w-4 h-4 object-contain rounded-sm bg-white p-px"
+            />
+            {league.name}
+          </ToggleGroupItem>
         ))}
       </ToggleGroup>
     </div>
@@ -79,7 +89,15 @@ interface TeamCardProps {
   managerLoading?: boolean;
 }
 
-function TeamCard({ team, rank, type, index = 0, formLeader, manager, managerLoading }: TeamCardProps) {
+function TeamCard({
+  team,
+  rank,
+  type,
+  index = 0,
+  formLeader,
+  manager,
+  managerLoading,
+}: TeamCardProps) {
   const isOver = type === "over";
 
   return (
@@ -91,7 +109,10 @@ function TeamCard({ team, rank, type, index = 0, formLeader, manager, managerLoa
         {/* Main content */}
         <div className="flex-1 min-w-0 p-3 sm:p-4">
           <div className="flex items-center gap-3 sm:gap-4">
-            <RankBadge rank={rank} highlightClass={isOver ? "bg-green-600 text-white" : "bg-red-600 text-white"} />
+            <RankBadge
+              rank={rank}
+              highlightClass={isOver ? "bg-green-600 text-white" : "bg-red-600 text-white"}
+            />
 
             {/* Club Logo */}
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1 bg-white shadow-sm">
@@ -113,9 +134,13 @@ function TeamCard({ team, rank, type, index = 0, formLeader, manager, managerLoa
               <div className="flex items-center gap-1.5 mt-0.5">
                 <LeagueBadge league={team.league} />
                 {formLeader && (
-                  <a href="/form" className={`inline-flex items-center gap-0.5 text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-semibold transition-all duration-150 hover:scale-105 hover:brightness-125 ${formLeader.type === "top" ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}>
-                    {formLeader.type === "top" ? "↑ Best" : "↓ Worst"} form <span className="text-[8px] opacity-60">→</span>
-                  </a>
+                  <Link
+                    href="/form"
+                    className={`inline-flex items-center gap-0.5 text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-semibold transition-all duration-150 hover:scale-105 hover:brightness-125 ${formLeader.type === "top" ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}
+                  >
+                    {formLeader.type === "top" ? "↑ Best" : "↓ Worst"} form{" "}
+                    <span className="text-[8px] opacity-60">→</span>
+                  </Link>
                 )}
               </div>
             </div>
@@ -123,13 +148,22 @@ function TeamCard({ team, rank, type, index = 0, formLeader, manager, managerLoa
 
           {/* Stats Row — actual vs expected, color-coded */}
           <div className="flex flex-wrap items-center gap-1.5 mt-2.5 text-xs sm:text-sm">
-            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-value ${isOver ? "bg-green-600/10 text-green-500" : "bg-red-600/10 text-red-500"}`}>
+            <span
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-value ${isOver ? "bg-green-600/10 text-green-500" : "bg-red-600/10 text-red-500"}`}
+            >
               {ordinal(team.leaguePosition)} · {team.points}pts
             </span>
             <span className="text-[10px] text-text-muted">vs</span>
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-elevated text-text-muted">
-              <span className="font-value">{ordinal(team.marketValueRank)} · {team.expectedPoints}pts</span>
-              <span className="hidden sm:inline text-xs text-text-secondary">by value{formatValueStr(team.marketValue) !== "-" ? ` · ${formatValueStr(team.marketValue)}` : ""}</span>
+              <span className="font-value">
+                {ordinal(team.marketValueRank)} · {team.expectedPoints}pts
+              </span>
+              <span className="hidden sm:inline text-xs text-text-secondary">
+                by value
+                {formatValueStr(team.marketValue) !== "-"
+                  ? ` · ${formatValueStr(team.marketValue)}`
+                  : ""}
+              </span>
             </span>
           </div>
 
@@ -138,10 +172,12 @@ function TeamCard({ team, rank, type, index = 0, formLeader, manager, managerLoa
             <div className="mt-2 text-[11px] sm:text-sm">
               <ManagerSkeleton />
             </div>
-          ) : manager && (
-            <div className="mt-2 text-[11px] sm:text-sm text-text-muted animate-fade-in">
-              <ManagerSection manager={manager} />
-            </div>
+          ) : (
+            manager && (
+              <div className="mt-2 text-[11px] sm:text-sm text-text-muted animate-fade-in">
+                <ManagerSection manager={manager} />
+              </div>
+            )
           )}
         </div>
 
@@ -177,8 +213,14 @@ function TeamListsGrid({
   underperformers: TeamFormEntry[];
   formLeaders?: Record<string, { type: "top" | "bottom"; count: number }>;
 }) {
-  const displayedTeams = useMemo(() => [...overperformers, ...underperformers], [overperformers, underperformers]);
-  const clubIds = useMemo(() => [...new Set(displayedTeams.map((t) => t.clubId).filter(Boolean))], [displayedTeams]);
+  const displayedTeams = useMemo(
+    () => [...overperformers, ...underperformers],
+    [overperformers, underperformers],
+  );
+  const clubIds = useMemo(
+    () => [...new Set(displayedTeams.map((t) => t.clubId).filter(Boolean))],
+    [displayedTeams],
+  );
 
   const managerQueries = useQueries({
     queries: clubIds.map((clubId) => managerQueryOptions(clubId)),
@@ -196,7 +238,12 @@ function TeamListsGrid({
 
   const maxLength = Math.max(overperformers.length, underperformers.length);
 
-  const renderTeamCard = (team: TeamFormEntry, rank: number, type: "over" | "under", index: number) => (
+  const renderTeamCard = (
+    team: TeamFormEntry,
+    rank: number,
+    type: "over" | "under",
+    index: number,
+  ) => (
     <TeamCard
       team={team}
       rank={rank}
@@ -217,13 +264,27 @@ function TeamListsGrid({
           <div className="flex items-center gap-3">
             <h2 className="text-lg sm:text-xl font-pixel flex items-center gap-2 shrink-0 text-green-600">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               Overperformers
               <InfoTip>
-                <p>Teams earning <strong>more points</strong> than their squad market value would predict.</p>
-                <p className="mt-1.5">The &ldquo;points gap&rdquo; is calculated by ranking all teams in a league by squad value, then comparing each team&apos;s actual points to the points earned by the team sitting in that value-based position.</p>
-                <p className="mt-1.5 text-text-muted">&ldquo;Squad ranked 3rd, 58pts expected&rdquo; means the team has the 3rd most valuable squad, and the team currently in 3rd has 58 points.</p>
+                <p>
+                  Teams earning <strong>more points</strong> than their squad market value would
+                  predict.
+                </p>
+                <p className="mt-1.5">
+                  The &ldquo;points gap&rdquo; is calculated by ranking all teams in a league by
+                  squad value, then comparing each team&apos;s actual points to the points earned by
+                  the team sitting in that value-based position.
+                </p>
+                <p className="mt-1.5 text-text-muted">
+                  &ldquo;Squad ranked 3rd, 58pts expected&rdquo; means the team has the 3rd most
+                  valuable squad, and the team currently in 3rd has 58 points.
+                </p>
               </InfoTip>
             </h2>
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-green-600/10 text-green-600/70">
@@ -234,12 +295,22 @@ function TeamListsGrid({
           <div className="flex items-center gap-3">
             <h2 className="text-lg sm:text-xl font-pixel flex items-center gap-2 shrink-0 text-red-600">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               Underperformers
               <InfoTip>
-                <p>Teams earning <strong>fewer points</strong> than their squad market value would predict.</p>
-                <p className="mt-1.5">A negative points gap means the team is underdelivering relative to how much their squad costs.</p>
+                <p>
+                  Teams earning <strong>fewer points</strong> than their squad market value would
+                  predict.
+                </p>
+                <p className="mt-1.5">
+                  A negative points gap means the team is underdelivering relative to how much their
+                  squad costs.
+                </p>
               </InfoTip>
             </h2>
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-red-600/10 text-red-600/70">
@@ -276,12 +347,22 @@ function TeamListsGrid({
           <div className="flex items-center gap-3 mb-3">
             <h2 className="text-lg font-pixel flex items-center gap-2 shrink-0 text-green-600">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               Overperformers
               <InfoTip>
-                <p>Teams earning <strong>more points</strong> than their squad market value would predict.</p>
-                <p className="mt-1.5">The &ldquo;points gap&rdquo; compares actual points to the points earned by the team sitting in the equivalent value-based position.</p>
+                <p>
+                  Teams earning <strong>more points</strong> than their squad market value would
+                  predict.
+                </p>
+                <p className="mt-1.5">
+                  The &ldquo;points gap&rdquo; compares actual points to the points earned by the
+                  team sitting in the equivalent value-based position.
+                </p>
               </InfoTip>
             </h2>
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-green-600/10 text-green-600/70">
@@ -303,12 +384,22 @@ function TeamListsGrid({
           <div className="flex items-center gap-3 mb-3">
             <h2 className="text-lg font-pixel flex items-center gap-2 shrink-0 text-red-600">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               Underperformers
               <InfoTip>
-                <p>Teams earning <strong>fewer points</strong> than their squad market value would predict.</p>
-                <p className="mt-1.5">A negative points gap means the team is underdelivering relative to how much their squad costs.</p>
+                <p>
+                  Teams earning <strong>fewer points</strong> than their squad market value would
+                  predict.
+                </p>
+                <p className="mt-1.5">
+                  A negative points gap means the team is underdelivering relative to how much their
+                  squad costs.
+                </p>
               </InfoTip>
             </h2>
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0 bg-red-600/10 text-red-600/70">
@@ -333,14 +424,19 @@ export function TeamFormUI({ initialData, formLeaders }: TeamFormUIProps) {
   const data = initialData;
   const { params, update } = useQueryParams("/expected-position");
   const requestedLeague = params.get("league");
-  const selectedLeague = requestedLeague && LEAGUES.some((league) => league.name === requestedLeague)
-    ? requestedLeague
-    : "all";
+  const selectedLeague =
+    requestedLeague && LEAGUES.some((league) => league.name === requestedLeague)
+      ? requestedLeague
+      : "all";
 
-  const { overperformers: filteredOverperformers, underperformers: filteredUnderperformers } = useMemo(() => {
-    const teams = selectedLeague === "all" ? data.allTeams : data.allTeams.filter((t) => t.league === selectedLeague);
-    return splitPerformers(teams, selectedLeague === "all" ? 20 : undefined);
-  }, [data.allTeams, selectedLeague]);
+  const { overperformers: filteredOverperformers, underperformers: filteredUnderperformers } =
+    useMemo(() => {
+      const teams =
+        selectedLeague === "all"
+          ? data.allTeams
+          : data.allTeams.filter((t) => t.league === selectedLeague);
+      return splitPerformers(teams, selectedLeague === "all" ? 20 : undefined);
+    }, [data.allTeams, selectedLeague]);
 
   return (
     <>

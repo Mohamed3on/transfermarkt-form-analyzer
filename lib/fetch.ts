@@ -9,7 +9,9 @@ const BASE_DELAY = 1000;
 let maxConcurrent = 4;
 
 /** Override the concurrency limit (e.g. for batch scripts with their own backoff). */
-export function setMaxConcurrent(n: number) { maxConcurrent = n; }
+export function setMaxConcurrent(n: number) {
+  maxConcurrent = n;
+}
 
 let active = 0;
 const queue: (() => void)[] = [];
@@ -26,7 +28,11 @@ function releaseSlot() {
   queue.shift()?.();
 }
 
-export async function fetchPage(url: string, revalidate?: number, extraHeaders?: Record<string, string>): Promise<string> {
+export async function fetchPage(
+  url: string,
+  revalidate?: number,
+  extraHeaders?: Record<string, string>,
+): Promise<string> {
   await acquireSlot();
   try {
     return await fetchPageInner(url, revalidate, extraHeaders);
@@ -35,7 +41,11 @@ export async function fetchPage(url: string, revalidate?: number, extraHeaders?:
   }
 }
 
-async function fetchPageInner(url: string, revalidate?: number, extraHeaders?: Record<string, string>): Promise<string> {
+async function fetchPageInner(
+  url: string,
+  revalidate?: number,
+  extraHeaders?: Record<string, string>,
+): Promise<string> {
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const response = await fetch(url, {
       headers: { ...HEADERS, ...extraHeaders },
@@ -44,7 +54,9 @@ async function fetchPageInner(url: string, revalidate?: number, extraHeaders?: R
     const html = await response.text();
     // Transfermarkt rate-limit responses are ~146 bytes
     if (html.length > 500) return html;
-    console.warn(`[fetch] Rate limited (${html.length}b), retry ${attempt + 1}/${MAX_RETRIES}: ${url}`);
+    console.warn(
+      `[fetch] Rate limited (${html.length}b), retry ${attempt + 1}/${MAX_RETRIES}: ${url}`,
+    );
     if (attempt < MAX_RETRIES - 1) {
       const jitter = Math.random() * 500;
       await new Promise((r) => setTimeout(r, BASE_DELAY * 2 ** attempt + jitter));

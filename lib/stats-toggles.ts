@@ -4,7 +4,8 @@ export function toPlayerStats(p: MinutesValuePlayer): PlayerStats {
   return {
     name: p.name,
     position: p.position,
-    playedPosition: p.playedPosition && p.playedPosition !== p.position ? p.playedPosition : undefined,
+    playedPosition:
+      p.playedPosition && p.playedPosition !== p.position ? p.playedPosition : undefined,
     age: p.age,
     club: p.club,
     clubLogoUrl: p.clubLogoUrl ?? "",
@@ -42,7 +43,9 @@ export function applyStatsToggles(
   return players.map((p) => {
     const rawGoals = p.goals + (opts.includeIntl ? p.intlGoals : 0);
     const assists = p.assists + (opts.includeIntl ? p.intlAssists : 0);
-    const penAdj = opts.includePen ? 0 : p.penaltyGoals + (opts.includeIntl ? p.intlPenaltyGoals : 0);
+    const penAdj = opts.includePen
+      ? 0
+      : p.penaltyGoals + (opts.includeIntl ? p.intlPenaltyGoals : 0);
     const goals = rawGoals - penAdj;
     return {
       ...p,

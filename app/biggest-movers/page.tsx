@@ -18,10 +18,7 @@ export const metadata = createPageMetadata({
 });
 
 export default async function BiggestMoversPage() {
-  const [losers, winners] = await Promise.all([
-    findRepeatLosers(),
-    findRepeatWinners(),
-  ]);
+  const [losers, winners] = await Promise.all([findRepeatLosers(), findRepeatWinners()]);
   return (
     <>
       <BiggestMoversUI losers={losers} winners={winners} />

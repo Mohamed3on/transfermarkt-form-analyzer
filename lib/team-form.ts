@@ -20,7 +20,10 @@ interface MarketValueTeam {
   marketValueNum: number;
 }
 
-function parseStartseitePage($: cheerio.CheerioAPI): { standings: LeagueTeam[]; marketValues: MarketValueTeam[] } {
+function parseStartseitePage($: cheerio.CheerioAPI): {
+  standings: LeagueTeam[];
+  marketValues: MarketValueTeam[];
+} {
   const standings: LeagueTeam[] = [];
   const marketValues: MarketValueTeam[] = [];
 
@@ -28,7 +31,8 @@ function parseStartseitePage($: cheerio.CheerioAPI): { standings: LeagueTeam[]; 
     .filter((_, table) => {
       const headerText = $(table).find("thead").text().toLowerCase();
       const hasPts = headerText.includes("pts") || headerText.includes("pkte");
-      const hasMarketValue = headerText.includes("market value") || headerText.includes("marktwert");
+      const hasMarketValue =
+        headerText.includes("market value") || headerText.includes("marktwert");
       return hasPts && !hasMarketValue;
     })
     .first();
@@ -49,13 +53,22 @@ function parseStartseitePage($: cheerio.CheerioAPI): { standings: LeagueTeam[]; 
     const clubIdMatch = clubUrl.match(/\/verein\/(\d+)/);
     const clubId = clubIdMatch ? clubIdMatch[1] : "";
 
-    const pointsText = $(cells[cells.length - 1]).text().trim();
+    const pointsText = $(cells[cells.length - 1])
+      .text()
+      .trim();
     const points = parseInt(pointsText, 10);
     if (isNaN(points)) return;
 
     if (name && clubId) {
       const normalizedUrl = clubUrl.replace(/\/(spielplan|tabelle)\//, "/startseite/");
-      standings.push({ name, position, points, logoUrl, clubUrl: `${BASE_URL}${normalizedUrl}`, clubId });
+      standings.push({
+        name,
+        position,
+        points,
+        logoUrl,
+        clubUrl: `${BASE_URL}${normalizedUrl}`,
+        clubId,
+      });
     }
   });
 
@@ -98,7 +111,11 @@ async function fetchLeagueData(league: (typeof LEAGUES)[number]): Promise<TeamFo
     const sortedByMV = [...marketValues].sort((a, b) => b.marketValueNum - a.marketValueNum);
     const mvRankMap = new Map<string, { rank: number; value: string; valueNum: number }>();
     sortedByMV.forEach((team, idx) => {
-      mvRankMap.set(team.clubId, { rank: idx + 1, value: team.marketValue, valueNum: team.marketValueNum });
+      mvRankMap.set(team.clubId, {
+        rank: idx + 1,
+        value: team.marketValue,
+        valueNum: team.marketValueNum,
+      });
     });
 
     const pointsByPosition = new Map<number, number>();
@@ -139,8 +156,12 @@ async function fetchLeagueData(league: (typeof LEAGUES)[number]): Promise<TeamFo
 }
 
 export function splitPerformers(teams: TeamFormEntry[], limit?: number) {
-  const over = teams.filter((t) => t.deltaPts > 0).sort((a, b) => b.deltaPts - a.deltaPts || b.marketValueNum - a.marketValueNum);
-  const under = teams.filter((t) => t.deltaPts < 0).sort((a, b) => a.deltaPts - b.deltaPts || b.marketValueNum - a.marketValueNum);
+  const over = teams
+    .filter((t) => t.deltaPts > 0)
+    .sort((a, b) => b.deltaPts - a.deltaPts || b.marketValueNum - a.marketValueNum);
+  const under = teams
+    .filter((t) => t.deltaPts < 0)
+    .sort((a, b) => a.deltaPts - b.deltaPts || b.marketValueNum - a.marketValueNum);
   return {
     overperformers: limit ? over.slice(0, limit) : over,
     underperformers: limit ? under.slice(0, limit) : under,
@@ -169,7 +190,7 @@ export const getTeamFormData = unstable_cache(
 
       if (pending.length > 0) {
         console.warn(
-          `team-form attempt ${attempt}/${MAX_ATTEMPTS}: missing leagues: ${pending.map((l) => l.name).join(", ")}`
+          `team-form attempt ${attempt}/${MAX_ATTEMPTS}: missing leagues: ${pending.map((l) => l.name).join(", ")}`,
         );
         if (attempt < MAX_ATTEMPTS) {
           await new Promise((r) => setTimeout(r, 2000 * attempt));
@@ -179,7 +200,7 @@ export const getTeamFormData = unstable_cache(
 
     if (pending.length > 0) {
       throw new Error(
-        `Failed to fetch all 5 leagues after ${MAX_ATTEMPTS} attempts. Missing: ${pending.map((l) => l.name).join(", ")}`
+        `Failed to fetch all 5 leagues after ${MAX_ATTEMPTS} attempts. Missing: ${pending.map((l) => l.name).join(", ")}`,
       );
     }
 
@@ -190,5 +211,5 @@ export const getTeamFormData = unstable_cache(
     };
   },
   ["team-form"],
-  { revalidate: 7200, tags: ["team-form"] }
+  { revalidate: 7200, tags: ["team-form"] },
 );

@@ -28,14 +28,18 @@ export function BenchmarkCard({
     <div
       className="relative overflow-hidden rounded-2xl p-4 sm:p-6 animate-scale-in"
       style={{
-        background: "linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 165, 0, 0.04) 100%)",
+        background:
+          "linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 165, 0, 0.04) 100%)",
         border: "1px solid rgba(255, 215, 0, 0.3)",
         boxShadow: "0 0 60px rgba(255, 215, 0, 0.08), inset 0 1px 0 rgba(255, 215, 0, 0.1)",
       }}
     >
       <div
         className="absolute top-0 right-0 w-32 h-32 opacity-20"
-        style={{ background: "radial-gradient(circle at top right, rgba(255, 215, 0, 0.4), transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(circle at top right, rgba(255, 215, 0, 0.4), transparent 70%)",
+        }}
       />
       <div className="relative flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5">
         {/* Avatar + mobile name */}
@@ -43,10 +47,17 @@ export function BenchmarkCard({
           <div className="relative shrink-0">
             <div
               className="absolute -inset-1 rounded-xl opacity-60"
-              style={{ background: "linear-gradient(135deg, #ffd700, #ff8c00)", filter: "blur(4px)" }}
+              style={{
+                background: "linear-gradient(135deg, #ffd700, #ff8c00)",
+                filter: "blur(4px)",
+              }}
             />
             {imageUrl ? (
-              <img src={imageUrl} alt={name} className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border-2 border-accent-gold/50" />
+              <img
+                src={imageUrl}
+                alt={name}
+                className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border-2 border-accent-gold/50"
+              />
             ) : (
               <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center text-xl sm:text-2xl font-bold bg-elevated text-accent-gold border-2 border-accent-gold/50">
                 {name.charAt(0)}
@@ -54,14 +65,22 @@ export function BenchmarkCard({
             )}
             <div
               className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs"
-              style={{ background: "linear-gradient(135deg, #ffd700, #ff8c00)", color: "#000", fontWeight: 700, boxShadow: "0 2px 8px rgba(255, 215, 0, 0.4)" }}
+              style={{
+                background: "linear-gradient(135deg, #ffd700, #ff8c00)",
+                color: "#000",
+                fontWeight: 700,
+                boxShadow: "0 2px 8px rgba(255, 215, 0, 0.4)",
+              }}
             >
               ★
             </div>
           </div>
           {/* Mobile name + subtitle */}
           <div className="flex-1 min-w-0 sm:hidden">
-            <Link href={href} className="font-bold text-lg hover:underline block truncate text-accent-gold">
+            <Link
+              href={href}
+              className="font-bold text-lg hover:underline block truncate text-accent-gold"
+            >
               {name}
             </Link>
             <div className="flex items-center gap-2 mt-0.5 text-xs text-text-secondary">
@@ -72,30 +91,25 @@ export function BenchmarkCard({
 
         {/* Desktop name + subtitle + stats */}
         <div className="hidden sm:block flex-1 min-w-0">
-          <Link href={href} className="font-bold text-xl hover:underline block truncate text-accent-gold">
+          <Link
+            href={href}
+            className="font-bold text-xl hover:underline block truncate text-accent-gold"
+          >
             {name}
           </Link>
-          <div className="flex items-center gap-2 mt-1 text-sm text-text-secondary">
-            {subtitle}
-          </div>
+          <div className="flex items-center gap-2 mt-1 text-sm text-text-secondary">{subtitle}</div>
           <div className="flex items-center gap-4 mt-4 text-sm text-text-secondary">
             {desktopStats}
           </div>
         </div>
 
         {/* Desktop big numbers */}
-        <div className="hidden sm:flex gap-6 shrink-0">
-          {desktopBigNumbers}
-        </div>
+        <div className="hidden sm:flex gap-6 shrink-0">{desktopBigNumbers}</div>
 
         {/* Mobile bottom */}
         <div className="sm:hidden flex items-center justify-between gap-3 pt-3 border-t border-t-accent-gold/15">
-          <div className="flex items-center gap-3 text-xs text-text-secondary">
-            {mobileStats}
-          </div>
-          <div className="flex gap-4 shrink-0">
-            {mobileBigNumbers}
-          </div>
+          <div className="flex items-center gap-3 text-xs text-text-secondary">{mobileStats}</div>
+          <div className="flex gap-4 shrink-0">{mobileBigNumbers}</div>
         </div>
       </div>
 
@@ -108,10 +122,20 @@ export function BenchmarkCard({
   );
 }
 
-export function BigNumber({ value, label, color }: { value: string; label: string; color: string }) {
+export function BigNumber({
+  value,
+  label,
+  color,
+}: {
+  value: string;
+  label: string;
+  color: string;
+}) {
   return (
     <div className="text-center">
-      <div className="text-2xl font-medium font-value" style={{ color }}>{value}</div>
+      <div className="text-2xl font-medium font-value" style={{ color }}>
+        {value}
+      </div>
       <div className="text-xs uppercase tracking-widest mt-0.5 text-text-secondary">{label}</div>
     </div>
   );

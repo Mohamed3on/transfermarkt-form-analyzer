@@ -1,6 +1,10 @@
 import { writeFile, readFile, mkdir } from "fs/promises";
 import { join } from "path";
-import { fetchMinutesValueRaw, fetchO30MostValuableRaw, fetchTopForwardsRaw } from "@/lib/fetch-minutes-value";
+import {
+  fetchMinutesValueRaw,
+  fetchO30MostValuableRaw,
+  fetchTopForwardsRaw,
+} from "@/lib/fetch-minutes-value";
 import { fetchTopScorersRaw, fetchYearlyScorersRaw } from "@/lib/fetch-top-scorers";
 import { fetchPlayerMinutesRaw } from "@/lib/fetch-player-minutes";
 import { extractClubIdFromLogoUrl } from "@/lib/format";
@@ -58,9 +62,12 @@ async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
     throw new Error("0 players from MV pages after 6 attempts — rate-limited.");
   }
   if (o30Players.length === 0) console.warn("[refresh] O30 MV unavailable — continuing without");
-  if (topForwards.length === 0) console.warn("[refresh] top forwards unavailable — continuing without");
-  if (seasonScorers.length === 0) console.warn("[refresh] season scorers unavailable — continuing without");
-  if (yearlyScorers.length === 0) console.warn("[refresh] yearly scorers unavailable — continuing without");
+  if (topForwards.length === 0)
+    console.warn("[refresh] top forwards unavailable — continuing without");
+  if (seasonScorers.length === 0)
+    console.warn("[refresh] season scorers unavailable — continuing without");
+  if (yearlyScorers.length === 0)
+    console.warn("[refresh] yearly scorers unavailable — continuing without");
 
   const seen = new Set<string>();
   const players: MinutesValuePlayer[] = [];
@@ -112,7 +119,10 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
       for (let j = 0; j < batch.length; j++) {
         const r = results[j];
         if (r.status === "fulfilled") cache[batch[j]] = r.value;
-        else { failures++; failed.push(batch[j]); }
+        else {
+          failures++;
+          failed.push(batch[j]);
+        }
       }
 
       const failRate = failures / batch.length;
@@ -120,7 +130,11 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
         state.concurrency = Math.max(CONCURRENCY.min, state.concurrency >> 1);
         state.delay *= DELAY.multiplier;
         state.cleanStreak = 0;
-      } else if (failures === 0 && ++state.cleanStreak >= CLEAN_BATCHES_TO_RAMP && state.concurrency < CONCURRENCY.max) {
+      } else if (
+        failures === 0 &&
+        ++state.cleanStreak >= CLEAN_BATCHES_TO_RAMP &&
+        state.concurrency < CONCURRENCY.max
+      ) {
         state.concurrency = Math.min(CONCURRENCY.max, state.concurrency * 2);
         state.delay = Math.max(DELAY.base, state.delay >> 1);
         state.cleanStreak = 0;
@@ -128,7 +142,9 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
         state.cleanStreak = 0;
       }
 
-      console.log(`[refresh] ${Object.keys(cache).length}/${playerIds.length} fetched (batch: ${batch.length - failures}/${batch.length} ok)`);
+      console.log(
+        `[refresh] ${Object.keys(cache).length}/${playerIds.length} fetched (batch: ${batch.length - failures}/${batch.length} ok)`,
+      );
       await writeFile(CACHE_PATH, JSON.stringify(cache));
 
       if (i + state.concurrency < remaining.length) {
@@ -140,9 +156,13 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
 
   if (remaining.length > 0) {
     if (remaining.length > 5) {
-      throw new Error(`${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds — too many`);
+      throw new Error(
+        `${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds — too many`,
+      );
     }
-    console.warn(`[refresh] ${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds — skipping: ${remaining.join(", ")}`);
+    console.warn(
+      `[refresh] ${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds — skipping: ${remaining.join(", ")}`,
+    );
   }
   return cache;
 }
@@ -178,12 +198,27 @@ function mergeStats(players: MinutesValuePlayer[], cache: Cache): void {
     if (s.playedPosition) p.playedPosition = s.playedPosition;
     if (s.recentForm?.length) p.recentForm = s.recentForm;
     if (s.positionStats?.length) p.positionStats = s.positionStats;
-    if (s.marketValue) { p.marketValue = s.marketValue; p.marketValueDisplay = s.marketValueDisplay; }
+    if (s.marketValue) {
+      p.marketValue = s.marketValue;
+      p.marketValueDisplay = s.marketValueDisplay;
+    }
     if (s.age) p.age = s.age;
 
-    if (s.isCurrentIntl) { p.isCurrentIntl = true; } else { delete p.isCurrentIntl; }
-    if (s.isNewSigning) { p.isNewSigning = true; } else { delete p.isNewSigning; }
-    if (s.isOnLoan) { p.isOnLoan = true; } else { delete p.isOnLoan; }
+    if (s.isCurrentIntl) {
+      p.isCurrentIntl = true;
+    } else {
+      delete p.isCurrentIntl;
+    }
+    if (s.isNewSigning) {
+      p.isNewSigning = true;
+    } else {
+      delete p.isNewSigning;
+    }
+    if (s.isOnLoan) {
+      p.isOnLoan = true;
+    } else {
+      delete p.isOnLoan;
+    }
   }
 }
 
@@ -272,12 +307,18 @@ async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<vo
   const fetched = players.filter((p) => cache[p.playerId]);
   const zeroStats = fetched.filter((p) => p.goals === 0 && p.assists === 0 && p.minutes === 0);
   const zeroMV = players.filter((p) => p.marketValue <= 0);
-  console.log(`[refresh] Validation: ${zeroStats.length}/${fetched.length} zero-stats, ${zeroMV.length}/${players.length} zero-MV`);
+  console.log(
+    `[refresh] Validation: ${zeroStats.length}/${fetched.length} zero-stats, ${zeroMV.length}/${players.length} zero-MV`,
+  );
   if (fetched.length > 50 && zeroStats.length / fetched.length > 0.3) {
-    throw new Error(`${zeroStats.length}/${fetched.length} players have zero stats — scraping issue.`);
+    throw new Error(
+      `${zeroStats.length}/${fetched.length} players have zero stats — scraping issue.`,
+    );
   }
   if (zeroMV.length > players.length * 0.1) {
-    throw new Error(`${zeroMV.length}/${players.length} players have no market value — scraping issue.`);
+    throw new Error(
+      `${zeroMV.length}/${players.length} players have no market value — scraping issue.`,
+    );
   }
 
   try {
@@ -286,15 +327,25 @@ async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<vo
     const newGA = players.reduce((s, p) => s + p.goals + p.assists, 0);
     const oldCount = existing.length;
     const newCount = players.filter((p) => p.marketValue > 0).length;
-    console.log(`[refresh] G+A: ${oldGA} → ${newGA} (${newGA >= oldGA ? "+" : ""}${newGA - oldGA}), players: ${oldCount} → ${newCount} (${newCount >= oldCount ? "+" : ""}${newCount - oldCount})`);
+    console.log(
+      `[refresh] G+A: ${oldGA} → ${newGA} (${newGA >= oldGA ? "+" : ""}${newGA - oldGA}), players: ${oldCount} → ${newCount} (${newCount >= oldCount ? "+" : ""}${newCount - oldCount})`,
+    );
     if (oldGA > 100 && newGA < oldGA * 0.85) {
-      throw new Error(`Stats regressed: G+A ${oldGA} → ${newGA} (${Math.round((newGA / oldGA) * 100)}%).`);
+      throw new Error(
+        `Stats regressed: G+A ${oldGA} → ${newGA} (${Math.round((newGA / oldGA) * 100)}%).`,
+      );
     }
     if (oldCount > 100 && newCount < oldCount * 0.85) {
-      throw new Error(`Player count regressed: ${oldCount} → ${newCount} (${Math.round((newCount / oldCount) * 100)}%).`);
+      throw new Error(
+        `Player count regressed: ${oldCount} → ${newCount} (${Math.round((newCount / oldCount) * 100)}%).`,
+      );
     }
   } catch (e) {
-    if (e instanceof Error && (e.message.startsWith("Stats regressed") || e.message.startsWith("Player count"))) throw e;
+    if (
+      e instanceof Error &&
+      (e.message.startsWith("Stats regressed") || e.message.startsWith("Player count"))
+    )
+      throw e;
   }
 }
 
@@ -323,7 +374,9 @@ async function main() {
   await writeFile(CLUBS_PATH, JSON.stringify(clubs));
   await writeFile(OUT_PATH, JSON.stringify(withMV));
   await writeFile(join(DATA_DIR, "updated-at.txt"), new Date().toISOString());
-  console.log(`[refresh] Done: ${withMV.length} players → ${OUT_PATH}, ${Object.keys(clubs).length} clubs cached`);
+  console.log(
+    `[refresh] Done: ${withMV.length} players → ${OUT_PATH}, ${Object.keys(clubs).length} clubs cached`,
+  );
 }
 
 main().catch((err) => {

@@ -50,7 +50,22 @@ function parseTeamRow($: cheerio.CheerioAPI, row: any): TeamStats | null {
   const points = parseInt($(cells[10]).text().trim()) || 0;
 
   if (!name) return null;
-  return { name, league, country, leaguePosition, wins, draws, losses, goalsScored: scored, goalsConceded: conceded, goalDiff, points, logoUrl, clubUrl, clubId };
+  return {
+    name,
+    league,
+    country,
+    leaguePosition,
+    wins,
+    draws,
+    losses,
+    goalsScored: scored,
+    goalsConceded: conceded,
+    goalDiff,
+    points,
+    logoUrl,
+    clubUrl,
+    clubId,
+  };
 }
 
 const AJAX_HEADERS = { "X-Requested-With": "XMLHttpRequest" };
@@ -80,7 +95,10 @@ async function fetchAllTeams(period: number): Promise<TeamStats[]> {
 function getLeaders(teams: TeamStats[]) {
   if (teams.length === 0) {
     const empty = { value: 0, teams: [] as string[] };
-    return { top: { points: empty, goalDiff: empty, goalsScored: empty, goalsConceded: empty }, bottom: { points: empty, goalDiff: empty, goalsScored: empty, goalsConceded: empty } };
+    return {
+      top: { points: empty, goalDiff: empty, goalsScored: empty, goalsConceded: empty },
+      bottom: { points: empty, goalDiff: empty, goalsScored: empty, goalsConceded: empty },
+    };
   }
   const maxPoints = Math.max(...teams.map((t) => t.points));
   const maxGoalDiff = Math.max(...teams.map((t) => t.goalDiff));
@@ -93,21 +111,49 @@ function getLeaders(teams: TeamStats[]) {
 
   return {
     top: {
-      points: { value: maxPoints, teams: teams.filter((t) => t.points === maxPoints).map((t) => t.name) },
-      goalDiff: { value: maxGoalDiff, teams: teams.filter((t) => t.goalDiff === maxGoalDiff).map((t) => t.name) },
-      goalsScored: { value: maxGoalsScored, teams: teams.filter((t) => t.goalsScored === maxGoalsScored).map((t) => t.name) },
-      goalsConceded: { value: minGoalsConceded, teams: teams.filter((t) => t.goalsConceded === minGoalsConceded).map((t) => t.name) },
+      points: {
+        value: maxPoints,
+        teams: teams.filter((t) => t.points === maxPoints).map((t) => t.name),
+      },
+      goalDiff: {
+        value: maxGoalDiff,
+        teams: teams.filter((t) => t.goalDiff === maxGoalDiff).map((t) => t.name),
+      },
+      goalsScored: {
+        value: maxGoalsScored,
+        teams: teams.filter((t) => t.goalsScored === maxGoalsScored).map((t) => t.name),
+      },
+      goalsConceded: {
+        value: minGoalsConceded,
+        teams: teams.filter((t) => t.goalsConceded === minGoalsConceded).map((t) => t.name),
+      },
     },
     bottom: {
-      points: { value: minPoints, teams: teams.filter((t) => t.points === minPoints).map((t) => t.name) },
-      goalDiff: { value: minGoalDiff, teams: teams.filter((t) => t.goalDiff === minGoalDiff).map((t) => t.name) },
-      goalsScored: { value: minGoalsScored, teams: teams.filter((t) => t.goalsScored === minGoalsScored).map((t) => t.name) },
-      goalsConceded: { value: maxGoalsConceded, teams: teams.filter((t) => t.goalsConceded === maxGoalsConceded).map((t) => t.name) },
+      points: {
+        value: minPoints,
+        teams: teams.filter((t) => t.points === minPoints).map((t) => t.name),
+      },
+      goalDiff: {
+        value: minGoalDiff,
+        teams: teams.filter((t) => t.goalDiff === minGoalDiff).map((t) => t.name),
+      },
+      goalsScored: {
+        value: minGoalsScored,
+        teams: teams.filter((t) => t.goalsScored === minGoalsScored).map((t) => t.name),
+      },
+      goalsConceded: {
+        value: maxGoalsConceded,
+        teams: teams.filter((t) => t.goalsConceded === maxGoalsConceded).map((t) => t.name),
+      },
     },
   };
 }
 
-function findQualifiedTeams(teams: TeamStats[], type: "top" | "bottom", leaders: ReturnType<typeof getLeaders>) {
+function findQualifiedTeams(
+  teams: TeamStats[],
+  type: "top" | "bottom",
+  leaders: ReturnType<typeof getLeaders>,
+) {
   const data = leaders[type];
   const categories = type === "top" ? TOP_CATEGORIES : BOTTOM_CATEGORIES;
   const results: { team: TeamStats; criteria: string[] }[] = [];
@@ -134,7 +180,9 @@ export const getAnalysis = unstable_cache(
 
     const analysis: PeriodAnalysis[] = [];
     let matchedPeriod: number | null = null;
-    const leadersPerPeriod = allTeamsPerPeriod.map((teams) => teams.length > 0 ? getLeaders(teams) : null);
+    const leadersPerPeriod = allTeamsPerPeriod.map((teams) =>
+      teams.length > 0 ? getLeaders(teams) : null,
+    );
 
     for (let i = 0; i < PERIODS.length; i++) {
       const period = PERIODS[i];
@@ -155,7 +203,12 @@ export const getAnalysis = unstable_cache(
           country: team.country,
           leaguePosition: team.leaguePosition,
           criteria,
-          stats: { points: team.points, goalDiff: team.goalDiff, goalsScored: team.goalsScored, goalsConceded: team.goalsConceded },
+          stats: {
+            points: team.points,
+            goalDiff: team.goalDiff,
+            goalsScored: team.goalsScored,
+            goalsConceded: team.goalsConceded,
+          },
           logoUrl: team.logoUrl,
           clubUrl: team.clubUrl,
           clubId: team.clubId,
@@ -166,7 +219,12 @@ export const getAnalysis = unstable_cache(
           country: team.country,
           leaguePosition: team.leaguePosition,
           criteria,
-          stats: { points: team.points, goalDiff: team.goalDiff, goalsScored: team.goalsScored, goalsConceded: team.goalsConceded },
+          stats: {
+            points: team.points,
+            goalDiff: team.goalDiff,
+            goalsScored: team.goalsScored,
+            goalsConceded: team.goalsConceded,
+          },
           logoUrl: team.logoUrl,
           clubUrl: team.clubUrl,
           clubId: team.clubId,
@@ -183,7 +241,10 @@ export const getAnalysis = unstable_cache(
 
     // Aggregate: tally how often each team leads any category across all windows
     const aggregateEntries = (type: "top" | "bottom") => {
-      const teamMap = new Map<string, { team: TeamStats; entries: { category: string; period: number; value: number }[] }>();
+      const teamMap = new Map<
+        string,
+        { team: TeamStats; entries: { category: string; period: number; value: number }[] }
+      >();
 
       for (let i = 0; i < PERIODS.length; i++) {
         const period = PERIODS[i];
@@ -225,7 +286,12 @@ export const getAnalysis = unstable_cache(
           clubId: team.clubId,
           count: entries.length,
           entries,
-          stats: { points: statsTeam.points, goalDiff: statsTeam.goalDiff, goalsScored: statsTeam.goalsScored, goalsConceded: statsTeam.goalsConceded },
+          stats: {
+            points: statsTeam.points,
+            goalDiff: statsTeam.goalDiff,
+            goalsScored: statsTeam.goalsScored,
+            goalsConceded: statsTeam.goalsConceded,
+          },
         });
       }
       return result.sort((a, b) => b.count - a.count);
@@ -244,5 +310,5 @@ export const getAnalysis = unstable_cache(
     };
   },
   ["form-analysis"],
-  { revalidate: 7200, tags: ["form-analysis"] }
+  { revalidate: 7200, tags: ["form-analysis"] },
 );

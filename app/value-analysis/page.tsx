@@ -24,25 +24,31 @@ export const metadata = createPageMetadata({
 const SPIELER_RE = /\/spieler\/(\d+)/;
 
 export default async function ValueAnalysisPage() {
-  const [mvPlayers, injuredData] = await Promise.all([
-    getMinutesValueData(),
-    getInjuredPlayers(),
-  ]);
+  const [mvPlayers, injuredData] = await Promise.all([getMinutesValueData(), getInjuredPlayers()]);
 
   const injuryMap: Record<string, { injury: string; returnDate: string; injurySince: string }> = {};
   for (const p of injuredData.players) {
     const m = p.profileUrl.match(SPIELER_RE);
-    if (m) injuryMap[m[1]] = { injury: p.injury, returnDate: p.returnDate, injurySince: p.injurySince };
+    if (m)
+      injuryMap[m[1]] = { injury: p.injury, returnDate: p.returnDate, injurySince: p.injurySince };
   }
 
   const rawPlayerStats = mvPlayers.map(toPlayerStats);
-  const defaultPlayers = applyStatsToggles(rawPlayerStats, { includePen: false, includeIntl: false });
+  const defaultPlayers = applyStatsToggles(rawPlayerStats, {
+    includePen: false,
+    includeIntl: false,
+  });
 
   const MIN_DISCOVERY_MINUTES = 260;
-  const defaultUnderperformers = findValueCandidates(defaultPlayers, { candidateOutperforms: false, minMinutes: MIN_DISCOVERY_MINUTES, sortAsc: false })
-    .map(({ count, ...p }) => ({ ...p, outperformedByCount: count }));
-  const defaultOverperformers = findValueCandidates(defaultPlayers, { candidateOutperforms: true, sortAsc: true })
-    .map(({ count, ...p }) => ({ ...p, outperformsCount: count }));
+  const defaultUnderperformers = findValueCandidates(defaultPlayers, {
+    candidateOutperforms: false,
+    minMinutes: MIN_DISCOVERY_MINUTES,
+    sortAsc: false,
+  }).map(({ count, ...p }) => ({ ...p, outperformedByCount: count }));
+  const defaultOverperformers = findValueCandidates(defaultPlayers, {
+    candidateOutperforms: true,
+    sortAsc: true,
+  }).map(({ count, ...p }) => ({ ...p, outperformsCount: count }));
 
   return (
     <>

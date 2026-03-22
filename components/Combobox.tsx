@@ -4,7 +4,14 @@ import { useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 export type ComboboxOption = { value: string; label: string };
 export type ComboboxGroup = { heading?: string; options: ComboboxOption[] };
@@ -41,7 +48,12 @@ export function Combobox({
         setOpen(false);
       }}
     >
-      <Check className={cn("shrink-0 transition-opacity", value === option.value ? "opacity-100" : "opacity-0")} />
+      <Check
+        className={cn(
+          "shrink-0 transition-opacity",
+          value === option.value ? "opacity-100" : "opacity-0",
+        )}
+      />
       {option.label}
     </CommandItem>
   );
@@ -73,7 +85,9 @@ export function Combobox({
         <Command>
           <CommandInput placeholder={searchPlaceholder || "Search..."} />
           <CommandList className="max-h-[220px]">
-            <CommandEmpty className="py-4 text-center text-xs text-muted-foreground">No results.</CommandEmpty>
+            <CommandEmpty className="py-4 text-center text-xs text-muted-foreground">
+              No results.
+            </CommandEmpty>
             {groups ? (
               groups.map((group, i) => (
                 <CommandGroup key={group.heading ?? i} heading={group.heading} className="p-1">
@@ -81,9 +95,7 @@ export function Combobox({
                 </CommandGroup>
               ))
             ) : (
-              <CommandGroup className="p-1">
-                {allOptions.map(renderItem)}
-              </CommandGroup>
+              <CommandGroup className="p-1">{allOptions.map(renderItem)}</CommandGroup>
             )}
           </CommandList>
         </Command>

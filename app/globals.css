@@ -129,14 +129,18 @@ html {
 body {
   background: var(--bg-base);
   color: var(--text-primary);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-family:
+    var(--font-geist-sans),
+    system-ui,
+    -apple-system,
+    sans-serif;
   min-height: 100vh;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Subtle grid background pattern */
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   background-image:
@@ -149,57 +153,116 @@ body::before {
 
 /* Animations */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slide-in-right {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes scale-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes blur-in {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 135, 0.1); }
-  50% { box-shadow: 0 0 40px rgba(0, 255, 135, 0.25); }
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(0, 255, 135, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 255, 135, 0.25);
+  }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 /* Utility classes */
@@ -247,33 +310,58 @@ body::before {
 
 /* Count badge pulse on change */
 @keyframes count-pop {
-  0% { transform: scale(1); }
-  40% { transform: scale(1.15); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 .animate-count-pop {
   animation: count-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes filter-dim {
-  0%, 25% { opacity: 0.4; }
-  100% { opacity: 1; }
+  0%,
+  25% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 .animate-filter-dim {
   animation: filter-dim 0.25s ease-out both;
 }
 
 /* Stagger animations - use with animation-delay or style={{ animationDelay }} */
-.stagger-1 { animation-delay: 0.03s; }
-.stagger-2 { animation-delay: 0.06s; }
-.stagger-3 { animation-delay: 0.09s; }
-.stagger-4 { animation-delay: 0.12s; }
-.stagger-5 { animation-delay: 0.15s; }
-.stagger-6 { animation-delay: 0.18s; }
+.stagger-1 {
+  animation-delay: 0.03s;
+}
+.stagger-2 {
+  animation-delay: 0.06s;
+}
+.stagger-3 {
+  animation-delay: 0.09s;
+}
+.stagger-4 {
+  animation-delay: 0.12s;
+}
+.stagger-5 {
+  animation-delay: 0.15s;
+}
+.stagger-6 {
+  animation-delay: 0.18s;
+}
 
 /* Hover animations */
 .hover-lift {
-  transition: transform 150ms ease, box-shadow 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
 @media (hover: hover) and (pointer: fine) {
   .hover-lift:hover {
@@ -293,7 +381,9 @@ body::before {
 
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -357,6 +447,8 @@ body::before {
 .font-value,
 .tabular-nums {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-feature-settings: 'tnum' on, 'lnum' on;
+  font-feature-settings:
+    "tnum" on,
+    "lnum" on;
   letter-spacing: -0.02em;
 }

@@ -15,7 +15,7 @@ export async function POST() {
         Accept: "application/vnd.github+json",
       },
       body: JSON.stringify({ ref: "main" }),
-    }
+    },
   );
 
   if (!res.ok) {

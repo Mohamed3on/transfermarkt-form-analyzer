@@ -1,16 +1,8 @@
 "use client";
 
 import type { ManagerInfo } from "@/app/types";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsTouchDevice } from "@/lib/hooks/use-touch-device";
 
@@ -91,10 +83,10 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
   const badgeColors = isBest
     ? "bg-green-600/15 text-green-500 border-green-600/30"
     : isWorst
-    ? "bg-red-600/15 text-red-500 border-red-600/30"
-    : isOnly
-    ? "bg-blue-500/15 text-blue-500 border-blue-500/30"
-    : "bg-elevated text-text-secondary border-border-subtle";
+      ? "bg-red-600/15 text-red-500 border-red-600/30"
+      : isOnly
+        ? "bg-blue-500/15 text-blue-500 border-blue-500/30"
+        : "bg-elevated text-text-secondary border-border-subtle";
 
   const badge = (
     <span
@@ -105,7 +97,9 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
       {isOnly && <span className="hidden sm:inline">👑</span>}
       <span className="sm:hidden">{manager.ppg!.toFixed(2)}</span>
       <span className="hidden sm:inline">{manager.ppg!.toFixed(2)} PPG</span>
-      <span className="text-text-secondary">({manager.ppgRank}/{manager.totalComparableManagers})</span>
+      <span className="text-text-secondary">
+        ({manager.ppgRank}/{manager.totalComparableManagers})
+      </span>
     </span>
   );
 
@@ -161,7 +155,8 @@ export function ManagerPPGBadge({ manager }: ManagerPPGBadgeProps) {
     </div>
   );
 
-  const contentClass = "max-w-[280px] sm:max-w-xs p-3 bg-card text-text-primary border border-border-subtle shadow-[0_8px_32px_rgba(0,0,0,0.4)]";
+  const contentClass =
+    "max-w-[280px] sm:max-w-xs p-3 bg-card text-text-primary border border-border-subtle shadow-[0_8px_32px_rgba(0,0,0,0.4)]";
 
   return (
     <span className="inline-flex max-w-full flex-wrap items-center gap-1">

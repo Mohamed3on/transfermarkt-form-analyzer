@@ -11,9 +11,7 @@ const QUICK_VIEW_LINKS = [
 
 export function Footer() {
   return (
-    <footer
-      className="mt-auto border-t border-border-subtle bg-black/90"
-    >
+    <footer className="mt-auto border-t border-border-subtle bg-black/90">
       <div className="page-container py-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm text-text-muted">
@@ -25,8 +23,8 @@ export function Footer() {
               className="font-medium transition-colors duration-150 hover:opacity-80 text-accent-blue"
             >
               Transfermarkt
-            </Link>
-            {" "}&middot; Built by{" "}
+            </Link>{" "}
+            &middot; Built by{" "}
             <Link
               href="https://mohamed3on.com"
               target="_blank"

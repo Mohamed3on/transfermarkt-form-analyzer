@@ -25,7 +25,7 @@ export function DetailDeck({ sections, children }: DetailDeckProps) {
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onValueChange = useCallback((v: string) => {
@@ -48,9 +48,7 @@ export function DetailDeck({ sections, children }: DetailDeckProps) {
           </Tabs>
         </div>
 
-        <div className="p-5 sm:p-6">
-          {panels[keys.indexOf(active)]}
-        </div>
+        <div className="p-5 sm:p-6">{panels[keys.indexOf(active)]}</div>
       </div>
     </section>
   );

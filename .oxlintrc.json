@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "nextjs"],
+  "ignorePatterns": [".next/**", "out/**", "build/**"],
+  "rules": {
+    "no-unused-vars": "warn",
+    "nextjs/no-img-element": "off",
+    "react-hooks/exhaustive-deps": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "rules": {
+        "no-unused-vars": "off",
+        "typescript/no-unused-vars": [
+          "warn",
+          {
+            "argsIgnorePattern": "^_",
+            "destructuredArrayIgnorePattern": "^_",
+            "caughtErrorsIgnorePattern": "^_"
+          }
+        ]
+      }
+    }
+  ]
+}

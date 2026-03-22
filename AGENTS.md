@@ -42,7 +42,7 @@ const getData = unstable_cache(
     // fetch logic
   },
   ["cache-key"],
-  { revalidate: 86400, tags: ["tag-name"] } // 24 hour cache
+  { revalidate: 86400, tags: ["tag-name"] }, // 24 hour cache
 );
 ```
 

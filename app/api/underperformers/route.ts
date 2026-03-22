@@ -7,8 +7,11 @@ const MIN_DISCOVERY_MINUTES = 260;
 export async function GET() {
   try {
     const allPlayers = await getPlayerStatsData();
-    const underperformers = findValueCandidates(allPlayers, { candidateOutperforms: false, minMinutes: MIN_DISCOVERY_MINUTES, sortAsc: false })
-      .map(({ count, ...p }) => ({ ...p, outperformedByCount: count }));
+    const underperformers = findValueCandidates(allPlayers, {
+      candidateOutperforms: false,
+      minMinutes: MIN_DISCOVERY_MINUTES,
+      sortAsc: false,
+    }).map(({ count, ...p }) => ({ ...p, outperformedByCount: count }));
     return NextResponse.json({ underperformers });
   } catch (error) {
     console.error("Error computing underperformers:", error);

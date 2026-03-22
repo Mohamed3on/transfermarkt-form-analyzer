@@ -27,7 +27,8 @@ export default function DiscoverPage() {
       <header className="mb-8">
         <h1 className="text-2xl font-pixel text-text-primary sm:text-3xl">Quick Views</h1>
         <p className="mt-2 max-w-3xl text-sm text-text-muted">
-          Pre-configured filters that jump straight to specific stats — no setup needed. Just click and explore.
+          Pre-configured filters that jump straight to specific stats — no setup needed. Just click
+          and explore.
         </p>
       </header>
 

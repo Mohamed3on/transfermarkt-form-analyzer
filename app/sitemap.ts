@@ -16,7 +16,9 @@ const CORE_ROUTES = [
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
-  const curatedHrefs = Array.from(new Set(DISCOVERY_PRESETS.map((preset) => getPresetTargetHref(preset))));
+  const curatedHrefs = Array.from(
+    new Set(DISCOVERY_PRESETS.map((preset) => getPresetTargetHref(preset))),
+  );
   const coreHrefSet = new Set(CORE_ROUTES);
   const coreEntries: MetadataRoute.Sitemap = CORE_ROUTES.map((path) => ({
     url: absoluteUrl(path),

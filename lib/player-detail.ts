@@ -166,11 +166,16 @@ function buildTrend(
     appearances.some((appearance) => appearance.playerId === playerId),
   );
   if (winnerSequence) {
-    const appearances = [...winnerSequence].sort((left, right) => right.period.localeCompare(left.period));
+    const appearances = [...winnerSequence].sort((left, right) =>
+      right.period.localeCompare(left.period),
+    );
     return {
       type: "winner",
       appearances,
-      totalAbsoluteChange: appearances.reduce((sum, appearance) => sum + appearance.absoluteChange, 0),
+      totalAbsoluteChange: appearances.reduce(
+        (sum, appearance) => sum + appearance.absoluteChange,
+        0,
+      ),
       latestAbsoluteChange: appearances[0]?.absoluteChange ?? 0,
     };
   }
@@ -180,11 +185,16 @@ function buildTrend(
   );
   if (!loserSequence) return null;
 
-  const appearances = [...loserSequence].sort((left, right) => right.period.localeCompare(left.period));
+  const appearances = [...loserSequence].sort((left, right) =>
+    right.period.localeCompare(left.period),
+  );
   return {
     type: "loser",
     appearances,
-    totalAbsoluteChange: appearances.reduce((sum, appearance) => sum + appearance.absoluteChange, 0),
+    totalAbsoluteChange: appearances.reduce(
+      (sum, appearance) => sum + appearance.absoluteChange,
+      0,
+    ),
     latestAbsoluteChange: appearances[0]?.absoluteChange ?? 0,
   };
 }
@@ -240,8 +250,16 @@ function buildFormSummary(player: MinutesValuePlayer): PlayerFormSummary {
       const f5 = getFormStats(player, 5);
       const f10 = getFormStats(player, 10);
       return {
-        last5Npga: f5.npga, last5Goals: f5.goals, last5PenaltyGoals: f5.penaltyGoals, last5Assists: f5.assists, last5Minutes: f5.minutes,
-        last10Npga: f10.npga, last10Goals: f10.goals, last10PenaltyGoals: f10.penaltyGoals, last10Assists: f10.assists, last10Minutes: f10.minutes,
+        last5Npga: f5.npga,
+        last5Goals: f5.goals,
+        last5PenaltyGoals: f5.penaltyGoals,
+        last5Assists: f5.assists,
+        last5Minutes: f5.minutes,
+        last10Npga: f10.npga,
+        last10Goals: f10.goals,
+        last10PenaltyGoals: f10.penaltyGoals,
+        last10Assists: f10.assists,
+        last10Minutes: f10.minutes,
       };
     })(),
   };
@@ -249,13 +267,19 @@ function buildFormSummary(player: MinutesValuePlayer): PlayerFormSummary {
 
 function sortOutperformers(players: PlayerStats[]): PlayerStats[] {
   return [...players].sort(
-    (left, right) => right.points - left.points || left.marketValue - right.marketValue || left.minutes! - right.minutes!,
+    (left, right) =>
+      right.points - left.points ||
+      left.marketValue - right.marketValue ||
+      left.minutes! - right.minutes!,
   );
 }
 
 function sortUnderperformers(players: PlayerStats[]): PlayerStats[] {
   return [...players].sort(
-    (left, right) => right.marketValue - left.marketValue || left.points - right.points || right.minutes! - left.minutes!,
+    (left, right) =>
+      right.marketValue - left.marketValue ||
+      left.points - right.points ||
+      right.minutes! - left.minutes!,
   );
 }
 
@@ -284,7 +308,8 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
   const positionPlayers: MinutesValuePlayer[] = [];
   for (const candidate of players) {
     if (candidate.league === player.league) leaguePlayers.push(candidate);
-    if (getBroadPositionGroup(effectivePosition(candidate)) === playerBroadPosition) positionPlayers.push(candidate);
+    if (getBroadPositionGroup(effectivePosition(candidate)) === playerBroadPosition)
+      positionPlayers.push(candidate);
     const matchesClub = clubId
       ? extractClubIdFromLogoUrl(candidate.clubLogoUrl) === clubId
       : candidate.club === player.club && candidate.league === player.league;
@@ -296,27 +321,26 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
     includePen: false,
     includeIntl: false,
   });
-  const comparisonTarget = comparisonPlayers.find((candidate) => candidate.playerId === player.playerId) ?? playerStats;
+  const comparisonTarget =
+    comparisonPlayers.find((candidate) => candidate.playerId === player.playerId) ?? playerStats;
   const targetPosition = effectivePosition(comparisonTarget);
   const underperformers = sortUnderperformers(
-    comparisonPlayers
-      .filter(
-        (candidate) =>
-          candidate.playerId !== comparisonTarget.playerId &&
-          candidate.marketValue >= comparisonTarget.marketValue &&
-          strictlyOutperforms(comparisonTarget, candidate) &&
-          canBeUnderperformerAgainst(effectivePosition(candidate), targetPosition),
-      ),
+    comparisonPlayers.filter(
+      (candidate) =>
+        candidate.playerId !== comparisonTarget.playerId &&
+        candidate.marketValue >= comparisonTarget.marketValue &&
+        strictlyOutperforms(comparisonTarget, candidate) &&
+        canBeUnderperformerAgainst(effectivePosition(candidate), targetPosition),
+    ),
   );
   const outperformers = sortOutperformers(
-    comparisonPlayers
-      .filter(
-        (candidate) =>
-          candidate.playerId !== comparisonTarget.playerId &&
-          candidate.marketValue <= comparisonTarget.marketValue &&
-          strictlyOutperforms(candidate, comparisonTarget) &&
-          canBeOutperformerAgainst(effectivePosition(candidate), targetPosition),
-      ),
+    comparisonPlayers.filter(
+      (candidate) =>
+        candidate.playerId !== comparisonTarget.playerId &&
+        candidate.marketValue <= comparisonTarget.marketValue &&
+        strictlyOutperforms(candidate, comparisonTarget) &&
+        canBeOutperformerAgainst(effectivePosition(candidate), targetPosition),
+    ),
   );
 
   const cheaperPlayersBeatingTarget = countComparisons(comparisonTarget, comparisonPlayers, false);
@@ -325,8 +349,8 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
     pricierPlayersBeatenByTarget >= MIN_COMPARISON_COUNT
       ? "bargain"
       : cheaperPlayersBeatingTarget >= MIN_COMPARISON_COUNT
-      ? "overpriced"
-      : null;
+        ? "overpriced"
+        : null;
 
   const topClubmatesByNpga = [...clubmates]
     .sort((left, right) => {
@@ -339,10 +363,22 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
   // Minutes benchmark: compare against same-or-higher value players with same-or-better availability
   const benchPct = missedPct(player);
   const playingLess = players
-    .filter((p) => p.playerId !== player.playerId && p.marketValue >= player.marketValue && p.minutes <= player.minutes && missedPct(p) <= benchPct)
+    .filter(
+      (p) =>
+        p.playerId !== player.playerId &&
+        p.marketValue >= player.marketValue &&
+        p.minutes <= player.minutes &&
+        missedPct(p) <= benchPct,
+    )
     .sort((a, b) => a.minutes - b.minutes || b.marketValue - a.marketValue);
   const playingMore = players
-    .filter((p) => p.playerId !== player.playerId && p.marketValue >= player.marketValue && p.minutes > player.minutes && missedPct(p) <= benchPct)
+    .filter(
+      (p) =>
+        p.playerId !== player.playerId &&
+        p.marketValue >= player.marketValue &&
+        p.minutes > player.minutes &&
+        missedPct(p) <= benchPct,
+    )
     .sort((a, b) => a.minutes - b.minutes || b.marketValue - a.marketValue);
 
   // Subgroup rankings (loan players, new signings)
@@ -404,21 +440,24 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
       playingMore: playingMore.slice(0, 10).map(stripRecentForm),
     },
     subgroupRankings,
-    penaltyRank: (player.penaltyGoals ?? 0) > 0
-      ? (() => {
-          const penaltyTakers = players.filter((p) => (p.penaltyGoals ?? 0) > 0);
-          return { rank: compareByMetric(player.playerId, penaltyTakers, (p) => p.penaltyGoals ?? 0), total: penaltyTakers.length };
-        })()
-      : null,
+    penaltyRank:
+      (player.penaltyGoals ?? 0) > 0
+        ? (() => {
+            const penaltyTakers = players.filter((p) => (p.penaltyGoals ?? 0) > 0);
+            return {
+              rank: compareByMetric(player.playerId, penaltyTakers, (p) => p.penaltyGoals ?? 0),
+              total: penaltyTakers.length,
+            };
+          })()
+        : null,
   };
 }
 
 export const getPlayerDetailData = cache((playerId: string) =>
-  unstable_cache(
-    () => computePlayerDetailData(playerId),
-    [`player-detail-${playerId}`],
-    { revalidate: 86400, tags: ["form-analysis"] },
-  )(),
+  unstable_cache(() => computePlayerDetailData(playerId), [`player-detail-${playerId}`], {
+    revalidate: 86400,
+    tags: ["form-analysis"],
+  })(),
 );
 
 export function formatTrendLabel(trend: PlayerTrend): string {

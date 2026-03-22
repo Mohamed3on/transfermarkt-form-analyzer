@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowUpRight, Crown, Medal, TrendingDown, TrendingUp, TriangleAlert } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Crown,
+  Medal,
+  TrendingDown,
+  TrendingUp,
+  TriangleAlert,
+} from "lucide-react";
 import { createPageMetadata } from "@/lib/metadata";
 import {
   extractClubIdFromLogoUrl,
@@ -30,7 +38,9 @@ function InjuredPlayerRow({ player }: { player: InjuredPlayer }) {
   const returnInfo = formatReturnInfo(player.returnDate);
   const duration = formatInjuryDuration(player.injurySince);
   const playerId = getPlayerIdFromProfileUrl(player.profileUrl);
-  const href = playerId ? getPlayerDetailHref(playerId) : `https://www.transfermarkt.com${player.profileUrl}`;
+  const href = playerId
+    ? getPlayerDetailHref(playerId)
+    : `https://www.transfermarkt.com${player.profileUrl}`;
   return (
     <Link
       href={href}
@@ -38,7 +48,12 @@ function InjuredPlayerRow({ player }: { player: InjuredPlayer }) {
       rel={playerId ? undefined : "noopener noreferrer"}
       className="flex items-center gap-3 rounded-xl border border-border-subtle bg-elevated p-2.5 transition-colors hover:border-border-medium hover:bg-card-hover"
     >
-      <PlayerAvatar imageUrl={player.imageUrl} name={player.name} size="sm" className="border border-border-subtle" />
+      <PlayerAvatar
+        imageUrl={player.imageUrl}
+        name={player.name}
+        size="sm"
+        className="border border-border-subtle"
+      />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm text-text-primary">{player.name}</p>
         <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-text-secondary">
@@ -56,7 +71,9 @@ function InjuredPlayerRow({ player }: { player: InjuredPlayer }) {
       <div className="shrink-0 text-right">
         <p className="text-sm font-value text-accent-hot">{player.marketValue}</p>
         {returnInfo && (
-          <p className={`text-[11px] ${returnInfo.imminent ? "text-emerald-400 font-medium" : "text-text-muted"}`}>
+          <p
+            className={`text-[11px] ${returnInfo.imminent ? "text-emerald-400 font-medium" : "text-text-muted"}`}
+          >
             {returnInfo.label}
           </p>
         )}
@@ -65,11 +82,7 @@ function InjuredPlayerRow({ player }: { player: InjuredPlayer }) {
   );
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ clubId: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ clubId: string }> }) {
   const { clubId } = await params;
   const data = await getTeamDetailData(clubId);
 
@@ -89,11 +102,7 @@ export async function generateMetadata({
   });
 }
 
-export default async function TeamDetailPage({
-  params,
-}: {
-  params: Promise<{ clubId: string }>;
-}) {
+export default async function TeamDetailPage({ params }: { params: Promise<{ clubId: string }> }) {
   const { clubId } = await params;
   const [data, injuredData] = await Promise.all([
     getTeamDetailData(clubId),
@@ -116,11 +125,17 @@ export default async function TeamDetailPage({
             <p className="mt-1 text-sm text-text-secondary">Redirecting to Transfermarkt&hellip;</p>
           </div>
           <meta httpEquiv="refresh" content={`1;url=${url}`} />
-          <a href={url} className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-elevated px-4 py-2 text-sm text-text-primary transition-colors hover:bg-card-hover">
+          <a
+            href={url}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-elevated px-4 py-2 text-sm text-text-primary transition-colors hover:bg-card-hover"
+          >
             Go now
             <ArrowUpRight className="h-3.5 w-3.5" />
           </a>
-          <Link href="/expected-position" className="text-xs text-text-muted transition-colors hover:text-text-secondary">
+          <Link
+            href="/expected-position"
+            className="text-xs text-text-muted transition-colors hover:text-text-secondary"
+          >
             &larr; Back to team rankings
           </Link>
         </div>
@@ -170,8 +185,8 @@ export default async function TeamDetailPage({
     ? teamForm.deltaPts > 0
       ? "above expected"
       : teamForm.deltaPts < 0
-      ? "below expected"
-      : "on par"
+        ? "below expected"
+        : "on par"
     : null;
 
   return (
@@ -227,13 +242,21 @@ export default async function TeamDetailPage({
                   <ManagerClient clubId={clubId} />
 
                   <div className="mt-5 flex flex-wrap items-center gap-3">
-                    <Button asChild variant="outline" className="border-border-medium bg-elevated text-text-primary hover:bg-card-hover">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="border-border-medium bg-elevated text-text-primary hover:bg-card-hover"
+                    >
                       <Link href={`/players?club=${encodeURIComponent(squad[0]?.club ?? name)}`}>
                         Filter in Players
                       </Link>
                     </Button>
                     {clubUrl && (
-                      <Button asChild variant="outline" className="border-border-medium bg-elevated text-text-primary hover:bg-card-hover">
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="border-border-medium bg-elevated text-text-primary hover:bg-card-hover"
+                      >
                         <a href={clubUrl} target="_blank" rel="noopener noreferrer">
                           Transfermarkt
                           <ArrowUpRight className="ml-2 h-4 w-4" />
@@ -245,7 +268,9 @@ export default async function TeamDetailPage({
               </div>
             </div>
 
-            <div className={`grid gap-x-8 gap-y-5 ${teamForm ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1"}`}>
+            <div
+              className={`grid gap-x-8 gap-y-5 ${teamForm ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1"}`}
+            >
               {teamForm && (
                 <HeroMetric
                   label="League position"
@@ -257,9 +282,17 @@ export default async function TeamDetailPage({
               {teamForm && (
                 <HeroMetric
                   label="Points gap"
-                  value={teamForm.deltaPts > 0 ? `+${teamForm.deltaPts}` : String(teamForm.deltaPts)}
+                  value={
+                    teamForm.deltaPts > 0 ? `+${teamForm.deltaPts}` : String(teamForm.deltaPts)
+                  }
                   subline={deltaLabel ?? ""}
-                  accentClass={teamForm.deltaPts > 0 ? "text-emerald-400" : teamForm.deltaPts < 0 ? "text-red-400" : "text-text-primary"}
+                  accentClass={
+                    teamForm.deltaPts > 0
+                      ? "text-emerald-400"
+                      : teamForm.deltaPts < 0
+                        ? "text-red-400"
+                        : "text-text-primary"
+                  }
                 />
               )}
               {teamForm && (
@@ -273,51 +306,65 @@ export default async function TeamDetailPage({
             </div>
 
             <div className="col-span-full flex flex-wrap gap-2.5 empty:hidden">
-                {worstHit.reason && clubInjuries.length > 0 && (() => {
+              {worstHit.reason &&
+                clubInjuries.length > 0 &&
+                (() => {
                   const injuryValue = clubInjuries.reduce((s, p) => s + p.marketValueNum, 0);
                   const scopeLabel = worstHit.scope === "top5" ? "in top 5 leagues" : "in league";
-                  const label = worstHit.reason === "count" || worstHit.reason === "both"
-                    ? `Most injuries ${scopeLabel} · ${clubInjuries.length} out · ${formatMarketValue(injuryValue)}`
-                    : `Most value sidelined ${scopeLabel} · ${formatMarketValue(injuryValue)} · ${clubInjuries.length} out`;
+                  const label =
+                    worstHit.reason === "count" || worstHit.reason === "both"
+                      ? `Most injuries ${scopeLabel} · ${clubInjuries.length} out · ${formatMarketValue(injuryValue)}`
+                      : `Most value sidelined ${scopeLabel} · ${formatMarketValue(injuryValue)} · ${clubInjuries.length} out`;
                   return (
                     <Badge className="rounded-full border border-accent-cold-border bg-accent-cold-glow px-3 py-1 text-xs text-accent-cold-soft">
                       {label}
                     </Badge>
                   );
                 })()}
-                {trendPlayers.map((tp) => (
-                  <Link key={tp.player.playerId} href={getPlayerDetailHref(tp.player.playerId)}>
-                    <Badge className={`rounded-full border px-3 py-1 text-xs transition-colors hover:brightness-125 ${
+              {trendPlayers.map((tp) => (
+                <Link key={tp.player.playerId} href={getPlayerDetailHref(tp.player.playerId)}>
+                  <Badge
+                    className={`rounded-full border px-3 py-1 text-xs transition-colors hover:brightness-125 ${
                       tp.type === "winner"
                         ? "border-accent-hot-border bg-accent-hot-glow text-accent-hot"
                         : "border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft"
-                    }`}>
-                      {tp.type === "winner" ? <TrendingUp className="mr-1 h-3.5 w-3.5" /> : <TrendingDown className="mr-1 h-3.5 w-3.5" />}
-                      {tp.player.name} · {tp.appearances.length} {tp.type === "winner" ? "rises" : "drops"}
-                    </Badge>
-                  </Link>
-                ))}
-                {formPresence.map((fp) => (
-                  <Link key={`${fp.type}-${fp.category}`} href="/form">
-                    <Badge className={`rounded-full border px-3 py-1 text-xs transition-colors hover:brightness-125 ${
+                    }`}
+                  >
+                    {tp.type === "winner" ? (
+                      <TrendingUp className="mr-1 h-3.5 w-3.5" />
+                    ) : (
+                      <TrendingDown className="mr-1 h-3.5 w-3.5" />
+                    )}
+                    {tp.player.name} · {tp.appearances.length}{" "}
+                    {tp.type === "winner" ? "rises" : "drops"}
+                  </Badge>
+                </Link>
+              ))}
+              {formPresence.map((fp) => (
+                <Link key={`${fp.type}-${fp.category}`} href="/form">
+                  <Badge
+                    className={`rounded-full border px-3 py-1 text-xs transition-colors hover:brightness-125 ${
                       fp.type === "top"
                         ? "border-accent-hot-border bg-accent-hot-glow text-accent-hot"
                         : "border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft"
-                    }`}>
-                      {fp.type === "top" ? "↑" : "↓"} {fp.category} · last {fp.periods.join(", ")}
-                    </Badge>
-                  </Link>
-                ))}
+                    }`}
+                  >
+                    {fp.type === "top" ? "↑" : "↓"} {fp.category} · last {fp.periods.join(", ")}
+                  </Badge>
+                </Link>
+              ))}
             </div>
           </div>
         </section>
 
-        <DetailDeck sections={[
-          { value: "form", label: "Recent Form" },
-          { value: "squad", label: "Squad" },
-          { value: "value", label: "Value Analysis" },
-          { value: "injuries", label: "Injuries" },
-        ]}>
+        <DetailDeck
+          sections={[
+            { value: "form", label: "Recent Form" },
+            { value: "squad", label: "Squad" },
+            { value: "value", label: "Value Analysis" },
+            { value: "injuries", label: "Injuries" },
+          ]}
+        >
           {/* Tab 1: Recent Form */}
           <div>
             {recentForm.length === 0 ? (
@@ -331,7 +378,12 @@ export default async function TeamDetailPage({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border-subtle bg-black/20 text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                        <th className="px-3 py-2 text-left font-normal">Window <span className="text-text-secondary">/ {recentForm[0]?.totalTeams ?? ""} top-5 league teams</span></th>
+                        <th className="px-3 py-2 text-left font-normal">
+                          Window{" "}
+                          <span className="text-text-secondary">
+                            / {recentForm[0]?.totalTeams ?? ""} top-5 league teams
+                          </span>
+                        </th>
                         <th className="px-3 py-2 text-right font-normal">W</th>
                         <th className="px-3 py-2 text-right font-normal">D</th>
                         <th className="px-3 py-2 text-right font-normal">L</th>
@@ -339,7 +391,9 @@ export default async function TeamDetailPage({
                         <th className="px-3 py-2 text-right font-normal">GF</th>
                         <th className="px-3 py-2 text-right font-normal">GA</th>
                         <th className="px-3 py-2 text-right font-normal">GD</th>
-                        <th className="hidden sm:table-cell px-3 py-2 text-right font-normal">PPG</th>
+                        <th className="hidden sm:table-cell px-3 py-2 text-right font-normal">
+                          PPG
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -354,8 +408,21 @@ export default async function TeamDetailPage({
                           const fromBottom = totalTeams - r + 1;
                           const isTop = r <= 3;
                           const isBottom = fromBottom <= 3;
-                          const color = isTop ? "text-emerald-400" : isBottom ? "text-red-400" : "text-text-secondary";
-                          const label = r === 1 ? "best" : fromBottom === 1 ? "worst" : isTop ? ordinal(r) : isBottom ? `${ordinal(fromBottom)} worst` : `#${r}`;
+                          const color = isTop
+                            ? "text-emerald-400"
+                            : isBottom
+                              ? "text-red-400"
+                              : "text-text-secondary";
+                          const label =
+                            r === 1
+                              ? "best"
+                              : fromBottom === 1
+                                ? "worst"
+                                : isTop
+                                  ? ordinal(r)
+                                  : isBottom
+                                    ? `${ordinal(fromBottom)} worst`
+                                    : `#${r}`;
                           return (
                             <span className={`ml-1.5 text-[11px] ${color}`}>
                               {r === 1 && <Crown className="mr-0.5 inline h-2.5 w-2.5" />}
@@ -366,24 +433,50 @@ export default async function TeamDetailPage({
                           );
                         };
                         return (
-                          <tr key={period} className="border-b border-border-subtle/50 last:border-0">
-                            <td className="px-3 py-2.5 text-text-secondary whitespace-nowrap">Last {period}</td>
-                            <td className="px-3 py-2.5 text-right font-value text-text-primary">{stats.wins}</td>
-                            <td className="px-3 py-2.5 text-right font-value text-text-primary">{stats.draws}</td>
-                            <td className="px-3 py-2.5 text-right font-value text-text-primary">{stats.losses}</td>
-                            <td className={`px-3 py-2.5 text-right font-value text-accent-blue whitespace-nowrap transition-colors ${cellHighlight("points")}`}>
-                              {stats.points}{rankLabel(ranks.points)}
+                          <tr
+                            key={period}
+                            className="border-b border-border-subtle/50 last:border-0"
+                          >
+                            <td className="px-3 py-2.5 text-text-secondary whitespace-nowrap">
+                              Last {period}
                             </td>
-                            <td className={`px-3 py-2.5 text-right font-value text-text-primary whitespace-nowrap transition-colors ${cellHighlight("goalsScored")}`}>
-                              {stats.goalsScored}{rankLabel(ranks.goalsScored)}
+                            <td className="px-3 py-2.5 text-right font-value text-text-primary">
+                              {stats.wins}
                             </td>
-                            <td className={`px-3 py-2.5 text-right font-value text-text-primary whitespace-nowrap transition-colors ${cellHighlight("goalsConceded")}`}>
-                              {stats.goalsConceded}{rankLabel(ranks.goalsConceded)}
+                            <td className="px-3 py-2.5 text-right font-value text-text-primary">
+                              {stats.draws}
                             </td>
-                            <td className={`px-3 py-2.5 text-right font-value whitespace-nowrap transition-colors ${stats.goalDiff > 0 ? "text-emerald-400" : stats.goalDiff < 0 ? "text-red-400" : "text-text-primary"} ${cellHighlight("goalDiff")}`}>
-                              {stats.goalDiff > 0 ? "+" : ""}{stats.goalDiff}{rankLabel(ranks.goalDiff)}
+                            <td className="px-3 py-2.5 text-right font-value text-text-primary">
+                              {stats.losses}
                             </td>
-                            <td className="hidden sm:table-cell px-3 py-2.5 text-right font-value text-text-secondary">{ppg}</td>
+                            <td
+                              className={`px-3 py-2.5 text-right font-value text-accent-blue whitespace-nowrap transition-colors ${cellHighlight("points")}`}
+                            >
+                              {stats.points}
+                              {rankLabel(ranks.points)}
+                            </td>
+                            <td
+                              className={`px-3 py-2.5 text-right font-value text-text-primary whitespace-nowrap transition-colors ${cellHighlight("goalsScored")}`}
+                            >
+                              {stats.goalsScored}
+                              {rankLabel(ranks.goalsScored)}
+                            </td>
+                            <td
+                              className={`px-3 py-2.5 text-right font-value text-text-primary whitespace-nowrap transition-colors ${cellHighlight("goalsConceded")}`}
+                            >
+                              {stats.goalsConceded}
+                              {rankLabel(ranks.goalsConceded)}
+                            </td>
+                            <td
+                              className={`px-3 py-2.5 text-right font-value whitespace-nowrap transition-colors ${stats.goalDiff > 0 ? "text-emerald-400" : stats.goalDiff < 0 ? "text-red-400" : "text-text-primary"} ${cellHighlight("goalDiff")}`}
+                            >
+                              {stats.goalDiff > 0 ? "+" : ""}
+                              {stats.goalDiff}
+                              {rankLabel(ranks.goalDiff)}
+                            </td>
+                            <td className="hidden sm:table-cell px-3 py-2.5 text-right font-value text-text-secondary">
+                              {ppg}
+                            </td>
                           </tr>
                         );
                       })}
@@ -396,7 +489,10 @@ export default async function TeamDetailPage({
                   <SectionPanel
                     title="Category leaders"
                     aside={
-                      <Link href="/form" className="text-xs text-text-secondary transition-colors hover:text-text-primary">
+                      <Link
+                        href="/form"
+                        className="text-xs text-text-secondary transition-colors hover:text-text-primary"
+                      >
                         Full form analysis &rarr;
                       </Link>
                     }
@@ -411,7 +507,9 @@ export default async function TeamDetailPage({
                               : "border-accent-cold/25 bg-accent-cold-glow text-accent-cold-soft"
                           }`}
                         >
-                          <span className="font-medium">{fp.type === "top" ? "↑" : "↓"} {fp.category}</span>
+                          <span className="font-medium">
+                            {fp.type === "top" ? "↑" : "↓"} {fp.category}
+                          </span>
                           <span className="ml-1.5 opacity-60">in last {fp.periods.join(", ")}</span>
                         </div>
                       ))}
@@ -430,7 +528,10 @@ export default async function TeamDetailPage({
             <SectionPanel
               title={`Bargains at ${name} (${overperformers.length})`}
               aside={
-                <Link href="/value-analysis?mode=ga&dTab=bargains" className="text-xs text-text-secondary transition-colors hover:text-text-primary">
+                <Link
+                  href="/value-analysis?mode=ga&dTab=bargains"
+                  className="text-xs text-text-secondary transition-colors hover:text-text-primary"
+                >
                   Full analysis &rarr;
                 </Link>
               }
@@ -451,7 +552,10 @@ export default async function TeamDetailPage({
             <SectionPanel
               title={`Overpriced at ${name} (${underperformers.length})`}
               aside={
-                <Link href="/value-analysis?mode=ga" className="text-xs text-text-secondary transition-colors hover:text-text-primary">
+                <Link
+                  href="/value-analysis?mode=ga"
+                  className="text-xs text-text-secondary transition-colors hover:text-text-primary"
+                >
                   Full analysis &rarr;
                 </Link>
               }
