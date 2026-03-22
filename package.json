@@ -56,6 +56,6 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": "oxlint --max-warnings 0",
-    "*.{ts,tsx,json,css,md}": "oxfmt --write"
+    "*.{ts,tsx,css,md}": "oxfmt --write"
   }
 }
