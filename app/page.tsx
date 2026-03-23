@@ -36,6 +36,8 @@ import type {
   MinutesValuePlayer,
 } from "@/app/types";
 
+export const revalidate = 7200; // 2 hours — data refreshes daily
+
 export const metadata = createPageMetadata({
   title: "Football Form, Value & Injury Analytics",
   description:

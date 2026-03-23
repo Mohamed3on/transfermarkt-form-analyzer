@@ -154,3 +154,28 @@ export async function getMinutesValueData(): Promise<MinutesValuePlayer[]> {
   const raw = await readFile(filePath, "utf-8");
   return JSON.parse(raw) as MinutesValuePlayer[];
 }
+
+/**
+ * Strip heavy fields before serializing to client components.
+ * - `recentForm`: 3.3MB (78% of full payload). Pass `trimRecentForm: true` to
+ *   keep only the 4 fields the client actually reads (goals, assists, penaltyGoals, minutes).
+ * - `positionStats`: 210KB, unused by any client component.
+ */
+export function slimForClient(
+  players: MinutesValuePlayer[],
+  opts?: { trimRecentForm?: boolean },
+): MinutesValuePlayer[] {
+  return players.map(({ positionStats: _positionStats, recentForm, ...rest }) => ({
+    ...rest,
+    ...(opts?.trimRecentForm && recentForm
+      ? {
+          recentForm: recentForm.map(({ goals, assists, penaltyGoals, minutes }) => ({
+            goals,
+            assists,
+            penaltyGoals,
+            minutes,
+          })) as typeof recentForm,
+        }
+      : {}),
+  }));
+}

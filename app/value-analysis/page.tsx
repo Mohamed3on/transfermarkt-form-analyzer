@@ -1,11 +1,18 @@
 import { Suspense } from "react";
-import { getMinutesValueData, toPlayerStats, applyStatsToggles } from "@/lib/fetch-minutes-value";
+import {
+  getMinutesValueData,
+  toPlayerStats,
+  applyStatsToggles,
+  slimForClient,
+} from "@/lib/fetch-minutes-value";
 import { getInjuredPlayers } from "@/lib/injured";
 import { findValueCandidates } from "@/lib/value-analysis";
 import { DataLastUpdated } from "@/app/components/DataLastUpdated";
 import { ValueAnalysisUI } from "./ValueAnalysisUI";
 import { createPageMetadata } from "@/lib/metadata";
 import { DiscoveryLinkGrid } from "@/app/components/DiscoveryLinkGrid";
+
+export const revalidate = 7200; // 2 hours — data refreshes daily
 
 export const metadata = createPageMetadata({
   title: "Over/Under",
@@ -55,7 +62,7 @@ export default async function ValueAnalysisPage() {
       <Suspense>
         <ValueAnalysisUI
           initialAllPlayers={defaultPlayers}
-          initialData={mvPlayers}
+          initialData={slimForClient(mvPlayers)}
           injuryMap={injuryMap}
           initialUnderperformers={defaultUnderperformers}
           initialOverperformers={defaultOverperformers}

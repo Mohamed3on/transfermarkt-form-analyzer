@@ -9,7 +9,12 @@ export async function GET() {
       candidateOutperforms: true,
       sortAsc: true,
     }).map(({ count, ...p }) => ({ ...p, outperformsCount: count }));
-    return NextResponse.json({ overperformers });
+    return NextResponse.json(
+      { overperformers },
+      {
+        headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
+      },
+    );
   } catch (error) {
     console.error("Error computing overperformers:", error);
     return NextResponse.json({ error: "Failed to compute overperformers" }, { status: 500 });

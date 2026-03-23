@@ -20,6 +20,7 @@ import {
   ordinal,
 } from "@/lib/format";
 import { getTeamDetailData } from "@/lib/team-detail";
+import { slimForClient } from "@/lib/fetch-minutes-value";
 import { getInjuredPlayers } from "@/lib/injured";
 import { getWorstHitResult } from "@/lib/injury-utils";
 import { Badge } from "@/components/ui/badge";
@@ -521,7 +522,7 @@ export default async function TeamDetailPage({ params }: { params: Promise<{ clu
           </div>
 
           {/* Tab 2: Squad */}
-          <SquadTab squad={squad} />
+          <SquadTab squad={slimForClient(squad)} />
 
           {/* Tab 3: Value Analysis */}
           <div className="space-y-8">

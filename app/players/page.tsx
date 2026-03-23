@@ -1,9 +1,11 @@
-import { getMinutesValueData } from "@/lib/fetch-minutes-value";
+import { getMinutesValueData, slimForClient } from "@/lib/fetch-minutes-value";
 import { getInjuredPlayers } from "@/lib/injured";
 import { DataLastUpdated } from "@/app/components/DataLastUpdated";
 import { PlayersUI } from "./PlayersUI";
 import { createPageMetadata } from "@/lib/metadata";
 import { DiscoveryLinkGrid } from "@/app/components/DiscoveryLinkGrid";
+
+export const revalidate = 7200; // 2 hours — data refreshes daily
 
 export const metadata = createPageMetadata({
   title: "Player Explorer",
@@ -33,7 +35,10 @@ export default async function PlayersPage() {
 
   return (
     <>
-      <PlayersUI initialData={players} injuryMap={injuryMap} />
+      <PlayersUI
+        initialData={slimForClient(players, { trimRecentForm: true })}
+        injuryMap={injuryMap}
+      />
       <DiscoveryLinkGrid
         section="players"
         title="Player Scouting Boards"

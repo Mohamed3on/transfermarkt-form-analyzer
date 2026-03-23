@@ -12,7 +12,12 @@ export async function GET() {
       minMinutes: MIN_DISCOVERY_MINUTES,
       sortAsc: false,
     }).map(({ count, ...p }) => ({ ...p, outperformedByCount: count }));
-    return NextResponse.json({ underperformers });
+    return NextResponse.json(
+      { underperformers },
+      {
+        headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
+      },
+    );
   } catch (error) {
     console.error("Error computing underperformers:", error);
     return NextResponse.json({ error: "Failed to compute underperformers" }, { status: 500 });
