@@ -143,12 +143,11 @@ function AggregatedTeamCard({
           variant="outline"
           className={`shrink-0 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${isTop ? "bg-accent-hot-glow text-accent-hot border-accent-hot" : "bg-accent-cold-glow text-accent-cold border-accent-cold"}`}
         >
-          <span className="font-value">{team.count}</span>&nbsp;
-          {team.count === 1 ? "category" : "categories"} led
+          {isTop ? "Top" : "Bottom"}&nbsp;in&nbsp;<span className="font-value">{team.count}</span>
         </Badge>
       </div>
 
-      {/* What they led */}
+      {/* Category breakdown */}
       <div className="mt-3 space-y-1">
         {grouped.map(({ category, periodValues }) => (
           <div key={category} className="text-xs sm:text-sm text-text-muted">
