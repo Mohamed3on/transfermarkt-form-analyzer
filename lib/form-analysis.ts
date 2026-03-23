@@ -168,15 +168,43 @@ function findQualifiedTeams(
   return results;
 }
 
+async function fetchAllPeriodsWithRetry(): Promise<TeamStats[][]> {
+  const settled = await Promise.allSettled(PERIODS.map(fetchAllTeams));
+  const results = settled.map((r) =>
+    r.status === "fulfilled" && r.value.length > 0 ? r.value : null,
+  );
+
+  // Retry failed periods once, sequentially to avoid overwhelming rate limiter
+  const failedIndices = results.flatMap((r, i) => (r === null ? [i] : []));
+  if (failedIndices.length > 0 && failedIndices.length < PERIODS.length) {
+    console.warn(
+      `[form] Retrying failed periods: ${failedIndices.map((i) => PERIODS[i]).join(", ")}`,
+    );
+    await new Promise((r) => setTimeout(r, 5000));
+    for (const i of failedIndices) {
+      try {
+        const teams = await fetchAllTeams(PERIODS[i]);
+        if (teams.length > 0) results[i] = teams;
+      } catch (err) {
+        console.error(`[form] Retry failed for period ${PERIODS[i]}:`, err);
+      }
+    }
+  }
+
+  const missing = results.flatMap((r, i) => (r === null ? [PERIODS[i]] : []));
+  if (missing.length > 0) {
+    throw new Error(
+      `Incomplete form data — missing ${missing.length}/4 windows: ${missing.join(", ")}`,
+    );
+  }
+
+  return results as TeamStats[][];
+}
+
 export const getAnalysis = unstable_cache(
   async (): Promise<AnalysisResult> => {
-    // Fetch all periods in parallel
-    const settled = await Promise.allSettled(PERIODS.map(fetchAllTeams));
-    const allTeamsPerPeriod = settled.map((r, i) => {
-      if (r.status === "fulfilled") return r.value;
-      console.error(`Failed to fetch period ${PERIODS[i]}:`, r.reason);
-      return [];
-    });
+    // Fetch all periods in parallel — all must succeed or we skip caching
+    const allTeamsPerPeriod = await fetchAllPeriodsWithRetry();
 
     const analysis: PeriodAnalysis[] = [];
     let matchedPeriod: number | null = null;

@@ -46,17 +46,26 @@ async function fetchPageInner(
   revalidate?: number,
   extraHeaders?: Record<string, string>,
 ): Promise<string> {
+  const headers = { ...HEADERS, ...extraHeaders };
+  const cacheOpts =
+    revalidate !== undefined ? { next: { revalidate } } : { cache: "no-store" as const };
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    const response = await fetch(url, {
-      headers: { ...HEADERS, ...extraHeaders },
-      ...(revalidate !== undefined ? { next: { revalidate } } : { cache: "no-store" }),
-    });
-    const html = await response.text();
-    // Transfermarkt rate-limit responses are ~146 bytes
-    if (html.length > 500) return html;
-    console.warn(
-      `[fetch] Rate limited (${html.length}b), retry ${attempt + 1}/${MAX_RETRIES}: ${url}`,
-    );
+    try {
+      const response = await fetch(url, { headers, ...cacheOpts });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const html = await response.text();
+      // Transfermarkt rate-limit responses are ~146 bytes
+      if (html.length > 500) return html;
+      console.warn(
+        `[fetch] Rate limited (${html.length}b), retry ${attempt + 1}/${MAX_RETRIES}: ${url}`,
+      );
+    } catch (err) {
+      console.warn(
+        `[fetch] ${err instanceof Error ? err.message : err}, retry ${attempt + 1}/${MAX_RETRIES}: ${url}`,
+      );
+    }
     if (attempt < MAX_RETRIES - 1) {
       const jitter = Math.random() * 500;
       await new Promise((r) => setTimeout(r, BASE_DELAY * 2 ** attempt + jitter));
