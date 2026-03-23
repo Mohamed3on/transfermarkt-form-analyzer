@@ -961,7 +961,7 @@ export function PlayersUI({
                 injuryMap={injuryMap}
                 ctx={{
                   sortBy,
-                  showCaps: minCaps !== null || maxCaps !== null,
+                  showCaps: minCaps !== null || maxCaps !== null || excludeCurrentIntl,
                   includePen,
                   showContract: contractYear !== null,
                   formWindow,
