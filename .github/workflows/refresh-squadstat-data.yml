@@ -3,7 +3,6 @@ name: Refresh SquadStat Data
 on:
   schedule:
     - cron: "0 */3 * * *"
-    - cron: "0 6 * * *" # Daily 6am UTC — checks if Transfermarkt updated market values
   workflow_dispatch:
 
 concurrency:
@@ -12,7 +11,6 @@ concurrency:
 
 jobs:
   warm-caches:
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 */3 * * *'
     runs-on: ubuntu-latest
     steps:
       - name: Warm API caches
@@ -39,7 +37,6 @@ jobs:
           echo "Done warming caches."
 
   refresh-minutes-value:
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 */3 * * *'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -94,7 +91,7 @@ jobs:
           fi
 
   check-mv-updates:
-    if: github.event.schedule == '0 6 * * *'
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     outputs:
       has_updates: ${{ steps.check.outputs.has_updates }}
@@ -120,8 +117,9 @@ jobs:
   refresh-biggest-movers:
     needs: [check-mv-updates]
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      needs.check-mv-updates.outputs.has_updates == 'true'
+      always() &&
+      (github.event_name == 'workflow_dispatch' ||
+      needs.check-mv-updates.outputs.has_updates == 'true')
     runs-on: ubuntu-latest
     permissions:
       contents: write
