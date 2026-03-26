@@ -27,11 +27,18 @@ import { Combobox } from "@/components/Combobox";
 import { LeagueCombobox } from "@/components/LeagueCombobox";
 import { InfoTip } from "@/app/components/InfoTip";
 import { filterPlayersByLeagueAndClub, uniqueFilterOptions } from "@/lib/filter-players";
-import { groupPlayersByClub, type TeamInjuryGroup } from "@/lib/injury-utils";
+import { groupPlayersByClub, categorizeInjury, type TeamInjuryGroup } from "@/lib/injury-utils";
 
 interface InjuryTypeGroup {
   injury: string;
   players: InjuredPlayer[];
+  totalValue: number;
+  count: number;
+}
+
+interface InjuryCategoryGroup {
+  category: string;
+  injuries: InjuryTypeGroup[];
   totalValue: number;
   count: number;
 }
@@ -52,6 +59,23 @@ async function fetchLeagueInjured(code: string): Promise<InjuredPlayer[]> {
   const res = await fetch(`/api/injured?league=${code}`);
   const data = await res.json();
   return (data.players || []) as InjuredPlayer[];
+}
+
+function CollapsibleChevron({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={cn(
+        className,
+        "text-text-muted shrink-0 transition-transform [[data-state=open]>&]:rotate-180",
+      )}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  );
 }
 
 function getInjuredPlayerDetailHref(profileUrl: string): string | null {
@@ -345,80 +369,160 @@ function TeamInjuryCard({
   );
 }
 
-function InjuryTypeCard({
+function InjuryCategoryCard({
   group,
   rank,
   index = 0,
+  totalValue,
 }: {
-  group: InjuryTypeGroup;
+  group: InjuryCategoryGroup;
   rank: number;
   index?: number;
+  totalValue: number;
 }) {
+  const pct = totalValue > 0 ? (group.totalValue / totalValue) * 100 : 0;
+  const isSingleType = group.injuries.length === 1;
+
   return (
     <Collapsible
       className="rounded-xl border border-border-subtle bg-card animate-slide-up"
       style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
     >
-      <CollapsibleTrigger className="flex items-center gap-2.5 px-3 py-2 sm:px-4 sm:py-2.5 w-full cursor-pointer hover:bg-card-hover transition-colors rounded-xl">
+      <CollapsibleTrigger className="flex items-center gap-2.5 px-3 py-3 sm:px-4 sm:py-3.5 w-full cursor-pointer hover:bg-card-hover transition-colors rounded-xl">
         <RankBadge rank={rank} />
-        <h3 className="font-bold text-sm sm:text-base text-text-primary flex-1 text-left">
-          {group.injury}
-        </h3>
-        <span className="text-[10px] sm:text-xs text-text-muted font-value shrink-0">
-          {group.count}
-        </span>
-        <span className="text-xs sm:text-sm font-medium text-accent-hot font-value shrink-0">
-          {formatMarketValue(group.totalValue)}
-        </span>
-        <svg
-          className="w-4 h-4 text-text-muted shrink-0 transition-transform [[data-state=open]>&]:rotate-180"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-pixel font-bold text-sm sm:text-base text-text-primary">
+              {group.category}
+            </h3>
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-[10px] sm:text-xs text-text-muted font-value">
+                {group.count} {group.count === 1 ? "player" : "players"}
+              </span>
+              <span className="text-xs sm:text-sm font-medium text-accent-hot font-value">
+                {formatMarketValue(group.totalValue)}
+              </span>
+            </div>
+          </div>
+          <div className="mt-1.5 flex items-center gap-2">
+            <div className="flex-1 h-1.5 rounded-full bg-elevated overflow-hidden">
+              <div
+                className="h-full rounded-full bg-accent-hot/60 animate-bar-fill"
+                style={{ "--bar-width": `${Math.max(pct, 1)}%` } as React.CSSProperties}
+              />
+            </div>
+            <span className="text-[10px] text-text-muted font-value shrink-0">
+              {pct.toFixed(1)}%
+            </span>
+          </div>
+          {!isSingleType && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {group.injuries.slice(0, 4).map((inj) => (
+                <span
+                  key={inj.injury}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-elevated text-text-muted"
+                >
+                  {inj.injury} <span className="font-value">{inj.count}</span>
+                </span>
+              ))}
+              {group.injuries.length > 4 && (
+                <span className="text-[10px] px-1.5 py-0.5 text-text-muted">
+                  +{group.injuries.length - 4} more
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <CollapsibleChevron />
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        <div className="px-3 py-2 sm:px-4 sm:py-2.5 border-t border-border-subtle flex flex-wrap gap-1.5">
-          {group.players.map((player) => {
-            const ri = formatReturnInfo(player.returnDate);
-            const dur = formatInjuryDuration(player.injurySince);
-            const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
-            return (
-              <Link
-                key={player.profileUrl || player.name}
-                href={detailHref || `https://www.transfermarkt.com${player.profileUrl}`}
-                target={detailHref ? undefined : "_blank"}
-                rel={detailHref ? undefined : "noopener noreferrer"}
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] sm:text-xs hover:bg-card-hover transition-colors duration-150 bg-elevated border border-border-subtle"
-              >
-                {player.imageUrl && !player.imageUrl.includes("data:image") && (
-                  <PlayerAvatar
-                    imageUrl={player.imageUrl}
-                    name={player.name}
-                    className="w-4 h-4 sm:w-5 sm:h-5 rounded-full"
-                  />
-                )}
-                <span className="text-text-primary">{player.name}</span>
-                <span className="text-text-secondary">{player.club}</span>
-                <span className="text-accent-hot font-medium font-value">{player.marketValue}</span>
-                {dur && <span className="text-text-muted">out {dur}</span>}
-                {ri && (
-                  <span
-                    className={cn(
-                      "font-medium",
-                      ri.imminent ? "text-emerald-500" : "text-text-muted",
-                    )}
-                  >
-                    {ri.label}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+        {isSingleType ? (
+          <div className="px-3 py-2 sm:px-4 sm:py-2.5 border-t border-border-subtle flex flex-wrap gap-1.5">
+            {group.injuries[0].players.map((player) => (
+              <InjuryPlayerChip key={player.profileUrl || player.name} player={player} />
+            ))}
+          </div>
+        ) : (
+          <div className="border-t border-border-subtle px-2 py-2 sm:px-3 sm:py-2.5 space-y-1.5">
+            {group.injuries.map((inj) => (
+              <InjurySubTypeRow
+                key={inj.injury}
+                group={inj}
+                categoryTotalValue={group.totalValue}
+              />
+            ))}
+          </div>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function InjuryPlayerChip({ player }: { player: InjuredPlayer }) {
+  const ri = formatReturnInfo(player.returnDate);
+  const dur = formatInjuryDuration(player.injurySince);
+  const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
+  return (
+    <Link
+      href={detailHref || `https://www.transfermarkt.com${player.profileUrl}`}
+      target={detailHref ? undefined : "_blank"}
+      rel={detailHref ? undefined : "noopener noreferrer"}
+      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] sm:text-xs hover:bg-card-hover transition-colors duration-150 bg-card border border-border-subtle"
+    >
+      {player.imageUrl && !player.imageUrl.includes("data:image") && (
+        <PlayerAvatar
+          imageUrl={player.imageUrl}
+          name={player.name}
+          className="w-4 h-4 sm:w-5 sm:h-5 rounded-full"
+        />
+      )}
+      <span className="text-text-primary">{player.name}</span>
+      <span className="text-text-secondary">{player.club}</span>
+      <span className="text-accent-hot font-medium font-value">{player.marketValue}</span>
+      {dur && <span className="text-text-muted">out {dur}</span>}
+      {ri && (
+        <span className={cn("font-medium", ri.imminent ? "text-emerald-500" : "text-text-muted")}>
+          {ri.label}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+function InjurySubTypeRow({
+  group,
+  categoryTotalValue,
+}: {
+  group: InjuryTypeGroup;
+  categoryTotalValue: number;
+}) {
+  const pct = categoryTotalValue > 0 ? (group.totalValue / categoryTotalValue) * 100 : 0;
+
+  return (
+    <Collapsible className="rounded-lg bg-elevated/40">
+      <CollapsibleTrigger className="flex items-center gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 w-full cursor-pointer hover:bg-card-hover transition-colors rounded-lg">
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          <span className="text-xs sm:text-sm text-text-secondary">{group.injury}</span>
+          <div className="hidden sm:block flex-1 max-w-24 h-1 rounded-full bg-elevated overflow-hidden">
+            <div
+              className="h-full rounded-full bg-accent-hot/30 animate-bar-fill"
+              style={{ "--bar-width": `${Math.max(pct, 3)}%` } as React.CSSProperties}
+            />
+          </div>
+        </div>
+        <span className="text-[10px] sm:text-xs text-text-muted font-value">{group.count}</span>
+        <span className="text-xs font-medium text-accent-hot font-value">
+          {formatMarketValue(group.totalValue)}
+        </span>
+        <CollapsibleChevron className="w-3.5 h-3.5" />
+      </CollapsibleTrigger>
+
+      <CollapsibleContent>
+        <div className="px-2.5 py-1.5 sm:px-3 sm:py-2 flex flex-wrap gap-1.5">
+          {group.players.map((player) => (
+            <InjuryPlayerChip key={player.profileUrl || player.name} player={player} />
+          ))}
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -620,6 +724,35 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
       : groups.sort((a, b) => b.totalValue - a.totalValue);
   }, [players, injurySort]);
 
+  const injuryCategoryGroups = useMemo(() => {
+    const catMap = new Map<string, InjuryCategoryGroup>();
+    for (const group of injuryTypeGroups) {
+      const category = categorizeInjury(group.injury);
+      const existing = catMap.get(category);
+      if (existing) {
+        existing.injuries.push(group);
+        existing.totalValue += group.totalValue;
+        existing.count += group.count;
+      } else {
+        catMap.set(category, {
+          category,
+          injuries: [group],
+          totalValue: group.totalValue,
+          count: group.count,
+        });
+      }
+    }
+    const groups = Array.from(catMap.values());
+    return injurySort === "count"
+      ? groups.sort((a, b) => b.count - a.count || b.totalValue - a.totalValue)
+      : groups.sort((a, b) => b.totalValue - a.totalValue);
+  }, [injuryTypeGroups, injurySort]);
+
+  const totalInjuredValue = useMemo(
+    () => players.reduce((sum, p) => sum + p.marketValueNum, 0),
+    [players],
+  );
+
   return (
     <>
       {pending.size > 0 && (
@@ -699,9 +832,15 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
             value={injurySort}
             onChange={(v) => update({ iSort: v === "value" ? null : v })}
           />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {injuryTypeGroups.map((group, idx) => (
-              <InjuryTypeCard key={group.injury} group={group} rank={idx + 1} index={idx} />
+          <div className="grid grid-cols-1 gap-3">
+            {injuryCategoryGroups.map((group, idx) => (
+              <InjuryCategoryCard
+                key={group.category}
+                group={group}
+                rank={idx + 1}
+                index={idx}
+                totalValue={totalInjuredValue}
+              />
             ))}
           </div>
         </TabsContent>

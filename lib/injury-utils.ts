@@ -1,6 +1,35 @@
 import type { InjuredPlayer } from "@/app/types";
 import { extractClubIdFromLogoUrl } from "@/lib/format";
 
+// Priority-ordered: first regex match wins, so body-part-specific rules come before generic ones
+const INJURY_CATEGORY_RULES: [string, RegExp][] = [
+  ["Hamstring", /hamstring/i],
+  ["Knee", /knee|cruciate|meniscus|cartilage/i],
+  ["Ankle", /ankle|syndesmotic/i],
+  ["Calf", /\bcalf\b/i],
+  ["Achilles", /achilles/i],
+  ["Foot", /\bfoot\b|metatarsal|plantar|\bheel\b/i],
+  ["Thigh", /thigh|dead leg/i],
+  ["Groin & Adductor", /groin|adductor|pubalgia|inguinal/i],
+  ["Hip & Back", /\bhip\b|\bback\b|lumbago/i],
+  ["Lower Leg", /fibula|tibia|lower leg/i],
+  [
+    "Head & Upper Body",
+    /shoulder|collarbone|\brib\b|\bjaw\b|cheekbone|\bhand\b|\belbow\b|thumb|scaphoid|concussion/i,
+  ],
+  ["Muscle", /muscle|muscular|\bstrain\b/i],
+  ["Ligament & Tendon", /ligament|capsular|tendon/i],
+  ["Illness & Fitness", /\bill\b|virus|fitness|stomach/i],
+  ["Surgery", /\bsurgery\b|arthroscopy/i],
+];
+
+export function categorizeInjury(injury: string): string {
+  for (const [category, pattern] of INJURY_CATEGORY_RULES) {
+    if (pattern.test(injury)) return category;
+  }
+  return "Other";
+}
+
 export interface TeamInjuryGroup {
   club: string;
   clubLogoUrl: string;
