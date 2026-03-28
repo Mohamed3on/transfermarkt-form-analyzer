@@ -108,14 +108,56 @@ export function getFormStats(
   return { goals, assists, penaltyGoals, npga, minutes };
 }
 
+/** Total games the player's team has played this season. */
+export function gamesScheduled(p: {
+  totalMatches: number;
+  gamesMissed?: number;
+  totalGames?: number;
+}): number {
+  return p.totalGames ?? p.totalMatches + (p.gamesMissed ?? 0);
+}
+
+/** Games the player was available for (not injured/suspended/absent). */
+export function gamesAvailable(p: {
+  totalMatches: number;
+  gamesMissed?: number;
+  totalGames?: number;
+}): number {
+  return gamesScheduled(p) - (p.gamesMissed ?? 0);
+}
+
+/** Split players into those playing less and more minutes than the target, filtered to same-or-higher value and same-or-more available games. */
+export function filterMinutesBenchmark<
+  T extends {
+    playerId: string;
+    marketValue: number;
+    minutes: number;
+    totalMatches: number;
+    gamesMissed?: number;
+    totalGames?: number;
+  },
+>(players: T[], target: T): { playingLess: T[]; playingMore: T[] } {
+  const benchAvail = gamesAvailable(target);
+  const playingLess: T[] = [];
+  const playingMore: T[] = [];
+  for (const p of players) {
+    if (p.playerId === target.playerId) continue;
+    if (p.marketValue < target.marketValue) continue;
+    if (gamesAvailable(p) < benchAvail) continue;
+    if (p.minutes <= target.minutes) playingLess.push(p);
+    else playingMore.push(p);
+  }
+  return { playingLess, playingMore };
+}
+
 /** Fraction of games missed (0–1). Players with 0 matches and 0 minutes are treated as 100% unavailable. */
 export function missedPct(p: {
   totalMatches: number;
   minutes: number;
   gamesMissed?: number;
+  totalGames?: number;
 }): number {
-  const missed = p.gamesMissed ?? 0;
-  const total = p.totalMatches + missed;
+  const total = gamesScheduled(p);
   if (total === 0) return p.minutes === 0 ? 1 : 0;
-  return missed / total;
+  return (p.gamesMissed ?? 0) / total;
 }

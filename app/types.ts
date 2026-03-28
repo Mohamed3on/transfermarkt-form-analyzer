@@ -194,6 +194,7 @@ export interface MinutesValuePlayer {
   isOnLoan?: boolean;
   contractExpiry?: string;
   gamesMissed?: number;
+  totalGames?: number;
   positionStats?: {
     positionId: number;
     position: string;
@@ -303,6 +304,7 @@ export interface PlayerStatsResult {
   playedPosition: string;
   contractExpiry?: string;
   gamesMissed: number;
+  totalGames: number;
   positionStats?: {
     positionId: number;
     position: string;

@@ -19,6 +19,8 @@ import { VirtualList } from "@/components/VirtualList";
 import {
   filterPlayersByLeagueAndClub,
   TOP_5_LEAGUES,
+  filterMinutesBenchmark,
+  gamesAvailable,
   missedPct,
   uniqueFilterOptions,
 } from "@/lib/filter-players";
@@ -671,6 +673,7 @@ function DiscoverySection({
 
 function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
   const ga = player.goals + player.assists;
+  const available = gamesAvailable(player);
   const missedPctVal = Math.round(missedPct(player) * 100);
   return (
     <BenchmarkCard
@@ -682,7 +685,7 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
         <>
           <span className="tabular-nums">{player.goals}G</span>
           <span className="tabular-nums">{player.assists}A</span>
-          <span className="tabular-nums">{player.totalMatches} games</span>
+          <span className="tabular-nums">{available} games</span>
           <span className="text-text-secondary">Age {player.age}</span>
         </>
       }
@@ -690,7 +693,7 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
         <>
           <span className="tabular-nums">{player.goals}G</span>
           <span className="tabular-nums">{player.assists}A</span>
-          <span className="tabular-nums">{player.totalMatches} games</span>
+          <span className="tabular-nums">{available} games</span>
           <span className="text-text-secondary">Age {player.age}</span>
         </>
       }
@@ -703,6 +706,7 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
             label="Minutes"
             color="var(--accent-blue)"
           />
+          <BigNumber value={String(available)} label="Games" color="var(--text-primary)" />
           {missedPctVal > 0 && (
             <BigNumber value={`${missedPctVal}%`} label="Missed" color="var(--accent-cold-soft)" />
           )}
@@ -717,6 +721,7 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
           <div className="text-lg font-medium font-value text-accent-blue">
             {player.minutes.toLocaleString()}&apos;
           </div>
+          <div className="text-lg font-medium font-value text-text-primary">{available}</div>
           {missedPctVal > 0 && (
             <div className="text-lg font-medium font-value text-accent-cold-soft">
               {missedPctVal}%
@@ -748,6 +753,8 @@ function MvPlayerCard({
   const valueDiffDisplay =
     valueDiff > 0 ? `+${formatMarketValue(valueDiff)}` : formatMarketValue(valueDiff);
   const minsDiff = target ? player.minutes - target.minutes : 0;
+  const available = gamesAvailable(player);
+  const missedPctVal = Math.round(missedPct(player) * 100);
 
   return (
     <PlayerCard
@@ -828,9 +835,7 @@ function MvPlayerCard({
           <div className="w-px h-8 bg-border-subtle" />
           <div className="flex items-center gap-2.5 text-right">
             <div>
-              <div className="text-sm font-medium font-value text-text-primary">
-                {player.totalMatches}
-              </div>
+              <div className="text-sm font-medium font-value text-text-primary">{available}</div>
               <div className="text-xs text-text-secondary">games</div>
             </div>
             <div>
@@ -860,11 +865,9 @@ function MvPlayerCard({
         <>
           <span className="tabular-nums text-text-secondary">{player.goals}G</span>
           <span className="tabular-nums text-text-secondary">{player.assists}A</span>
-          <span className="tabular-nums text-text-secondary">{player.totalMatches} games</span>
-          {missedPct(player) > 0 && (
-            <span className="tabular-nums text-accent-cold-soft">
-              {Math.round(missedPct(player) * 100)}% missed
-            </span>
+          <span className="tabular-nums text-text-secondary">{available} games</span>
+          {missedPctVal > 0 && (
+            <span className="tabular-nums text-accent-cold-soft">{missedPctVal}% missed</span>
           )}
           <span className="sm:hidden tabular-nums text-text-secondary">{player.age}y</span>
           <LeagueBadge league={player.league} variant="inline" />
@@ -1015,28 +1018,10 @@ export function ValueAnalysisUI({
     return initialData.find((p) => p.name === urlName) ?? null;
   }, [hasPlayer, urlId, urlName, initialData]);
 
-  const playingLess = useMemo(() => {
-    if (!minsSelected) return [];
-    const benchPct = missedPct(minsSelected);
-    return initialData.filter(
-      (p) =>
-        p.playerId !== minsSelected.playerId &&
-        p.marketValue >= minsSelected.marketValue &&
-        p.minutes <= minsSelected.minutes &&
-        missedPct(p) <= benchPct,
-    );
-  }, [minsSelected, initialData]);
-
-  const playingMore = useMemo(() => {
-    if (!minsSelected) return [];
-    const benchPct = missedPct(minsSelected);
-    return initialData.filter(
-      (p) =>
-        p.playerId !== minsSelected.playerId &&
-        p.marketValue >= minsSelected.marketValue &&
-        p.minutes > minsSelected.minutes &&
-        missedPct(p) <= benchPct,
-    );
+  const { playingLess, playingMore } = useMemo(() => {
+    if (!minsSelected)
+      return { playingLess: [] as MinutesValuePlayer[], playingMore: [] as MinutesValuePlayer[] };
+    return filterMinutesBenchmark(initialData, minsSelected);
   }, [minsSelected, initialData]);
 
   // ── Minutes discovery list ──

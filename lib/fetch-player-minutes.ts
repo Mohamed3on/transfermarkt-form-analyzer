@@ -26,6 +26,7 @@ const ZERO_STATS: PlayerStatsResult = {
   playedPosition: "",
   contractExpiry: undefined,
   gamesMissed: 0,
+  totalGames: 0,
   positionStats: [],
   marketValue: 0,
   marketValueDisplay: "-",
@@ -97,6 +98,7 @@ interface AggregatedStats {
   recentForm: RecentGameStats[];
   playedPosition: string;
   gamesMissed: number;
+  totalGames: number;
   positionStats: {
     positionId: number;
     position: string;
@@ -128,10 +130,12 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
     intlAppearances = 0,
     intlPenaltyGoals = 0;
   let gamesMissed = 0;
+  let totalGames = 0;
   let league = "";
   const recentDomestic: RecentGameStats[] = [];
   for (const g of games) {
     if (g.gameInformation.seasonId !== seasonId) continue;
+    totalGames++;
     const gs = g.statistics.goalStatistics;
     const mins = g.statistics.playingTimeStatistics.playedMinutes ?? 0;
     const state = g.statistics.generalStatistics.participationState ?? "";
@@ -200,6 +204,7 @@ function aggregateSeasonStats(games: CeapiGame[]): AggregatedStats {
     recentForm,
     playedPosition,
     gamesMissed,
+    totalGames,
     positionStats,
   };
 }

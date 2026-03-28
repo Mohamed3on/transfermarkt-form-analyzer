@@ -793,6 +793,12 @@ export default async function PlayerDetailPage({
                   {signalSummary.cheaperPlayersBeatingTarget} cheaper peers with more output
                 </SignalBadge>
               )}
+              {minutesBenchmark.playingLess.length === 0 &&
+                minutesBenchmark.playingMore.length > 0 && (
+                  <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
+                    Fewest minutes among comparable peers
+                  </SignalBadge>
+                )}
               <Suspense>
                 <PlayerInjuryBadge playerId={player.playerId} />
               </Suspense>

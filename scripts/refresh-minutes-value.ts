@@ -187,6 +187,7 @@ function mergeStats(players: MinutesValuePlayer[], cache: Cache): void {
     p.intlPenaltyGoals = s.intlPenaltyGoals;
     p.intlCareerCaps = s.intlCareerCaps;
     p.gamesMissed = s.gamesMissed;
+    p.totalGames = s.totalGames;
 
     if (s.club) p.club = s.club;
     if (s.clubLogoUrl) p.clubLogoUrl = s.clubLogoUrl;

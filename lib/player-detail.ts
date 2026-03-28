@@ -3,7 +3,12 @@ import { unstable_cache } from "next/cache";
 import type { MarketValueMover, MinutesValuePlayer, PlayerStats } from "@/app/types";
 import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { applyStatsToggles, getMinutesValueData, toPlayerStats } from "@/lib/fetch-minutes-value";
-import { getFormStats, missedPct } from "@/lib/filter-players";
+import {
+  filterMinutesBenchmark,
+  getFormStats,
+  gamesScheduled,
+  missedPct,
+} from "@/lib/filter-players";
 import { extractClubIdFromLogoUrl, formatMarketValue } from "@/lib/format";
 import { normalizeForSearch } from "@/lib/normalize";
 import {
@@ -237,6 +242,8 @@ function buildFormSummary(player: MinutesValuePlayer): PlayerFormSummary {
   const penGoals = player.penaltyGoals ?? 0;
   const penMisses = player.penaltyMisses ?? 0;
   const penAttempts = penGoals + penMisses;
+  const f5 = getFormStats(player, 5);
+  const f10 = getFormStats(player, 10);
   return {
     seasonNpga: seasonNpga(player),
     seasonGa: player.goals + player.assists,
@@ -246,22 +253,16 @@ function buildFormSummary(player: MinutesValuePlayer): PlayerFormSummary {
     penaltyGoals: penGoals,
     penaltyAttempts: penAttempts,
     penaltyConversion: penAttempts > 0 ? Math.round((penGoals / penAttempts) * 100) : null,
-    ...(() => {
-      const f5 = getFormStats(player, 5);
-      const f10 = getFormStats(player, 10);
-      return {
-        last5Npga: f5.npga,
-        last5Goals: f5.goals,
-        last5PenaltyGoals: f5.penaltyGoals,
-        last5Assists: f5.assists,
-        last5Minutes: f5.minutes,
-        last10Npga: f10.npga,
-        last10Goals: f10.goals,
-        last10PenaltyGoals: f10.penaltyGoals,
-        last10Assists: f10.assists,
-        last10Minutes: f10.minutes,
-      };
-    })(),
+    last5Npga: f5.npga,
+    last5Goals: f5.goals,
+    last5PenaltyGoals: f5.penaltyGoals,
+    last5Assists: f5.assists,
+    last5Minutes: f5.minutes,
+    last10Npga: f10.npga,
+    last10Goals: f10.goals,
+    last10PenaltyGoals: f10.penaltyGoals,
+    last10Assists: f10.assists,
+    last10Minutes: f10.minutes,
   };
 }
 
@@ -360,26 +361,13 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
     })
     .slice(0, 6);
 
-  // Minutes benchmark: compare against same-or-higher value players with same-or-better availability
-  const benchPct = missedPct(player);
-  const playingLess = players
-    .filter(
-      (p) =>
-        p.playerId !== player.playerId &&
-        p.marketValue >= player.marketValue &&
-        p.minutes <= player.minutes &&
-        missedPct(p) <= benchPct,
-    )
-    .sort((a, b) => a.minutes - b.minutes || b.marketValue - a.marketValue);
-  const playingMore = players
-    .filter(
-      (p) =>
-        p.playerId !== player.playerId &&
-        p.marketValue >= player.marketValue &&
-        p.minutes > player.minutes &&
-        missedPct(p) <= benchPct,
-    )
-    .sort((a, b) => a.minutes - b.minutes || b.marketValue - a.marketValue);
+  const minutesBench = filterMinutesBenchmark(players, player);
+  const playingLess = minutesBench.playingLess.sort(
+    (a, b) => a.minutes - b.minutes || b.marketValue - a.marketValue,
+  );
+  const playingMore = minutesBench.playingMore.sort(
+    (a, b) => a.minutes - b.minutes || b.marketValue - a.marketValue,
+  );
 
   // Subgroup rankings (loan players, new signings)
   const subgroupRankings: SubgroupRanking[] = [];
@@ -422,8 +410,8 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
     clubCount: clubmates.length,
     form: buildFormSummary(player),
     signalSummary: {
-      availablePct: Math.max(0, 100 - Math.round(benchPct * 100)),
-      gamesScheduled: player.totalMatches + (player.gamesMissed ?? 0),
+      availablePct: Math.max(0, 100 - Math.round(missedPct(player) * 100)),
+      gamesScheduled: gamesScheduled(player),
       gamesMissed: player.gamesMissed ?? 0,
       cheaperPlayersBeatingTarget,
       pricierPlayersBeatenByTarget,

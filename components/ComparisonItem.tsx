@@ -35,7 +35,7 @@ export function ComparisonItem({
       </div>
       <div className="shrink-0 text-right">
         <p
-          className={`text-sm font-value ${positive ? "text-accent-hot" : "text-accent-cold-soft"}`}
+          className={`text-sm font-value ${positive ? "text-accent-cold-soft" : "text-accent-hot"}`}
         >
           {player.points} <span className="text-[10px] text-text-muted">npG+A</span>
         </p>
@@ -44,7 +44,7 @@ export function ComparisonItem({
         </p>
         {count != null && count > 0 && (
           <p
-            className={`text-[10px] ${positive ? "text-accent-hot/60" : "text-accent-cold-soft/60"}`}
+            className={`text-[10px] ${positive ? "text-accent-cold-soft/60" : "text-accent-hot/60"}`}
           >
             {positive ? `outscores ${count} peers` : `outscored by ${count} peers`}
           </p>
