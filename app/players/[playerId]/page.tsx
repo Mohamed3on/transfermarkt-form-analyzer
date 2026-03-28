@@ -778,23 +778,19 @@ export default async function PlayerDetailPage({
             </div>
 
             <div className="col-span-full flex flex-wrap gap-2.5">
-              {signalSummary.discoveryStatus === "bargain" && (
-                <SignalBadge className="border-accent-hot-border bg-accent-hot-glow text-accent-hot">
-                  <Sparkles className="mr-1 h-3.5 w-3.5" />
-                  Outperforming {signalSummary.pricierPlayersBeatenByTarget} pricier peers
-                </SignalBadge>
-              )}
-              {signalSummary.discoveryStatus === "overpriced" && (
-                <SignalBadge
-                  className={
-                    signalSummary.pricierPlayersBeatenByTarget === 0
-                      ? "border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft"
-                      : "border-border-subtle bg-card-hover text-text-secondary"
-                  }
-                >
-                  {signalSummary.cheaperPlayersBeatingTarget} cheaper peers with more output
-                </SignalBadge>
-              )}
+              {signalSummary.discoveryStatus === "bargain" &&
+                signalSummary.cheaperPlayersBeatingTarget === 0 && (
+                  <SignalBadge className="border-accent-hot-border bg-accent-hot-glow text-accent-hot">
+                    <Sparkles className="mr-1 h-3.5 w-3.5" />
+                    Outperforming {signalSummary.pricierPlayersBeatenByTarget} pricier peers
+                  </SignalBadge>
+                )}
+              {signalSummary.discoveryStatus === "overpriced" &&
+                signalSummary.pricierPlayersBeatenByTarget === 0 && (
+                  <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
+                    {signalSummary.cheaperPlayersBeatingTarget} cheaper peers with more output
+                  </SignalBadge>
+                )}
               {(minutesBenchmark.playingLessCount ?? minutesBenchmark.playingLess.length) === 0 &&
                 (minutesBenchmark.playingMoreCount ?? minutesBenchmark.playingMore.length) > 0 && (
                   <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
