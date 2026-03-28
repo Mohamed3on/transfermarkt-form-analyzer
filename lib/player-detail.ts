@@ -98,6 +98,8 @@ export interface PlayerSignalSummary {
 export interface MinutesBenchmark {
   playingLess: MinutesValuePlayer[];
   playingMore: MinutesValuePlayer[];
+  playingLessCount: number;
+  playingMoreCount: number;
 }
 
 export interface SubgroupRanking {
@@ -426,6 +428,8 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
     minutesBenchmark: {
       playingLess: playingLess.slice(0, 10).map(stripRecentForm),
       playingMore: playingMore.slice(0, 10).map(stripRecentForm),
+      playingLessCount: playingLess.length,
+      playingMoreCount: playingMore.length,
     },
     subgroupRankings,
     penaltyRank:

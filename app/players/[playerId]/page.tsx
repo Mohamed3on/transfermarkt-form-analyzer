@@ -190,12 +190,14 @@ function SignalBadge({ children, className }: { children: React.ReactNode; class
 
 function MinutesBenchmarkPanel({
   title,
+  count,
   players,
   benchmarkUrl,
   emptyLabel,
   accentClass,
 }: {
   title: string;
+  count: number;
   players: MinutesValuePlayer[];
   benchmarkUrl: string;
   emptyLabel: string;
@@ -203,7 +205,7 @@ function MinutesBenchmarkPanel({
 }) {
   return (
     <SectionPanel
-      title={`${title} (${players.length})`}
+      title={`${title} (${count ?? players.length})`}
       aside={
         <Link
           href={benchmarkUrl}
@@ -793,8 +795,8 @@ export default async function PlayerDetailPage({
                   {signalSummary.cheaperPlayersBeatingTarget} cheaper peers with more output
                 </SignalBadge>
               )}
-              {minutesBenchmark.playingLess.length === 0 &&
-                minutesBenchmark.playingMore.length > 0 && (
+              {(minutesBenchmark.playingLessCount ?? minutesBenchmark.playingLess.length) === 0 &&
+                (minutesBenchmark.playingMoreCount ?? minutesBenchmark.playingMore.length) > 0 && (
                   <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
                     Fewest minutes among comparable peers
                   </SignalBadge>
@@ -1109,6 +1111,7 @@ export default async function PlayerDetailPage({
           <section className="grid gap-4 lg:grid-cols-2">
             <MinutesBenchmarkPanel
               title="Playing less"
+              count={minutesBenchmark.playingLessCount}
               players={minutesBenchmark.playingLess}
               benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&mode=mins&tab=less`}
               emptyLabel="No same-or-higher value players are playing fewer minutes."
@@ -1116,6 +1119,7 @@ export default async function PlayerDetailPage({
             />
             <MinutesBenchmarkPanel
               title="Playing more"
+              count={minutesBenchmark.playingMoreCount}
               players={minutesBenchmark.playingMore}
               benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&mode=mins&tab=more`}
               emptyLabel="No same-or-higher value players are playing more minutes."
