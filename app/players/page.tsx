@@ -5,7 +5,7 @@ import { PlayersUI } from "./PlayersUI";
 import { createPageMetadata } from "@/lib/metadata";
 import { DiscoveryLinkGrid } from "@/app/components/DiscoveryLinkGrid";
 
-export const revalidate = 7200; // 2 hours — data refreshes daily
+export const dynamic = "force-dynamic";
 
 export const metadata = createPageMetadata({
   title: "Player Explorer",

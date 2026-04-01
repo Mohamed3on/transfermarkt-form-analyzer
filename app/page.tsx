@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -29,6 +30,7 @@ import {
 } from "@/lib/format";
 import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { getManagerInfo } from "@/lib/fetch-manager";
+import { HeroCardSkeleton, StandoutsGridSkeleton } from "@/app/components/HomeSkeletons";
 import type {
   AggregatedTeam,
   ManagerInfo,
@@ -36,7 +38,7 @@ import type {
   MinutesValuePlayer,
 } from "@/app/types";
 
-export const revalidate = 7200; // 2 hours — data refreshes daily
+export const dynamic = "force-dynamic";
 
 export const metadata = createPageMetadata({
   title: "Football Form, Value & Injury Analytics",
@@ -594,7 +596,10 @@ function FeatureCard({ feature }: { feature: Feature }) {
   );
 }
 
-export default async function Home() {
+async function fetchHomeData(): Promise<{
+  heroSnapshots: SnapshotItem[];
+  snapshotGroups: SnapshotGroup[];
+}> {
   const [
     analysisResult,
     teamFormResult,
@@ -1105,6 +1110,96 @@ export default async function Home() {
     },
   ].filter(Boolean) as SnapshotGroup[];
 
+  return { heroSnapshots, snapshotGroups };
+}
+
+type HomeData = Awaited<ReturnType<typeof fetchHomeData>>;
+
+async function HeroCard({ dataPromise }: { dataPromise: Promise<HomeData> }) {
+  const { heroSnapshots } = await dataPromise;
+  return (
+    <Card className="border-border-medium bg-black/85 backdrop-blur-sm transition-colors duration-200 hover:border-accent-blue/30">
+      <CardHeader className="!pb-0">
+        <Badge
+          variant="outline"
+          className="w-fit border-accent-blue/40 bg-accent-blue/10 text-accent-blue"
+        >
+          Live snapshots
+        </Badge>
+        <CardTitle className="text-xl text-text-primary">Latest Highlights</CardTitle>
+        <CardDescription className="text-sm text-text-secondary">
+          Key names across form, value, output, and injuries.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="!pt-0">
+        <p className="text-xs uppercase tracking-[0.16em] text-text-muted">Latest Feed</p>
+        <div className="mt-3 space-y-2">
+          {heroSnapshots.length > 0 ? (
+            heroSnapshots.map((item) => (
+              <SnapshotItemRow key={`${item.label}-${item.value}`} item={item} variant="hero" />
+            ))
+          ) : (
+            <div className="rounded-lg border border-border-subtle bg-card px-3 py-2 text-sm text-text-muted">
+              Snapshot data is temporarily unavailable. Open a dashboard below for full tables.
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+async function StandoutsGrid({ dataPromise }: { dataPromise: Promise<HomeData> }) {
+  const { snapshotGroups } = await dataPromise;
+  if (snapshotGroups.length === 0) {
+    return (
+      <div className="rounded-xl border border-border-subtle bg-card p-4 text-sm text-text-muted">
+        Snapshot data is temporarily unavailable. Open a section for full live tables.
+      </div>
+    );
+  }
+  return (
+    <div className="columns-1 gap-4 lg:columns-2">
+      {snapshotGroups.map((group) => (
+        <Card
+          key={group.title}
+          className="mb-4 break-inside-avoid border-border-subtle bg-card transition-colors duration-200 hover:border-border-medium"
+        >
+          <CardHeader className="pb-0 sm:pb-0">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-lg text-text-primary">{group.title}</CardTitle>
+                <CardDescription className="mt-1 text-sm text-text-secondary">
+                  {group.description}
+                </CardDescription>
+              </div>
+              <Link
+                href={group.href}
+                className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-accent-blue transition-colors hover:text-text-primary"
+              >
+                Open
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {group.items.map((item) => (
+              <SnapshotItemRow
+                key={`${group.title}-${item.label}-${item.value}`}
+                item={item}
+                variant="section"
+              />
+            ))}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+export default function Home() {
+  const dataPromise = fetchHomeData();
+
   return (
     <div className="pb-16 sm:pb-20">
       <section className="full-bleed relative overflow-hidden border-b border-border-subtle bg-[radial-gradient(circle_at_14%_10%,rgba(0,255,135,0.16),transparent_40%),radial-gradient(circle_at_82%_8%,rgba(88,166,255,0.15),transparent_40%),linear-gradient(180deg,var(--bg-base),var(--bg-elevated))]">
@@ -1150,39 +1245,9 @@ export default async function Home() {
               </div>
             </div>
 
-            <Card className="border-border-medium bg-black/85 backdrop-blur-sm transition-colors duration-200 hover:border-accent-blue/30">
-              <CardHeader className="!pb-0">
-                <Badge
-                  variant="outline"
-                  className="w-fit border-accent-blue/40 bg-accent-blue/10 text-accent-blue"
-                >
-                  Live snapshots
-                </Badge>
-                <CardTitle className="text-xl text-text-primary">Latest Highlights</CardTitle>
-                <CardDescription className="text-sm text-text-secondary">
-                  Key names across form, value, output, and injuries.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="!pt-0">
-                <p className="text-xs uppercase tracking-[0.16em] text-text-muted">Latest Feed</p>
-                <div className="mt-3 space-y-2">
-                  {heroSnapshots.length > 0 ? (
-                    heroSnapshots.map((item) => (
-                      <SnapshotItemRow
-                        key={`${item.label}-${item.value}`}
-                        item={item}
-                        variant="hero"
-                      />
-                    ))
-                  ) : (
-                    <div className="rounded-lg border border-border-subtle bg-card px-3 py-2 text-sm text-text-muted">
-                      Snapshot data is temporarily unavailable. Open a dashboard below for full
-                      tables.
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <Suspense fallback={<HeroCardSkeleton />}>
+              <HeroCard dataPromise={dataPromise} />
+            </Suspense>
           </div>
         </div>
       </section>
@@ -1194,47 +1259,9 @@ export default async function Home() {
           description="The best and worst from each dashboard — open the full view for more."
         />
 
-        {snapshotGroups.length > 0 ? (
-          <div className="columns-1 gap-4 lg:columns-2">
-            {snapshotGroups.map((group) => (
-              <Card
-                key={group.title}
-                className="mb-4 break-inside-avoid border-border-subtle bg-card transition-colors duration-200 hover:border-border-medium"
-              >
-                <CardHeader className="pb-0 sm:pb-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <CardTitle className="text-lg text-text-primary">{group.title}</CardTitle>
-                      <CardDescription className="mt-1 text-sm text-text-secondary">
-                        {group.description}
-                      </CardDescription>
-                    </div>
-                    <Link
-                      href={group.href}
-                      className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-accent-blue transition-colors hover:text-text-primary"
-                    >
-                      Open
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {group.items.map((item) => (
-                    <SnapshotItemRow
-                      key={`${group.title}-${item.label}-${item.value}`}
-                      item={item}
-                      variant="section"
-                    />
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-border-subtle bg-card p-4 text-sm text-text-muted">
-            Snapshot data is temporarily unavailable. Open a section for full live tables.
-          </div>
-        )}
+        <Suspense fallback={<StandoutsGridSkeleton />}>
+          <StandoutsGrid dataPromise={dataPromise} />
+        </Suspense>
       </section>
 
       <section className="pt-12 sm:pt-16">

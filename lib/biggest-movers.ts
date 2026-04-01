@@ -1,5 +1,6 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { unstable_cache } from "next/cache";
 import type { MarketValueMoversResult } from "@/app/types";
 
 async function readMovers(file: string): Promise<MarketValueMoversResult> {
@@ -12,5 +13,13 @@ async function readMovers(file: string): Promise<MarketValueMoversResult> {
   return data;
 }
 
-export const findRepeatLosers = () => readMovers("biggest-losers.json");
-export const findRepeatWinners = () => readMovers("biggest-winners.json");
+export const findRepeatLosers = unstable_cache(
+  () => readMovers("biggest-losers.json"),
+  ["biggest-losers"],
+  { revalidate: 7200, tags: ["biggest-movers"] },
+);
+export const findRepeatWinners = unstable_cache(
+  () => readMovers("biggest-winners.json"),
+  ["biggest-winners"],
+  { revalidate: 7200, tags: ["biggest-movers"] },
+);
