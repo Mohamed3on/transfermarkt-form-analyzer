@@ -43,7 +43,7 @@ export function LeagueBadge({ league, variant = "badge" }: LeagueBadgeProps) {
     <a href={url} target="_blank" rel="noopener noreferrer">
       <Badge
         className={cn(
-          "text-[10px] sm:text-xs flex items-center gap-1 hover:opacity-80 transition-opacity",
+          "text-[10px] sm:text-xs inline-flex items-center gap-1 hover:opacity-80 transition-opacity",
           style.bg,
           style.text,
         )}
