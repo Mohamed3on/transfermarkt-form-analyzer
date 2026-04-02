@@ -4,6 +4,7 @@ export type PositionClass =
   | "attacking-midfield"
   | "central-midfield"
   | "defensive-midfield"
+  | "fullback"
   | "other";
 
 const POSITION_CLASS_MAP: Record<string, PositionClass> = {
@@ -16,9 +17,14 @@ const POSITION_CLASS_MAP: Record<string, PositionClass> = {
   "Right Midfield": "central-midfield",
   "Left Midfield": "central-midfield",
   "Defensive Midfield": "defensive-midfield",
+  "Left-Back": "fullback",
+  "Right-Back": "fullback",
+  "Left Wing-Back": "fullback",
+  "Right Wing-Back": "fullback",
 };
 const POSITION_CLASS_RANK: Record<PositionClass, number> = {
   other: 1,
+  fullback: 2,
   "defensive-midfield": 2,
   "central-midfield": 3,
   "attacking-midfield": 4,
