@@ -24,8 +24,10 @@ const OUT_PATH = join(DATA_DIR, "minutes-value.json");
 const CACHE_PATH = join(DATA_DIR, "player-cache.json");
 const CLUBS_PATH = join(DATA_DIR, "clubs.json");
 
-type Cache = Record<string, PlayerStatsResult>;
+type CacheEntry = { data: PlayerStatsResult; fetchedAt: number };
+type Cache = Record<string, CacheEntry>;
 type ClubMap = Record<string, { name: string; logoUrl: string }>;
+const STALE_MAX_MS = 24 * 60 * 60 * 1000; // 24h — discard cache entries older than this
 
 // --- 1. Gather & dedupe player pool ---
 
@@ -98,6 +100,25 @@ async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
 // --- 2. Fetch per-player stats with adaptive concurrency ---
 
 async function fetchAllStats(playerIds: string[]): Promise<Cache> {
+  // Load cache from previous runs as fallback for rate-limited players
+  const now = Date.now();
+  let staleCache: Cache = {};
+  try {
+    const raw: Cache = JSON.parse(await readFile(CACHE_PATH, "utf-8"));
+    // Discard entries older than 24h and migrate legacy entries without timestamps
+    for (const [id, entry] of Object.entries(raw)) {
+      if (entry.fetchedAt && now - entry.fetchedAt < STALE_MAX_MS) {
+        staleCache[id] = entry;
+      }
+    }
+    const hits = playerIds.filter((id) => id in staleCache).length;
+    console.log(
+      `[refresh] Loaded ${hits} valid cache entries (${Object.keys(raw).length - Object.keys(staleCache).length} expired)`,
+    );
+  } catch {
+    // No cache available
+  }
+
   const cache: Cache = {};
   let remaining = [...playerIds];
 
@@ -118,7 +139,7 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
       let failures = 0;
       for (let j = 0; j < batch.length; j++) {
         const r = results[j];
-        if (r.status === "fulfilled") cache[batch[j]] = r.value;
+        if (r.status === "fulfilled") cache[batch[j]] = { data: r.value, fetchedAt: now };
         else {
           failures++;
           failed.push(batch[j]);
@@ -145,7 +166,7 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
       console.log(
         `[refresh] ${Object.keys(cache).length}/${playerIds.length} fetched (batch: ${batch.length - failures}/${batch.length} ok)`,
       );
-      await writeFile(CACHE_PATH, JSON.stringify(cache));
+      await writeFile(CACHE_PATH, JSON.stringify({ ...staleCache, ...cache }));
 
       if (i + state.concurrency < remaining.length) {
         await new Promise((r) => setTimeout(r, state.delay));
@@ -155,14 +176,30 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
   }
 
   if (remaining.length > 0) {
-    if (remaining.length > 5) {
+    let filled = 0;
+    const uncached: string[] = [];
+    for (const id of remaining) {
+      if (staleCache[id]) {
+        cache[id] = staleCache[id];
+        filled++;
+      } else {
+        uncached.push(id);
+      }
+    }
+    if (filled > 0) {
+      console.log(`[refresh] ${filled} failed players filled from previous cache`);
+      await writeFile(CACHE_PATH, JSON.stringify({ ...staleCache, ...cache }));
+    }
+    if (uncached.length > 5) {
       throw new Error(
-        `${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds — too many`,
+        `${uncached.length} players failed with no cached fallback after ${MAX_RETRY_ROUNDS} rounds — too many`,
       );
     }
-    console.warn(
-      `[refresh] ${remaining.length} players failed after ${MAX_RETRY_ROUNDS} rounds — skipping: ${remaining.join(", ")}`,
-    );
+    if (uncached.length > 0) {
+      console.warn(
+        `[refresh] ${uncached.length} players have no data at all — skipping: ${uncached.join(", ")}`,
+      );
+    }
   }
   return cache;
 }
@@ -171,8 +208,9 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
 
 function mergeStats(players: MinutesValuePlayer[], cache: Cache): void {
   for (const p of players) {
-    const s = cache[p.playerId];
-    if (!s) continue;
+    const entry = cache[p.playerId];
+    if (!entry) continue;
+    const s = entry.data;
 
     p.minutes = s.minutes;
     p.totalMatches = s.appearances || p.totalMatches;

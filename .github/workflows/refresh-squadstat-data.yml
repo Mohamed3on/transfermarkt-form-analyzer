@@ -64,6 +64,7 @@ jobs:
           bun run scripts/refresh-minutes-value.ts
 
       - name: Save player cache
+        if: always()
         uses: actions/cache/save@v4
         with:
           path: data/player-cache.json
