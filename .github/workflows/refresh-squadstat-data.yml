@@ -32,10 +32,12 @@ jobs:
         env:
           TM_2CAPTCHA_KEY: ${{ secrets.TM_2CAPTCHA_KEY }}
           TM_COOKIE: ${{ secrets.TM_COOKIE }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           COOKIE=$(bun run scripts/solve-captcha.ts)
           ENCODED=$(echo -n "$COOKIE" | base64 -w0)
           echo "tm_cookie=$ENCODED" >> "$GITHUB_OUTPUT"
+          echo -n "$COOKIE" | gh secret set TM_COOKIE
 
   warm-caches:
     runs-on: ubuntu-latest
