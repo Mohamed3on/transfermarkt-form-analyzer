@@ -11,9 +11,22 @@ if (!API_KEY) {
   process.exit(1);
 }
 
+const EXISTING_COOKIE = process.env.TM_COOKIE || "";
 const TM_URL = "https://www.transfermarkt.com/";
 const POLL_INTERVAL = 5_000;
 const MAX_POLLS = 60;
+
+async function isExistingCookieValid(): Promise<boolean> {
+  if (!EXISTING_COOKIE) return false;
+  const res = await fetch(TM_URL, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+      Cookie: EXISTING_COOKIE,
+    },
+    redirect: "manual",
+  });
+  return res.status === 200;
+}
 
 async function fetchCaptchaPage(): Promise<{
   sitekey: string;
@@ -97,7 +110,14 @@ async function pollResult(taskId: string): Promise<string> {
 }
 
 async function main() {
-  console.error("[captcha] Fetching CAPTCHA page...");
+  console.error("[captcha] Checking existing cookie...");
+  if (await isExistingCookieValid()) {
+    console.error("[captcha] Existing cookie still valid, skipping 2captcha.");
+    console.log(EXISTING_COOKIE);
+    return;
+  }
+  console.error("[captcha] Cookie expired, solving CAPTCHA...");
+
   const params = await fetchCaptchaPage();
 
   console.error("[captcha] Submitting to 2captcha...");

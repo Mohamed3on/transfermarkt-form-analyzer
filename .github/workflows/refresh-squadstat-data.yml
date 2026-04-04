@@ -28,6 +28,7 @@ jobs:
         id: solve
         env:
           TM_2CAPTCHA_KEY: ${{ secrets.TM_2CAPTCHA_KEY }}
+          TM_COOKIE: ${{ secrets.TM_COOKIE }}
         run: |
           COOKIE=$(bun run scripts/solve-captcha.ts)
           echo "::add-mask::$COOKIE"
