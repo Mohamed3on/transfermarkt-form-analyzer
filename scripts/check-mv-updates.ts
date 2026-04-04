@@ -23,7 +23,9 @@ const HEADERS = {
 };
 
 async function main() {
-  const res = await fetch(URL, { headers: HEADERS });
+  const res = await fetch(URL, {
+    headers: { ...HEADERS, ...(process.env.TM_COOKIE ? { Cookie: process.env.TM_COOKIE } : {}) },
+  });
   const html = await res.text();
 
   if (html.length < 500) {

@@ -94,7 +94,6 @@ jobs:
           fi
 
   check-mv-updates:
-    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     outputs:
       has_updates: ${{ steps.check.outputs.has_updates }}
@@ -110,6 +109,8 @@ jobs:
 
       - name: Check for market value updates today
         id: check
+        env:
+          TM_COOKIE: ${{ secrets.TM_COOKIE }}
         run: |
           if bun run scripts/check-mv-updates.ts; then
             echo "has_updates=true" >> "$GITHUB_OUTPUT"
@@ -119,10 +120,7 @@ jobs:
 
   refresh-biggest-movers:
     needs: [check-mv-updates]
-    if: >-
-      always() &&
-      (github.event_name == 'workflow_dispatch' ||
-      needs.check-mv-updates.outputs.has_updates == 'true')
+    if: needs.check-mv-updates.outputs.has_updates == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
