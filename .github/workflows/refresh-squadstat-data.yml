@@ -10,6 +10,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  solve-captcha:
+    runs-on: ubuntu-latest
+    outputs:
+      tm_cookie: ${{ steps.solve.outputs.tm_cookie }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Solve Transfermarkt CAPTCHA
+        id: solve
+        env:
+          TM_2CAPTCHA_KEY: ${{ secrets.TM_2CAPTCHA_KEY }}
+        run: |
+          COOKIE=$(bun run scripts/solve-captcha.ts)
+          echo "::add-mask::$COOKIE"
+          echo "tm_cookie=$COOKIE" >> "$GITHUB_OUTPUT"
+
   warm-caches:
     runs-on: ubuntu-latest
     steps:
@@ -37,6 +60,7 @@ jobs:
           echo "Done warming caches."
 
   refresh-minutes-value:
+    needs: [solve-captcha]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -61,7 +85,7 @@ jobs:
       - name: Run refresh scripts
         id: refresh
         env:
-          TM_COOKIE: ${{ secrets.TM_COOKIE }}
+          TM_COOKIE: ${{ needs.solve-captcha.outputs.tm_cookie }}
         run: |
           bun run scripts/refresh-minutes-value.ts
 
@@ -94,6 +118,7 @@ jobs:
           fi
 
   check-mv-updates:
+    needs: [solve-captcha]
     runs-on: ubuntu-latest
     outputs:
       has_updates: ${{ steps.check.outputs.has_updates }}
@@ -110,7 +135,7 @@ jobs:
       - name: Check for market value updates today
         id: check
         env:
-          TM_COOKIE: ${{ secrets.TM_COOKIE }}
+          TM_COOKIE: ${{ needs.solve-captcha.outputs.tm_cookie }}
         run: |
           if bun run scripts/check-mv-updates.ts; then
             echo "has_updates=true" >> "$GITHUB_OUTPUT"
@@ -119,7 +144,7 @@ jobs:
           fi
 
   refresh-biggest-movers:
-    needs: [check-mv-updates]
+    needs: [solve-captcha, check-mv-updates]
     if: needs.check-mv-updates.outputs.has_updates == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -136,7 +161,7 @@ jobs:
 
       - name: Run refresh script
         env:
-          TM_COOKIE: ${{ secrets.TM_COOKIE }}
+          TM_COOKIE: ${{ needs.solve-captcha.outputs.tm_cookie }}
         run: bun run scripts/refresh-biggest-movers.ts
 
       - name: Commit and push
