@@ -1,9 +1,14 @@
 /**
- * Solves the Transfermarkt AWS WAF CAPTCHA via 2captcha and outputs
- * the aws-waf-token cookie value to stdout.
+ * Solves the Transfermarkt AWS WAF CAPTCHA via Playwright + 2captcha.
  *
- * Usage: TM_2CAPTCHA_KEY=xxx bun run scripts/solve-captcha.ts
+ * Flow: Playwright loads the CAPTCHA page → 2captcha solves it → Playwright
+ * injects the voucher via the AWS WAF SDK → extracts the minted cookie.
+ *
+ * Outputs the aws-waf-token cookie to stdout.
+ * Skips solving if TM_COOKIE env var is still valid.
  */
+
+import { chromium } from "playwright";
 
 const API_KEY = process.env.TM_2CAPTCHA_KEY;
 if (!API_KEY) {
@@ -28,107 +33,105 @@ async function isExistingCookieValid(): Promise<boolean> {
   return res.status === 200;
 }
 
-async function fetchCaptchaPage(): Promise<{
-  sitekey: string;
-  iv: string;
-  context: string;
-  challengeScript: string;
-  captchaScript: string;
-}> {
-  const res = await fetch(TM_URL, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      Accept: "text/html",
-    },
-  });
-  const html = await res.text();
+async function solveCaptcha(): Promise<string> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      userAgent:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+    });
+    const page = await context.newPage();
 
-  const propsMatch = html.match(/window\.gokuProps\s*=\s*(\{[\s\S]*?\});/);
-  if (!propsMatch) throw new Error("No gokuProps found — CAPTCHA page may have changed");
+    console.error("[captcha] Opening Transfermarkt in Playwright...");
+    await page.goto(TM_URL, { waitUntil: "networkidle", timeout: 30000 });
+    await page.waitForTimeout(3000);
 
-  const props = JSON.parse(propsMatch[1]);
+    // Extract CAPTCHA params from page
+    const params = await page.evaluate(() => {
+      const props = (window as any).gokuProps;
+      const scripts = [...document.querySelectorAll("script[src]")].map(
+        (s) => s.getAttribute("src") || "",
+      );
+      return {
+        sitekey: props?.key,
+        iv: props?.iv,
+        context: props?.context,
+        challengeScript: scripts.find((s) => s.includes("challenge.js")),
+        captchaScript: scripts.find((s) => s.includes("captcha.js")),
+      };
+    });
 
-  const challengeMatch = html.match(/src="(https:\/\/[^"]+\/challenge\.js)"/);
-  const captchaMatch = html.match(/src="(https:\/\/[^"]+\/captcha\.js)"/);
-  if (!challengeMatch || !captchaMatch)
-    throw new Error("Could not find challenge/captcha script URLs");
+    if (!params.sitekey) throw new Error("No gokuProps found on page");
 
-  return {
-    sitekey: props.key,
-    iv: props.iv,
-    context: props.context,
-    challengeScript: challengeMatch[1],
-    captchaScript: captchaMatch[1],
-  };
-}
+    // Submit to 2captcha
+    console.error("[captcha] Submitting to 2captcha...");
+    const createRes = await fetch("https://api.2captcha.com/createTask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientKey: API_KEY,
+        task: {
+          type: "AmazonTaskProxyless",
+          websiteURL: TM_URL,
+          websiteKey: params.sitekey,
+          iv: params.iv,
+          context: params.context,
+          challengeScript: params.challengeScript,
+          captchaScript: params.captchaScript,
+        },
+      }),
+    });
+    const { taskId, errorId, errorDescription } = await createRes.json();
+    if (errorId) throw new Error(`2captcha submit failed: ${errorDescription}`);
+    console.error(`[captcha] Task ${taskId}, polling...`);
 
-async function submitTo2Captcha(params: {
-  sitekey: string;
-  iv: string;
-  context: string;
-  challengeScript: string;
-  captchaScript: string;
-}): Promise<string> {
-  const body = new URLSearchParams({
-    key: API_KEY!,
-    method: "amazon_waf",
-    sitekey: params.sitekey,
-    iv: params.iv,
-    context: params.context,
-    pageurl: TM_URL,
-    challengescript: params.challengeScript,
-    captchascript: params.captchaScript,
-    json: "1",
-  });
-
-  const res = await fetch("https://2captcha.com/in.php", {
-    method: "POST",
-    body,
-  });
-  const data = await res.json();
-
-  if (data.status !== 1) throw new Error(`2captcha submit failed: ${JSON.stringify(data)}`);
-  return data.request as string;
-}
-
-async function pollResult(taskId: string): Promise<string> {
-  for (let i = 0; i < MAX_POLLS; i++) {
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL));
-
-    const res = await fetch(
-      `https://2captcha.com/res.php?key=${API_KEY}&action=get&id=${taskId}&json=1`,
-    );
-    const data = await res.json();
-
-    if (data.status === 1) return data.request as string;
-    if (data.request !== "CAPCHA_NOT_READY") {
-      throw new Error(`2captcha solve failed: ${JSON.stringify(data)}`);
+    // Poll for voucher
+    let voucher = "";
+    for (let i = 0; i < MAX_POLLS; i++) {
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL));
+      const pollRes = await fetch("https://api.2captcha.com/getTaskResult", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientKey: API_KEY, taskId }),
+      });
+      const data = await pollRes.json();
+      if (data.status === "ready") {
+        voucher = data.solution.captcha_voucher;
+        break;
+      }
+      if (data.errorId) throw new Error(`2captcha solve failed: ${data.errorDescription}`);
+      console.error(`[captcha] Waiting... (${i + 1}/${MAX_POLLS})`);
     }
-    console.error(`[captcha] Waiting... (${i + 1}/${MAX_POLLS})`);
+    if (!voucher) throw new Error("2captcha timed out");
+
+    // Inject voucher into page via AWS WAF SDK
+    console.error("[captcha] Injecting voucher...");
+    await page.evaluate(async (v) => {
+      await (window as any).ChallengeScript.submitCaptcha(v);
+    }, voucher);
+    await page.waitForTimeout(3000);
+
+    // Extract cookie
+    const cookies = await context.cookies();
+    const wafCookie = cookies.find((c) => c.name === "aws-waf-token");
+    if (!wafCookie) throw new Error("No aws-waf-token cookie set after voucher injection");
+
+    return `aws-waf-token=${wafCookie.value}`;
+  } finally {
+    await browser.close();
   }
-  throw new Error("2captcha timed out");
 }
 
 async function main() {
   console.error("[captcha] Checking existing cookie...");
   if (await isExistingCookieValid()) {
-    console.error("[captcha] Existing cookie still valid, skipping 2captcha.");
+    console.error("[captcha] Existing cookie still valid, skipping solve.");
     console.log(EXISTING_COOKIE);
     return;
   }
-  console.error("[captcha] Cookie expired, solving CAPTCHA...");
-
-  const params = await fetchCaptchaPage();
-
-  console.error("[captcha] Submitting to 2captcha...");
-  const taskId = await submitTo2Captcha(params);
-  console.error(`[captcha] Task ID: ${taskId}`);
-
-  console.error("[captcha] Polling for solution...");
-  const token = await pollResult(taskId);
-
-  // Output just the cookie value to stdout
-  console.log(`aws-waf-token=${token}`);
+  console.error("[captcha] Cookie expired, solving...");
+  const cookie = await solveCaptcha();
+  console.log(cookie);
   console.error("[captcha] Done!");
 }
 
