@@ -683,17 +683,17 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
       subtitle={<PlayerSubtitle {...player} />}
       desktopStats={
         <>
-          <span className="tabular-nums">{player.goals}G</span>
-          <span className="tabular-nums">{player.assists}A</span>
-          <span className="tabular-nums">{available} games</span>
+          <span className="tabular-nums">
+            Played {player.totalMatches} of {available}
+          </span>
           <span className="text-text-secondary">Age {player.age}</span>
         </>
       }
       mobileStats={
         <>
-          <span className="tabular-nums">{player.goals}G</span>
-          <span className="tabular-nums">{player.assists}A</span>
-          <span className="tabular-nums">{available} games</span>
+          <span className="tabular-nums">
+            Played {player.totalMatches} of {available}
+          </span>
           <span className="text-text-secondary">Age {player.age}</span>
         </>
       }
@@ -706,7 +706,11 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
             label="Minutes"
             color="var(--accent-blue)"
           />
-          <BigNumber value={String(available)} label="Games" color="var(--text-primary)" />
+          <BigNumber
+            value={String(player.totalMatches)}
+            label="Games"
+            color="var(--text-primary)"
+          />
           {missedPctVal > 0 && (
             <BigNumber value={`${missedPctVal}%`} label="Missed" color="var(--accent-cold-soft)" />
           )}
@@ -721,7 +725,9 @@ function MvBenchmarkCard({ player }: { player: MinutesValuePlayer }) {
           <div className="text-lg font-medium font-value text-accent-blue">
             {player.minutes.toLocaleString()}&apos;
           </div>
-          <div className="text-lg font-medium font-value text-text-primary">{available}</div>
+          <div className="text-lg font-medium font-value text-text-primary">
+            {player.totalMatches}
+          </div>
           {missedPctVal > 0 && (
             <div className="text-lg font-medium font-value text-accent-cold-soft">
               {missedPctVal}%
@@ -835,18 +841,14 @@ function MvPlayerCard({
           <div className="w-px h-8 bg-border-subtle" />
           <div className="flex items-center gap-2.5 text-right">
             <div>
-              <div className="text-sm font-medium font-value text-text-primary">{available}</div>
-              <div className="text-xs text-text-secondary">games</div>
-            </div>
-            <div>
-              <div className="text-sm font-medium font-value text-text-primary">{player.goals}</div>
-              <div className="text-xs text-text-secondary">goals</div>
-            </div>
-            <div>
               <div className="text-sm font-medium font-value text-text-primary">
-                {player.assists}
+                {player.totalMatches}
               </div>
-              <div className="text-xs text-text-secondary">assists</div>
+              <div className="text-xs text-text-secondary">played</div>
+            </div>
+            <div>
+              <div className="text-sm font-medium font-value text-text-primary">{available}</div>
+              <div className="text-xs text-text-secondary">available</div>
             </div>
           </div>
         </>
@@ -863,9 +865,9 @@ function MvPlayerCard({
       }
       footer={
         <>
-          <span className="tabular-nums text-text-secondary">{player.goals}G</span>
-          <span className="tabular-nums text-text-secondary">{player.assists}A</span>
-          <span className="tabular-nums text-text-secondary">{available} games</span>
+          <span className="tabular-nums text-text-secondary">
+            Played {player.totalMatches} of {available}
+          </span>
           {missedPctVal > 0 && (
             <span className="tabular-nums text-accent-cold-soft">{missedPctVal}% missed</span>
           )}

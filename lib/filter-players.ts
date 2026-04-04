@@ -126,7 +126,9 @@ export function gamesAvailable(p: {
   return gamesScheduled(p) - (p.gamesMissed ?? 0);
 }
 
-/** Split players into those playing less and more minutes than the target, filtered to same-or-higher value and same-or-more available games. */
+/** Split players into those playing less and more minutes than the target, filtered to same-or-higher value.
+ *  "Playing less" = available for same-or-more games yet fewer minutes (had opportunity but didn't play).
+ *  "Playing more" = available for same-or-fewer games yet more minutes (played more despite less opportunity). */
 export function filterMinutesBenchmark<
   T extends {
     playerId: string;
@@ -143,9 +145,12 @@ export function filterMinutesBenchmark<
   for (const p of players) {
     if (p.playerId === target.playerId) continue;
     if (p.marketValue < target.marketValue) continue;
-    if (gamesAvailable(p) < benchAvail) continue;
-    if (p.minutes <= target.minutes) playingLess.push(p);
-    else playingMore.push(p);
+    const pAvail = gamesAvailable(p);
+    if (p.minutes <= target.minutes) {
+      if (pAvail >= benchAvail) playingLess.push(p);
+    } else {
+      if (pAvail <= benchAvail) playingMore.push(p);
+    }
   }
   return { playingLess, playingMore };
 }

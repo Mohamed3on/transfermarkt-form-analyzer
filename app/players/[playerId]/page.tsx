@@ -772,7 +772,7 @@ export default async function PlayerDetailPage({
               <HeroMetric
                 label="Minutes"
                 value={`${player.minutes.toLocaleString()}'`}
-                subline={`${signalSummary.availablePct}% avail · #${rankings.minutesPosition} ${positionLabel.toLowerCase()}`}
+                subline={`Played ${player.totalMatches} of ${signalSummary.gamesScheduled - signalSummary.gamesMissed}${signalSummary.availablePct < 100 ? ` · ${100 - signalSummary.availablePct}% missed` : ""}`}
                 accentClass="text-accent-blue"
               />
             </div>
