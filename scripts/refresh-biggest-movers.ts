@@ -54,7 +54,11 @@ function buildReferer(date: string, cfg: DirectionConfig): string {
 async function fetchWithRetry(url: string, referer: string, label: string): Promise<string> {
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const response = await fetch(url, {
-      headers: { ...AJAX_HEADERS, Referer: referer },
+      headers: {
+        ...AJAX_HEADERS,
+        Referer: referer,
+        ...(process.env.TM_COOKIE ? { Cookie: process.env.TM_COOKIE } : {}),
+      },
     });
     if (!response.ok) {
       console.warn(`[${label}] HTTP ${response.status}, retry ${attempt + 1}/${MAX_RETRIES}`);

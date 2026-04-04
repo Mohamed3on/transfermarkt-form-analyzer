@@ -1,7 +1,8 @@
-const HEADERS = {
+const HEADERS: Record<string, string> = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
   "Cache-Control": "no-cache",
+  ...(process.env.TM_COOKIE ? { Cookie: process.env.TM_COOKIE } : {}),
 };
 
 const MAX_RETRIES = 5;

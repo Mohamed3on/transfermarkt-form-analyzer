@@ -60,6 +60,8 @@ jobs:
 
       - name: Run refresh scripts
         id: refresh
+        env:
+          TM_COOKIE: ${{ secrets.TM_COOKIE }}
         run: |
           bun run scripts/refresh-minutes-value.ts
 
@@ -135,6 +137,8 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run refresh script
+        env:
+          TM_COOKIE: ${{ secrets.TM_COOKIE }}
         run: bun run scripts/refresh-biggest-movers.ts
 
       - name: Commit and push
