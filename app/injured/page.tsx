@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getInjuredPlayers } from "@/lib/injured";
 import { InjuredUI } from "./InjuredUI";
 import { createPageMetadata } from "@/lib/metadata";
@@ -23,7 +24,9 @@ export default async function InjuredPage() {
   const data = await getInjuredPlayers();
   return (
     <>
-      <InjuredUI initialData={data} failedLeagues={data.failedLeagues} />
+      <Suspense>
+        <InjuredUI initialData={data} failedLeagues={data.failedLeagues} />
+      </Suspense>
       <DiscoveryLinkGrid
         section="injured"
         title="Injury Tracking Boards"

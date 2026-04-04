@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getMinutesValueData, slimForClient } from "@/lib/fetch-minutes-value";
 import { getInjuredPlayers } from "@/lib/injured";
 import { DataLastUpdated } from "@/app/components/DataLastUpdated";
@@ -35,10 +36,12 @@ export default async function PlayersPage() {
 
   return (
     <>
-      <PlayersUI
-        initialData={slimForClient(players, { trimRecentForm: true })}
-        injuryMap={injuryMap}
-      />
+      <Suspense>
+        <PlayersUI
+          initialData={slimForClient(players, { trimRecentForm: true })}
+          injuryMap={injuryMap}
+        />
+      </Suspense>
       <DiscoveryLinkGrid
         section="players"
         title="Player Scouting Boards"

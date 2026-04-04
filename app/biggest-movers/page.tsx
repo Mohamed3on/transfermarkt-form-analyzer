@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { findRepeatLosers, findRepeatWinners } from "@/lib/biggest-movers";
 import { BiggestMoversUI } from "./BiggestMoversUI";
 import { DataLastUpdated } from "@/app/components/DataLastUpdated";
@@ -21,7 +22,9 @@ export default async function BiggestMoversPage() {
   const [losers, winners] = await Promise.all([findRepeatLosers(), findRepeatWinners()]);
   return (
     <>
-      <BiggestMoversUI losers={losers} winners={winners} />
+      <Suspense>
+        <BiggestMoversUI losers={losers} winners={winners} />
+      </Suspense>
       <DataLastUpdated file="biggest-movers-updated-at.txt" />
     </>
   );

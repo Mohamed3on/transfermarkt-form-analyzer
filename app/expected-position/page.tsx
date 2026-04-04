@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getTeamFormData } from "@/lib/team-form";
 import { getAnalysis } from "@/lib/form-analysis";
 import { TeamFormUI } from "./TeamFormUI";
@@ -31,7 +32,9 @@ export default async function ExpectedPositionPage() {
 
   return (
     <>
-      <TeamFormUI initialData={data} formLeaders={formLeaders} />
+      <Suspense>
+        <TeamFormUI initialData={data} formLeaders={formLeaders} />
+      </Suspense>
       <DiscoveryLinkGrid
         section="expected-position"
         title="Team Performance Boards"
