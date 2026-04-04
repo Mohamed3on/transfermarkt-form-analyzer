@@ -34,8 +34,8 @@ jobs:
           TM_COOKIE: ${{ secrets.TM_COOKIE }}
         run: |
           COOKIE=$(bun run scripts/solve-captcha.ts)
-          echo "::add-mask::$COOKIE"
-          echo "tm_cookie=$COOKIE" >> "$GITHUB_OUTPUT"
+          ENCODED=$(echo -n "$COOKIE" | base64 -w0)
+          echo "tm_cookie=$ENCODED" >> "$GITHUB_OUTPUT"
 
   warm-caches:
     runs-on: ubuntu-latest
@@ -89,8 +89,9 @@ jobs:
       - name: Run refresh scripts
         id: refresh
         env:
-          TM_COOKIE: ${{ needs.solve-captcha.outputs.tm_cookie }}
+          TM_COOKIE_B64: ${{ needs.solve-captcha.outputs.tm_cookie }}
         run: |
+          export TM_COOKIE=$(echo "$TM_COOKIE_B64" | base64 -d)
           bun run scripts/refresh-minutes-value.ts
 
       - name: Save player cache
@@ -139,8 +140,9 @@ jobs:
       - name: Check for market value updates today
         id: check
         env:
-          TM_COOKIE: ${{ needs.solve-captcha.outputs.tm_cookie }}
+          TM_COOKIE_B64: ${{ needs.solve-captcha.outputs.tm_cookie }}
         run: |
+          export TM_COOKIE=$(echo "$TM_COOKIE_B64" | base64 -d)
           if bun run scripts/check-mv-updates.ts; then
             echo "has_updates=true" >> "$GITHUB_OUTPUT"
           else
@@ -165,8 +167,10 @@ jobs:
 
       - name: Run refresh script
         env:
-          TM_COOKIE: ${{ needs.solve-captcha.outputs.tm_cookie }}
-        run: bun run scripts/refresh-biggest-movers.ts
+          TM_COOKIE_B64: ${{ needs.solve-captcha.outputs.tm_cookie }}
+        run: |
+          export TM_COOKIE=$(echo "$TM_COOKIE_B64" | base64 -d)
+          bun run scripts/refresh-biggest-movers.ts
 
       - name: Commit and push
         run: |
