@@ -9,12 +9,15 @@ export function formatMarketValue(value: number): string {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export function formatReturnInfo(dateStr: string): { label: string; imminent: boolean } | null {
+export function formatReturnInfo(
+  dateStr: string,
+  nowMs?: number,
+): { label: string; imminent: boolean } | null {
   if (!dateStr) return null;
   const [d, m, y] = dateStr.split("/").map(Number);
   if (!d || !m || !y) return null;
   const target = Date.UTC(y, m - 1, d);
-  const n = new Date();
+  const n = new Date(nowMs ?? Date.now());
   const now = Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate());
   const days = Math.ceil((target - now) / 86400000);
   const mon = MONTHS[m - 1];
@@ -24,12 +27,12 @@ export function formatReturnInfo(dateStr: string): { label: string; imminent: bo
   return { label: `back ${mon} ${d}`, imminent: false };
 }
 
-export function formatInjuryDuration(sinceStr: string): string | null {
+export function formatInjuryDuration(sinceStr: string, nowMs?: number): string | null {
   if (!sinceStr) return null;
   const [d, m, y] = sinceStr.split("/").map(Number);
   if (!d || !m || !y) return null;
   const since = Date.UTC(y, m - 1, d);
-  const n = new Date();
+  const n = new Date(nowMs ?? Date.now());
   const now = Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate());
   const days = Math.max(0, Math.floor((now - since) / 86400000));
   if (days < 14) return `${days} days`;

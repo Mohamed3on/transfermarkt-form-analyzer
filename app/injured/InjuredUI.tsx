@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { createContext, useContext, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -53,6 +53,12 @@ export interface InjuredResponse {
 interface InjuredUIProps {
   initialData: InjuredResponse;
   failedLeagues?: string[];
+  now: number;
+}
+
+const NowContext = createContext(0);
+function useNow() {
+  return useContext(NowContext);
 }
 
 async function fetchLeagueInjured(code: string): Promise<InjuredPlayer[]> {
@@ -92,7 +98,8 @@ function PlayerCard({
   rank: number;
   index?: number;
 }) {
-  const returnInfo = formatReturnInfo(player.returnDate);
+  const now = useNow();
+  const returnInfo = formatReturnInfo(player.returnDate, now);
   const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
 
   return (
@@ -165,7 +172,7 @@ function PlayerCard({
 
             {/* Injury Info */}
             {(() => {
-              const dur = formatInjuryDuration(player.injurySince);
+              const dur = formatInjuryDuration(player.injurySince, now);
               return (
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 sm:mt-2 text-xs sm:text-sm">
                   <Badge variant="destructive" className="gap-1">
@@ -210,10 +217,12 @@ function TeamInjuryCard({
   team,
   rank,
   index = 0,
+  now,
 }: {
   team: TeamInjuryGroup;
   rank: number;
   index?: number;
+  now: number;
 }) {
   return (
     <Card
@@ -273,8 +282,8 @@ function TeamInjuryCard({
         {/* Player list — mobile */}
         <div className="mt-3 flex flex-col divide-y divide-border-subtle sm:hidden">
           {team.players.map((player) => {
-            const ri = formatReturnInfo(player.returnDate);
-            const dur = formatInjuryDuration(player.injurySince);
+            const ri = formatReturnInfo(player.returnDate, now);
+            const dur = formatInjuryDuration(player.injurySince, now);
             const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
             return (
               <Link
@@ -324,8 +333,8 @@ function TeamInjuryCard({
         {/* Player rows — desktop */}
         <div className="mt-3 hidden sm:block rounded-lg border border-border-subtle overflow-hidden divide-y divide-border-subtle">
           {team.players.map((player) => {
-            const ri = formatReturnInfo(player.returnDate);
-            const dur = formatInjuryDuration(player.injurySince);
+            const ri = formatReturnInfo(player.returnDate, now);
+            const dur = formatInjuryDuration(player.injurySince, now);
             const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
             return (
               <Link
@@ -460,8 +469,9 @@ function InjuryCategoryCard({
 }
 
 function InjuryPlayerChip({ player }: { player: InjuredPlayer }) {
-  const ri = formatReturnInfo(player.returnDate);
-  const dur = formatInjuryDuration(player.injurySince);
+  const now = useNow();
+  const ri = formatReturnInfo(player.returnDate, now);
+  const dur = formatInjuryDuration(player.injurySince, now);
   const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
   return (
     <Link
@@ -664,7 +674,7 @@ function StatsHighlights({
 
 type GroupSort = "value" | "count";
 
-export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
+export function InjuredUI({ initialData, failedLeagues = [], now }: InjuredUIProps) {
   const { params, update } = useQueryParams("/injured");
   const { results: extraResults, pending } = useProgressiveFetch(failedLeagues, fetchLeagueInjured);
 
@@ -754,7 +764,7 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
   );
 
   return (
-    <>
+    <NowContext.Provider value={now}>
       {pending.size > 0 && (
         <p className="text-[11px] mb-4 animate-pulse text-accent-blue">
           Retrying {pending.size} failed {pending.size === 1 ? "league" : "leagues"}...
@@ -822,7 +832,7 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
           />
           <div className="grid grid-cols-1 gap-3">
             {teamGroups.map((team, idx) => (
-              <TeamInjuryCard key={team.club} team={team} rank={idx + 1} index={idx} />
+              <TeamInjuryCard key={team.club} team={team} rank={idx + 1} index={idx} now={now} />
             ))}
           </div>
         </TabsContent>
@@ -845,7 +855,7 @@ export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
           </div>
         </TabsContent>
       </Tabs>
-    </>
+    </NowContext.Provider>
   );
 }
 
