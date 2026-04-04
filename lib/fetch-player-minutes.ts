@@ -33,9 +33,10 @@ const ZERO_STATS: PlayerStatsResult = {
   age: 0,
 };
 
-const CEAPI_HEADERS = {
+const CEAPI_HEADERS: Record<string, string> = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
   Accept: "application/json",
+  ...(process.env.TM_COOKIE ? { Cookie: process.env.TM_COOKIE } : {}),
 };
 
 /** Domestic league competition ID → display name */
