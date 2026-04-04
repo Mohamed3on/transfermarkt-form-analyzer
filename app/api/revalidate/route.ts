@@ -7,7 +7,6 @@ const ALL_TAGS = [
   "team-form",
   "injured",
   "player-recent-matches",
-  "minutes-value",
   "biggest-movers",
 ];
 

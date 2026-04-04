@@ -1,7 +1,6 @@
 import * as cheerio from "cheerio";
 import { readFile } from "fs/promises";
 import { join } from "path";
-import { unstable_cache } from "next/cache";
 import type { MinutesValuePlayer, PlayerStats } from "@/app/types";
 import { BASE_URL } from "./constants";
 import { fetchPage } from "./fetch";
@@ -150,15 +149,11 @@ export const fetchTopForwardsRaw = () =>
   );
 
 /** Reads pre-built JSON data committed to the repo. */
-export const getMinutesValueData = unstable_cache(
-  async (): Promise<MinutesValuePlayer[]> => {
-    const filePath = join(process.cwd(), "data", "minutes-value.json");
-    const raw = await readFile(filePath, "utf-8");
-    return JSON.parse(raw) as MinutesValuePlayer[];
-  },
-  ["minutes-value-data"],
-  { revalidate: 7200, tags: ["minutes-value"] },
-);
+export async function getMinutesValueData(): Promise<MinutesValuePlayer[]> {
+  const filePath = join(process.cwd(), "data", "minutes-value.json");
+  const raw = await readFile(filePath, "utf-8");
+  return JSON.parse(raw) as MinutesValuePlayer[];
+}
 
 /**
  * Strip heavy fields before serializing to client components.
