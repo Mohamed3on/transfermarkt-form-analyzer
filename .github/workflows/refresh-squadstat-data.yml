@@ -30,10 +30,14 @@ jobs:
           TM_2CAPTCHA_KEY: ${{ secrets.TM_2CAPTCHA_KEY }}
           TM_COOKIE: ${{ secrets.TM_COOKIE }}
           GH_TOKEN: ${{ secrets.GH_PAT }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           COOKIE=$(bun run scripts/solve-captcha.ts)
           echo -n "$COOKIE" > /tmp/tm-cookie.txt
+          # Sync cookie to GitHub secret + Vercel env var
           echo -n "$COOKIE" | gh secret set TM_COOKIE
+          vercel env rm TM_COOKIE production -y 2>/dev/null || true
+          echo -n "$COOKIE" | vercel env add TM_COOKIE production
 
       - uses: actions/upload-artifact@v4
         with:
