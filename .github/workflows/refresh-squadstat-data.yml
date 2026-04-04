@@ -12,8 +12,6 @@ concurrency:
 jobs:
   solve-captcha:
     runs-on: ubuntu-latest
-    outputs:
-      tm_cookie: ${{ steps.solve.outputs.tm_cookie }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,16 +26,20 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Solve Transfermarkt CAPTCHA
-        id: solve
         env:
           TM_2CAPTCHA_KEY: ${{ secrets.TM_2CAPTCHA_KEY }}
           TM_COOKIE: ${{ secrets.TM_COOKIE }}
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           COOKIE=$(bun run scripts/solve-captcha.ts)
-          ENCODED=$(echo -n "$COOKIE" | base64 -w0)
-          echo "tm_cookie=$ENCODED" >> "$GITHUB_OUTPUT"
+          echo -n "$COOKIE" > /tmp/tm-cookie.txt
           echo -n "$COOKIE" | gh secret set TM_COOKIE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tm-cookie
+          path: /tmp/tm-cookie.txt
+          retention-days: 1
 
   warm-caches:
     runs-on: ubuntu-latest
@@ -88,12 +90,14 @@ jobs:
           key: player-cache-${{ github.run_id }}
           restore-keys: player-cache-
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: tm-cookie
+
       - name: Run refresh scripts
         id: refresh
-        env:
-          TM_COOKIE_B64: ${{ needs.solve-captcha.outputs.tm_cookie }}
         run: |
-          export TM_COOKIE=$(echo "$TM_COOKIE_B64" | base64 -d)
+          export TM_COOKIE=$(cat tm-cookie.txt)
           bun run scripts/refresh-minutes-value.ts
 
       - name: Save player cache
@@ -139,12 +143,14 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: tm-cookie
+
       - name: Check for market value updates today
         id: check
-        env:
-          TM_COOKIE_B64: ${{ needs.solve-captcha.outputs.tm_cookie }}
         run: |
-          export TM_COOKIE=$(echo "$TM_COOKIE_B64" | base64 -d)
+          export TM_COOKIE=$(cat tm-cookie.txt)
           if bun run scripts/check-mv-updates.ts; then
             echo "has_updates=true" >> "$GITHUB_OUTPUT"
           else
@@ -167,11 +173,13 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: tm-cookie
+
       - name: Run refresh script
-        env:
-          TM_COOKIE_B64: ${{ needs.solve-captcha.outputs.tm_cookie }}
         run: |
-          export TM_COOKIE=$(echo "$TM_COOKIE_B64" | base64 -d)
+          export TM_COOKIE=$(cat tm-cookie.txt)
           bun run scripts/refresh-biggest-movers.ts
 
       - name: Commit and push
