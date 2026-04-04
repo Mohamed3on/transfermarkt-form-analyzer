@@ -25,7 +25,7 @@ export default async function InjuredPage() {
   return (
     <>
       <Suspense>
-        <InjuredUI initialData={data} failedLeagues={data.failedLeagues} now={Date.now()} />
+        <InjuredUI initialData={data} failedLeagues={data.failedLeagues} />
       </Suspense>
       <DiscoveryLinkGrid
         section="injured"

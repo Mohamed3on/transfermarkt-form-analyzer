@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -53,12 +53,6 @@ export interface InjuredResponse {
 interface InjuredUIProps {
   initialData: InjuredResponse;
   failedLeagues?: string[];
-  now: number;
-}
-
-const NowContext = createContext(0);
-function useNow() {
-  return useContext(NowContext);
 }
 
 async function fetchLeagueInjured(code: string): Promise<InjuredPlayer[]> {
@@ -98,8 +92,7 @@ function PlayerCard({
   rank: number;
   index?: number;
 }) {
-  const now = useNow();
-  const returnInfo = formatReturnInfo(player.returnDate, now);
+  const returnInfo = formatReturnInfo(player.returnDate);
   const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
 
   return (
@@ -172,9 +165,12 @@ function PlayerCard({
 
             {/* Injury Info */}
             {(() => {
-              const dur = formatInjuryDuration(player.injurySince, now);
+              const dur = formatInjuryDuration(player.injurySince);
               return (
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 sm:mt-2 text-xs sm:text-sm">
+                <div
+                  className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 sm:mt-2 text-xs sm:text-sm"
+                  suppressHydrationWarning
+                >
                   <Badge variant="destructive" className="gap-1">
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                       <path
@@ -187,7 +183,7 @@ function PlayerCard({
                     {dur && (
                       <>
                         <span className="opacity-50">·</span>
-                        <span>out {dur}</span>
+                        <span suppressHydrationWarning>out {dur}</span>
                       </>
                     )}
                   </Badge>
@@ -199,6 +195,7 @@ function PlayerCard({
                         returnInfo.imminent &&
                           "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
                       )}
+                      suppressHydrationWarning
                     >
                       {returnInfo.label}
                     </Badge>
@@ -217,12 +214,10 @@ function TeamInjuryCard({
   team,
   rank,
   index = 0,
-  now,
 }: {
   team: TeamInjuryGroup;
   rank: number;
   index?: number;
-  now: number;
 }) {
   return (
     <Card
@@ -282,8 +277,8 @@ function TeamInjuryCard({
         {/* Player list — mobile */}
         <div className="mt-3 flex flex-col divide-y divide-border-subtle sm:hidden">
           {team.players.map((player) => {
-            const ri = formatReturnInfo(player.returnDate, now);
-            const dur = formatInjuryDuration(player.injurySince, now);
+            const ri = formatReturnInfo(player.returnDate);
+            const dur = formatInjuryDuration(player.injurySince);
             const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
             return (
               <Link
@@ -307,18 +302,24 @@ function TeamInjuryCard({
                       {player.marketValue}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] text-text-muted mt-0.5">
+                  <div
+                    className="flex items-center gap-1 text-[10px] text-text-muted mt-0.5"
+                    suppressHydrationWarning
+                  >
                     <span className="text-text-secondary">{player.injury}</span>
                     {dur && (
                       <>
                         <span className="opacity-40">·</span>
-                        <span>out {dur}</span>
+                        <span suppressHydrationWarning>out {dur}</span>
                       </>
                     )}
                     {ri && (
                       <>
                         <span className="opacity-40">·</span>
-                        <span className={ri.imminent ? "text-emerald-500 font-medium" : ""}>
+                        <span
+                          suppressHydrationWarning
+                          className={ri.imminent ? "text-emerald-500 font-medium" : ""}
+                        >
                           {ri.label}
                         </span>
                       </>
@@ -333,8 +334,8 @@ function TeamInjuryCard({
         {/* Player rows — desktop */}
         <div className="mt-3 hidden sm:block rounded-lg border border-border-subtle overflow-hidden divide-y divide-border-subtle">
           {team.players.map((player) => {
-            const ri = formatReturnInfo(player.returnDate, now);
-            const dur = formatInjuryDuration(player.injurySince, now);
+            const ri = formatReturnInfo(player.returnDate);
+            const dur = formatInjuryDuration(player.injurySince);
             const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
             return (
               <Link
@@ -352,12 +353,16 @@ function TeamInjuryCard({
                 <span className="text-sm font-medium text-text-primary w-36 lg:w-44 truncate shrink-0">
                   {player.name}
                 </span>
-                <span className="text-xs text-text-secondary flex-1 truncate">
+                <span
+                  className="text-xs text-text-secondary flex-1 truncate"
+                  suppressHydrationWarning
+                >
                   {player.injury}
                   {dur && <span className="text-text-muted"> · out {dur}</span>}
                 </span>
                 {ri && (
                   <span
+                    suppressHydrationWarning
                     className={cn(
                       "text-xs shrink-0",
                       ri.imminent ? "text-emerald-500 font-medium" : "text-text-muted",
@@ -469,9 +474,8 @@ function InjuryCategoryCard({
 }
 
 function InjuryPlayerChip({ player }: { player: InjuredPlayer }) {
-  const now = useNow();
-  const ri = formatReturnInfo(player.returnDate, now);
-  const dur = formatInjuryDuration(player.injurySince, now);
+  const ri = formatReturnInfo(player.returnDate);
+  const dur = formatInjuryDuration(player.injurySince);
   const detailHref = getInjuredPlayerDetailHref(player.profileUrl);
   return (
     <Link
@@ -479,6 +483,7 @@ function InjuryPlayerChip({ player }: { player: InjuredPlayer }) {
       target={detailHref ? undefined : "_blank"}
       rel={detailHref ? undefined : "noopener noreferrer"}
       className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] sm:text-xs hover:bg-card-hover transition-colors duration-150 bg-card border border-border-subtle"
+      suppressHydrationWarning
     >
       {player.imageUrl && !player.imageUrl.includes("data:image") && (
         <PlayerAvatar
@@ -490,9 +495,16 @@ function InjuryPlayerChip({ player }: { player: InjuredPlayer }) {
       <span className="text-text-primary">{player.name}</span>
       <span className="text-text-secondary">{player.club}</span>
       <span className="text-accent-hot font-medium font-value">{player.marketValue}</span>
-      {dur && <span className="text-text-muted">out {dur}</span>}
+      {dur && (
+        <span className="text-text-muted" suppressHydrationWarning>
+          out {dur}
+        </span>
+      )}
       {ri && (
-        <span className={cn("font-medium", ri.imminent ? "text-emerald-500" : "text-text-muted")}>
+        <span
+          suppressHydrationWarning
+          className={cn("font-medium", ri.imminent ? "text-emerald-500" : "text-text-muted")}
+        >
           {ri.label}
         </span>
       )}
@@ -674,7 +686,7 @@ function StatsHighlights({
 
 type GroupSort = "value" | "count";
 
-export function InjuredUI({ initialData, failedLeagues = [], now }: InjuredUIProps) {
+export function InjuredUI({ initialData, failedLeagues = [] }: InjuredUIProps) {
   const { params, update } = useQueryParams("/injured");
   const { results: extraResults, pending } = useProgressiveFetch(failedLeagues, fetchLeagueInjured);
 
@@ -764,7 +776,7 @@ export function InjuredUI({ initialData, failedLeagues = [], now }: InjuredUIPro
   );
 
   return (
-    <NowContext.Provider value={now}>
+    <>
       {pending.size > 0 && (
         <p className="text-[11px] mb-4 animate-pulse text-accent-blue">
           Retrying {pending.size} failed {pending.size === 1 ? "league" : "leagues"}...
@@ -832,7 +844,7 @@ export function InjuredUI({ initialData, failedLeagues = [], now }: InjuredUIPro
           />
           <div className="grid grid-cols-1 gap-3">
             {teamGroups.map((team, idx) => (
-              <TeamInjuryCard key={team.club} team={team} rank={idx + 1} index={idx} now={now} />
+              <TeamInjuryCard key={team.club} team={team} rank={idx + 1} index={idx} />
             ))}
           </div>
         </TabsContent>
@@ -855,7 +867,7 @@ export function InjuredUI({ initialData, failedLeagues = [], now }: InjuredUIPro
           </div>
         </TabsContent>
       </Tabs>
-    </NowContext.Provider>
+    </>
   );
 }
 
