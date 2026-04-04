@@ -131,6 +131,20 @@ async function main() {
   }
   console.error("[captcha] Cookie expired, solving...");
   const cookie = await solveCaptcha();
+
+  // Verify the token actually works before outputting
+  console.error("[captcha] Verifying solved token...");
+  const verify = await fetch("https://www.transfermarkt.com/", {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+      Cookie: cookie,
+    },
+    redirect: "manual",
+  });
+  if (verify.status !== 200) {
+    throw new Error(`Solved token failed verification (HTTP ${verify.status})`);
+  }
+
   console.log(cookie);
   console.error("[captcha] Done!");
 }
