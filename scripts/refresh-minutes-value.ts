@@ -13,10 +13,9 @@ import { BASE_URL } from "@/lib/constants";
 import type { MinutesValuePlayer, PlayerStatsResult } from "@/app/types";
 
 const FORCE_REFRESH = process.argv.includes("--force") || process.env.FORCE_REFRESH === "1";
-// TM rate-limits at ~100 rapid requests per token — use conservative concurrency for full fetches
-const CONCURRENCY = FORCE_REFRESH ? { max: 10, min: 5 } : { max: 50, min: 10 };
-const DELAY = FORCE_REFRESH ? { base: 500, multiplier: 2 } : { base: 100, multiplier: 2 };
-setMaxConcurrent(CONCURRENCY.max);
+setMaxConcurrent(50);
+const CONCURRENCY = { max: 50, min: 10 };
+const DELAY = { base: 100, multiplier: 2 };
 const FAILURE_THRESHOLD = 0.3;
 const CLEAN_BATCHES_TO_RAMP = 3;
 const MAX_RETRY_ROUNDS = 8;

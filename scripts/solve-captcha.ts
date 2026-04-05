@@ -16,24 +16,10 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-const EXISTING_COOKIE = process.env.TM_COOKIE || "";
 const TM_URL = "https://www.transfermarkt.com/";
 const VALIDATE_URL = "https://www.transfermarkt.com/x/leistungsdaten/spieler/28003"; // Messi — always exists
 const POLL_INTERVAL = 5_000;
 const MAX_POLLS = 60;
-
-async function isExistingCookieValid(): Promise<boolean> {
-  if (!EXISTING_COOKIE) return false;
-  // Validate against an actual player page, not the homepage (which may not require WAF cookie)
-  const res = await fetch(VALIDATE_URL, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      Cookie: EXISTING_COOKIE,
-    },
-    redirect: "manual",
-  });
-  return res.status === 200;
-}
 
 async function solveCaptcha(): Promise<string> {
   const browser = await chromium.launch({ headless: true });
@@ -125,13 +111,7 @@ async function solveCaptcha(): Promise<string> {
 }
 
 async function main() {
-  console.error("[captcha] Checking existing cookie...");
-  if (await isExistingCookieValid()) {
-    console.error("[captcha] Existing cookie still valid, skipping solve.");
-    console.log(EXISTING_COOKIE);
-    return;
-  }
-  console.error("[captcha] Cookie expired, solving...");
+  console.error("[captcha] Solving fresh cookie (always solve to avoid stale token issues)...");
   const cookie = await solveCaptcha();
 
   // Verify the token actually works against a real player page
