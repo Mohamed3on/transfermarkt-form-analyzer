@@ -12,6 +12,7 @@ import { fetchPage, setMaxConcurrent } from "@/lib/fetch";
 import { BASE_URL } from "@/lib/constants";
 import type { MinutesValuePlayer, PlayerStatsResult } from "@/app/types";
 
+const FORCE_REFRESH = process.argv.includes("--force") || process.env.FORCE_REFRESH === "1";
 setMaxConcurrent(50); // Script has its own adaptive backoff; no need for the default 4-slot limiter
 const CONCURRENCY = { max: 50, min: 10 };
 const DELAY = { base: 100, multiplier: 2 };
@@ -120,14 +121,38 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
   }
 
   const cache: Cache = {};
-  // Use valid cache entries directly — only fetch uncached/expired players
-  for (const id of playerIds) {
-    if (staleCache[id]) cache[id] = staleCache[id];
+  if (FORCE_REFRESH) {
+    console.log("[refresh] --force: bypassing cache, fetching all players");
+  } else {
+    for (const id of playerIds) {
+      if (staleCache[id]) cache[id] = staleCache[id];
+    }
   }
   let remaining = playerIds.filter((id) => !cache[id]);
   console.log(
     `[refresh] ${Object.keys(cache).length} players served from cache, ${remaining.length} need fetching`,
   );
+
+  // Validate cookie works before committing to full fetch
+  if (remaining.length > 5) {
+    const testIds = remaining.slice(0, 3);
+    const testResults = await Promise.allSettled(testIds.map((id) => fetchPlayerMinutesRaw(id)));
+    const failures = testResults.filter((r) => r.status === "rejected").length;
+    if (failures === testIds.length) {
+      throw new Error(
+        "Cookie validation failed: all test fetches returned 405. Cookie is invalid.",
+      );
+    }
+    // Move successful test results into cache
+    for (let i = 0; i < testIds.length; i++) {
+      const r = testResults[i];
+      if (r.status === "fulfilled") cache[testIds[i]] = { data: r.value, fetchedAt: now };
+    }
+    remaining = remaining.filter((id) => !cache[id]);
+    console.log(
+      `[refresh] Cookie validated (${testIds.length - failures}/${testIds.length} test fetches ok)`,
+    );
+  }
 
   for (let round = 0; round <= MAX_RETRY_ROUNDS && remaining.length > 0; round++) {
     if (round > 0) console.log(`[refresh] Retry ${round}: ${remaining.length} remaining`);

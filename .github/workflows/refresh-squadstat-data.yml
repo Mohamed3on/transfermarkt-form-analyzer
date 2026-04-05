@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 */3 * * *"
   workflow_dispatch:
+    inputs:
+      force_refresh:
+        description: "Bypass player cache and re-fetch all players"
+        type: boolean
+        default: false
 
 concurrency:
   group: data-refresh
@@ -113,6 +118,8 @@ jobs:
 
       - name: Run refresh scripts
         id: refresh
+        env:
+          FORCE_REFRESH: ${{ inputs.force_refresh && '1' || '0' }}
         run: |
           export TM_COOKIE=$(cat tm-cookie.txt)
           bun run scripts/refresh-minutes-value.ts
