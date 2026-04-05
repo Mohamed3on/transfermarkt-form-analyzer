@@ -34,10 +34,23 @@ jobs:
         run: |
           COOKIE=$(bun run scripts/solve-captcha.ts)
           echo -n "$COOKIE" > /tmp/tm-cookie.txt
-          # Sync cookie to GitHub secret + Vercel env var
+          # Sync cookie to GitHub secret
           echo -n "$COOKIE" | gh secret set TM_COOKIE
-          npx vercel env rm TM_COOKIE production -y 2>/dev/null || true
-          echo -n "$COOKIE" | npx vercel env add TM_COOKIE production
+          # Sync cookie to Vercel env var via REST API (no project linking needed)
+          PROJECT_ID="prj_wFW1sJsFd48VNhm9KWAN19vmLA2N"
+          TEAM_ID="team_0AB8ygPQlmDZKieEgjsCzIoD"
+          API="https://api.vercel.com"
+          AUTH="Authorization: Bearer $VERCEL_TOKEN"
+          # Delete existing TM_COOKIE env var if present
+          ENV_ID=$(curl -sf -H "$AUTH" "$API/v9/projects/$PROJECT_ID/env?teamId=$TEAM_ID" \
+            | jq -r '.envs[] | select(.key == "TM_COOKIE") | .id' 2>/dev/null || true)
+          if [ -n "$ENV_ID" ]; then
+            curl -sf -X DELETE -H "$AUTH" "$API/v9/projects/$PROJECT_ID/env/$ENV_ID?teamId=$TEAM_ID" || true
+          fi
+          # Create new TM_COOKIE env var
+          curl -sf -X POST -H "$AUTH" -H "Content-Type: application/json" \
+            -d "$(jq -n --arg v "$COOKIE" '{key:"TM_COOKIE",value:$v,target:["production"],type:"encrypted"}')" \
+            "$API/v10/projects/$PROJECT_ID/env?teamId=$TEAM_ID"
 
       - uses: actions/upload-artifact@v4
         with:
