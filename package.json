@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "vercel env pull .env.local --yes --environment=production && next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "oxlint",
