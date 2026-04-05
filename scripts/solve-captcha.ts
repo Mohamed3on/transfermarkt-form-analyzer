@@ -104,14 +104,23 @@ async function solveCaptcha(): Promise<string> {
     const wafCookie = cookies.find((c) => c.name === "aws-waf-token");
     if (!wafCookie) throw new Error("No aws-waf-token cookie set after voucher injection");
 
-    // Verify in browser context (plain fetch is unreliable with WAF tokens)
-    console.error("[captcha] Verifying token in browser...");
-    const resp = await page.goto(VALIDATE_URL, { waitUntil: "networkidle", timeout: 30000 });
-    if (!resp || resp.status() !== 200) {
-      throw new Error(`Solved token failed verification (HTTP ${resp?.status()})`);
-    }
+    const cookie = `aws-waf-token=${wafCookie.value}`;
 
-    return `aws-waf-token=${wafCookie.value}`;
+    // Verify with plain fetch — that's how the refresh script will use it
+    console.error("[captcha] Verifying token with fetch...");
+    const fetchResp = await fetch(VALIDATE_URL, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+        Cookie: cookie,
+      },
+    });
+    if (fetchResp.status !== 200) {
+      throw new Error(`Token failed fetch verification (HTTP ${fetchResp.status})`);
+    }
+    console.error("[captcha] Token verified.");
+
+    return cookie;
   } finally {
     await browser.close();
   }
