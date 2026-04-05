@@ -1,5 +1,6 @@
 import { writeFile, readFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { execFileSync } from "child_process";
 import {
   fetchMinutesValueRaw,
   fetchO30MostValuableRaw,
@@ -133,27 +134,6 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
     `[refresh] ${Object.keys(cache).length} players served from cache, ${remaining.length} need fetching`,
   );
 
-  // Validate cookie works before committing to full fetch
-  if (remaining.length > 5) {
-    const testIds = remaining.slice(0, 3);
-    const testResults = await Promise.allSettled(testIds.map((id) => fetchPlayerMinutesRaw(id)));
-    const failures = testResults.filter((r) => r.status === "rejected").length;
-    if (failures === testIds.length) {
-      throw new Error(
-        "Cookie validation failed: all test fetches returned 405. Cookie is invalid.",
-      );
-    }
-    // Move successful test results into cache
-    for (let i = 0; i < testIds.length; i++) {
-      const r = testResults[i];
-      if (r.status === "fulfilled") cache[testIds[i]] = { data: r.value, fetchedAt: now };
-    }
-    remaining = remaining.filter((id) => !cache[id]);
-    console.log(
-      `[refresh] Cookie validated (${testIds.length - failures}/${testIds.length} test fetches ok)`,
-    );
-  }
-
   for (let round = 0; round <= MAX_RETRY_ROUNDS && remaining.length > 0; round++) {
     if (round > 0) console.log(`[refresh] Retry ${round}: ${remaining.length} remaining`);
 
@@ -176,6 +156,18 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
           failures++;
           failed.push(batch[j]);
         }
+      }
+
+      // If entire batch failed, cookie is dead — rotate immediately
+      if (failures === batch.length && batch.length > 1) {
+        console.log("[refresh] Cookie expired, solving fresh captcha...");
+        const cookie = execFileSync("bun", ["run", "scripts/solve-captcha.ts"], {
+          encoding: "utf-8",
+          stdio: ["pipe", "pipe", "inherit"],
+        }).trim();
+        process.env.TM_COOKIE = cookie;
+        await writeFile("/tmp/tm-fresh-cookie.txt", cookie);
+        console.log("[refresh] Rotated cookie, continuing...");
       }
 
       const failRate = failures / batch.length;

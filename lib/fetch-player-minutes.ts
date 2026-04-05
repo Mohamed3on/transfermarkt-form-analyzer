@@ -33,11 +33,16 @@ const ZERO_STATS: PlayerStatsResult = {
   age: 0,
 };
 
-const CEAPI_HEADERS: Record<string, string> = {
+const CEAPI_BASE_HEADERS: Record<string, string> = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
   Accept: "application/json",
-  ...(process.env.TM_COOKIE ? { Cookie: process.env.TM_COOKIE } : {}),
 };
+
+function getCeapiHeaders(): Record<string, string> {
+  return process.env.TM_COOKIE
+    ? { ...CEAPI_BASE_HEADERS, Cookie: process.env.TM_COOKIE }
+    : CEAPI_BASE_HEADERS;
+}
 
 /** Domestic league competition ID → display name */
 export const LEAGUE_NAMES: Record<string, string> = {
@@ -248,7 +253,7 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const [htmlContent, ceapiRes] = await Promise.all([
     fetchPage(`${BASE_URL}/x/leistungsdaten/spieler/${playerId}`),
     fetch(`${BASE_URL}/ceapi/performance-game/${playerId}`, {
-      headers: CEAPI_HEADERS,
+      headers: getCeapiHeaders(),
       cache: "no-store",
     }),
   ]);

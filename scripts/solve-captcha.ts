@@ -104,31 +104,34 @@ async function solveCaptcha(): Promise<string> {
     const wafCookie = cookies.find((c) => c.name === "aws-waf-token");
     if (!wafCookie) throw new Error("No aws-waf-token cookie set after voucher injection");
 
+    // Verify in browser context (plain fetch is unreliable with WAF tokens)
+    console.error("[captcha] Verifying token in browser...");
+    const resp = await page.goto(VALIDATE_URL, { waitUntil: "networkidle", timeout: 30000 });
+    if (!resp || resp.status() !== 200) {
+      throw new Error(`Solved token failed verification (HTTP ${resp?.status()})`);
+    }
+
     return `aws-waf-token=${wafCookie.value}`;
   } finally {
     await browser.close();
   }
 }
 
+const MAX_SOLVE_ATTEMPTS = 3;
+
 async function main() {
-  console.error("[captcha] Solving fresh cookie (always solve to avoid stale token issues)...");
-  const cookie = await solveCaptcha();
-
-  // Verify the token actually works against a real player page
-  console.error("[captcha] Verifying solved token...");
-  const verify = await fetch(VALIDATE_URL, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      Cookie: cookie,
-    },
-    redirect: "manual",
-  });
-  if (verify.status !== 200) {
-    throw new Error(`Solved token failed verification (HTTP ${verify.status})`);
+  for (let attempt = 1; attempt <= MAX_SOLVE_ATTEMPTS; attempt++) {
+    try {
+      console.error(`[captcha] Solving fresh cookie (attempt ${attempt}/${MAX_SOLVE_ATTEMPTS})...`);
+      const cookie = await solveCaptcha();
+      console.log(cookie);
+      console.error("[captcha] Done!");
+      return;
+    } catch (err) {
+      console.error(`[captcha] Attempt ${attempt} failed: ${err}`);
+      if (attempt === MAX_SOLVE_ATTEMPTS) throw err;
+    }
   }
-
-  console.log(cookie);
-  console.error("[captcha] Done!");
 }
 
 main().catch((err) => {
