@@ -120,7 +120,14 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
   }
 
   const cache: Cache = {};
-  let remaining = [...playerIds];
+  // Use valid cache entries directly — only fetch uncached/expired players
+  for (const id of playerIds) {
+    if (staleCache[id]) cache[id] = staleCache[id];
+  }
+  let remaining = playerIds.filter((id) => !cache[id]);
+  console.log(
+    `[refresh] ${Object.keys(cache).length} players served from cache, ${remaining.length} need fetching`,
+  );
 
   for (let round = 0; round <= MAX_RETRY_ROUNDS && remaining.length > 0; round++) {
     if (round > 0) console.log(`[refresh] Retry ${round}: ${remaining.length} remaining`);
