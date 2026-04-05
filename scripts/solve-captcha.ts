@@ -18,12 +18,14 @@ if (!API_KEY) {
 
 const EXISTING_COOKIE = process.env.TM_COOKIE || "";
 const TM_URL = "https://www.transfermarkt.com/";
+const VALIDATE_URL = "https://www.transfermarkt.com/x/leistungsdaten/spieler/28003"; // Messi — always exists
 const POLL_INTERVAL = 5_000;
 const MAX_POLLS = 60;
 
 async function isExistingCookieValid(): Promise<boolean> {
   if (!EXISTING_COOKIE) return false;
-  const res = await fetch(TM_URL, {
+  // Validate against an actual player page, not the homepage (which may not require WAF cookie)
+  const res = await fetch(VALIDATE_URL, {
     headers: {
       "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
       Cookie: EXISTING_COOKIE,
@@ -132,9 +134,9 @@ async function main() {
   console.error("[captcha] Cookie expired, solving...");
   const cookie = await solveCaptcha();
 
-  // Verify the token actually works before outputting
+  // Verify the token actually works against a real player page
   console.error("[captcha] Verifying solved token...");
-  const verify = await fetch("https://www.transfermarkt.com/", {
+  const verify = await fetch(VALIDATE_URL, {
     headers: {
       "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
       Cookie: cookie,
