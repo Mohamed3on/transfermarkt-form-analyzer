@@ -36,8 +36,8 @@ jobs:
           echo -n "$COOKIE" > /tmp/tm-cookie.txt
           # Sync cookie to GitHub secret + Vercel env var
           echo -n "$COOKIE" | gh secret set TM_COOKIE
-          vercel env rm TM_COOKIE production -y 2>/dev/null || true
-          echo -n "$COOKIE" | vercel env add TM_COOKIE production
+          npx vercel env rm TM_COOKIE production -y 2>/dev/null || true
+          echo -n "$COOKIE" | npx vercel env add TM_COOKIE production
 
       - uses: actions/upload-artifact@v4
         with:
