@@ -133,6 +133,9 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
   console.log(
     `[refresh] ${Object.keys(cache).length} players served from cache, ${remaining.length} need fetching`,
   );
+  console.log(
+    `[refresh] TM_COOKIE: ${process.env.TM_COOKIE ? `set (${process.env.TM_COOKIE.length} chars)` : "NOT SET"}`,
+  );
 
   for (let round = 0; round <= MAX_RETRY_ROUNDS && remaining.length > 0; round++) {
     if (round > 0) console.log(`[refresh] Retry ${round}: ${remaining.length} remaining`);
