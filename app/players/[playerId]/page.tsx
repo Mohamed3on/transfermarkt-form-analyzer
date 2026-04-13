@@ -1170,13 +1170,13 @@ export default async function PlayerDetailPage({
               </div>
             </SectionPanel>
           </section>
-
-          {player.fetchedAt && (
-            <p className="text-center text-xs text-text-muted">
-              Stats updated {timeAgo(new Date(player.fetchedAt))}
-            </p>
-          )}
         </DetailDeck>
+
+        {player.fetchedAt && (
+          <p className="mt-6 text-center text-xs text-text-muted">
+            Stats updated {timeAgo(new Date(player.fetchedAt))}
+          </p>
+        )}
       </div>
     </div>
   );
