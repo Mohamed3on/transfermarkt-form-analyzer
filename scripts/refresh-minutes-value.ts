@@ -29,7 +29,7 @@ const CLUBS_PATH = join(DATA_DIR, "clubs.json");
 type CacheEntry = { data: PlayerStatsResult; fetchedAt: number };
 type Cache = Record<string, CacheEntry>;
 type ClubMap = Record<string, { name: string; logoUrl: string }>;
-const STALE_MAX_MS = 24 * 60 * 60 * 1000; // 24h — discard cache entries older than this
+const STALE_MAX_MS = 12 * 60 * 60 * 1000; // 12h — discard cache entries older than this
 
 // --- 1. Gather & dedupe player pool ---
 
