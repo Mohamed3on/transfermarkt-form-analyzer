@@ -27,6 +27,7 @@ import {
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { PlayerSubtitle } from "@/components/PlayerSubtitle";
+import { timeAgo } from "@/app/components/DataLastUpdated";
 import { ComparisonItem } from "@/components/ComparisonItem";
 import { DetailDeck } from "@/components/DetailDeck";
 import { HeroMetric } from "@/components/HeroMetric";
@@ -746,6 +747,11 @@ export default async function PlayerDetailPage({
                       </a>
                     </Button>
                   </div>
+                  {player.fetchedAt && (
+                    <p className="mt-3 text-xs text-text-muted">
+                      Stats updated {timeAgo(new Date(player.fetchedAt))}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

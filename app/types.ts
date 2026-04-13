@@ -207,6 +207,7 @@ export interface MinutesValuePlayer {
   leagueLogoUrl?: string;
   recentForm?: RecentGameStats[];
   rawGames?: CeapiGame[];
+  fetchedAt?: number;
 }
 
 export interface CeapiGame {

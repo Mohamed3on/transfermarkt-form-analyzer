@@ -1,7 +1,7 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
 
-function timeAgo(date: Date): string {
+export function timeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor(seconds / 3600);

@@ -29,7 +29,10 @@ const CLUBS_PATH = join(DATA_DIR, "clubs.json");
 type CacheEntry = { data: PlayerStatsResult; fetchedAt: number };
 type Cache = Record<string, CacheEntry>;
 type ClubMap = Record<string, { name: string; logoUrl: string }>;
-const STALE_MAX_MS = 12 * 60 * 60 * 1000; // 12h — discard cache entries older than this
+// Discard cache entries older than this. Default 12h; STALE_HOURS env can override (e.g. button-triggered refresh uses 1h).
+const STALE_MAX_MS = process.env.STALE_HOURS
+  ? Number(process.env.STALE_HOURS) * 60 * 60 * 1000
+  : 12 * 60 * 60 * 1000;
 
 // --- 1. Gather & dedupe player pool ---
 
@@ -239,6 +242,7 @@ function mergeStats(players: MinutesValuePlayer[], cache: Cache): void {
     if (!entry) continue;
     const s = entry.data;
 
+    p.fetchedAt = entry.fetchedAt;
     p.minutes = s.minutes;
     p.totalMatches = s.appearances || p.totalMatches;
     p.goals = s.goals;
