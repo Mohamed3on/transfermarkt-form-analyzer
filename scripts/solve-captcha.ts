@@ -106,17 +106,25 @@ async function solveCaptcha(): Promise<string> {
 
     const cookie = `aws-waf-token=${wafCookie.value}`;
 
-    // Verify with plain fetch — that's how the refresh script will use it
+    // Verify with plain fetch — that's how the refresh script will use it.
+    // Probe 3 stacks in parallel to distinguish IP block, cookie rejection, and Node-fetch fingerprint issues.
     console.error("[captcha] Verifying token with fetch...");
-    const fetchResp = await fetch(VALIDATE_URL, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
-        Cookie: cookie,
-      },
-    });
-    if (fetchResp.status !== 200) {
-      throw new Error(`Token failed fetch verification (HTTP ${fetchResp.status})`);
+    const UA =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36";
+    const [withCookie, noCookie, viaBrowser] = await Promise.all([
+      fetch(VALIDATE_URL, { headers: { "User-Agent": UA, Cookie: cookie } }),
+      fetch(VALIDATE_URL, { headers: { "User-Agent": UA } }),
+      context.request.get(VALIDATE_URL).catch((e) => ({ status: () => `err:${e}` })),
+    ]);
+    const body = (await withCookie.text()).slice(0, 200).replace(/\s+/g, " ");
+    console.error(
+      `[verify] node+cookie=${withCookie.status} node+nocookie=${noCookie.status} playwright=${viaBrowser.status()}`,
+    );
+    console.error(
+      `[verify] waf-action=${withCookie.headers.get("x-amzn-waf-action")} server=${withCookie.headers.get("server")} body="${body}"`,
+    );
+    if (withCookie.status !== 200) {
+      throw new Error(`Token failed fetch verification (HTTP ${withCookie.status})`);
     }
     console.error("[captcha] Token verified.");
 

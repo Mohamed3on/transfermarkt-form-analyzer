@@ -14,8 +14,8 @@ import { BASE_URL } from "@/lib/constants";
 import type { MinutesValuePlayer, PlayerStatsResult } from "@/app/types";
 
 const FORCE_REFRESH = process.argv.includes("--force") || process.env.FORCE_REFRESH === "1";
-setMaxConcurrent(50);
-const CONCURRENCY = { max: 50, min: 10 };
+setMaxConcurrent(20);
+const CONCURRENCY = { max: 20, min: 10 };
 const DELAY = { base: 100, multiplier: 2 };
 const FAILURE_THRESHOLD = 0.3;
 const CLEAN_BATCHES_TO_RAMP = 3;
