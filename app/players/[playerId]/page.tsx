@@ -1119,7 +1119,7 @@ export default async function PlayerDetailPage({
               count={minutesBenchmark.playingMoreCount}
               players={minutesBenchmark.playingMore}
               benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&mode=mins&tab=more`}
-              emptyLabel="No same-or-higher value players are playing more minutes."
+              emptyLabel="No players are playing more minutes with fewer available games."
               accentClass="text-accent-hot"
             />
           </section>

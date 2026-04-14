@@ -363,13 +363,7 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
     })
     .slice(0, 6);
 
-  const minutesBench = filterMinutesBenchmark(players, player);
-  const playingLess = minutesBench.playingLess.sort(
-    (a, b) => a.minutes - b.minutes || b.marketValue - a.marketValue,
-  );
-  const playingMore = minutesBench.playingMore.sort(
-    (a, b) => a.minutes - b.minutes || b.marketValue - a.marketValue,
-  );
+  const { playingLess, playingMore } = filterMinutesBenchmark(players, player);
 
   // Subgroup rankings (loan players, new signings)
   const subgroupRankings: SubgroupRanking[] = [];

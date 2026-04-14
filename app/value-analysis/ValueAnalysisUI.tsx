@@ -1058,7 +1058,7 @@ export function ValueAnalysisUI({
         <p className="text-sm sm:text-base text-text-muted">
           {mode === "ga"
             ? `Are expensive players worth it? Compare any player's goals and assists against cheaper alternatives — based on ${includePen ? "G+A" : "G+A (excl. penalties)"}.`
-            : "Expensive players ranked by fewest minutes. Search any player to compare against others at the same or higher value."}
+            : "Expensive players ranked by fewest minutes. Search any player to find peers playing more or fewer minutes than them."}
         </p>
       </div>
 
@@ -1410,9 +1410,8 @@ export function ValueAnalysisUI({
 
               <p className="text-xs text-text-muted flex items-start gap-1.5">
                 <span>
-                  Comparing against players at the same or higher market value who have missed the
-                  same % of games or fewer — so injured or suspended players don&apos;t skew the
-                  comparison.
+                  Comparing against players who have missed the same % of games or fewer — so
+                  injured or suspended players don&apos;t skew the comparison.
                 </span>
                 <InfoTip className="mt-0.5 shrink-0">
                   <p>
@@ -1420,8 +1419,9 @@ export function ValueAnalysisUI({
                     matches the player has been unavailable for (injury, suspension, etc.).
                   </p>
                   <p className="mt-1.5">
-                    &ldquo;Playing Less&rdquo; shows equally or more expensive players who are
-                    getting fewer minutes. &ldquo;Playing More&rdquo; shows the reverse.
+                    &ldquo;Playing Less&rdquo; shows equally or more expensive players getting fewer
+                    minutes. &ldquo;Playing More&rdquo; shows any players getting more minutes
+                    despite fewer available games.
                   </p>
                 </InfoTip>
               </p>
@@ -1447,7 +1447,8 @@ export function ValueAnalysisUI({
                       <div className="rounded-xl p-10 text-center animate-fade-in bg-card border border-border-subtle">
                         <p className="font-medium text-lg text-text-primary">No results</p>
                         <p className="text-sm mt-1 text-text-muted">
-                          No higher-valued players have fewer minutes than {minsSelected.name}
+                          No same-or-higher value players have fewer minutes than{" "}
+                          {minsSelected.name}
                         </p>
                       </div>
                     ) : (
@@ -1475,7 +1476,7 @@ export function ValueAnalysisUI({
                       <div className="rounded-xl p-10 text-center animate-fade-in bg-card border border-border-subtle">
                         <p className="font-medium text-lg text-text-primary">No results</p>
                         <p className="text-sm mt-1 text-text-muted">
-                          No higher-valued players have more minutes than {minsSelected.name}
+                          No players have more minutes than {minsSelected.name}
                         </p>
                       </div>
                     ) : (
