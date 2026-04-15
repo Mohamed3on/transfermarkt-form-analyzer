@@ -441,7 +441,7 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
 
 export const getPlayerDetailData = cache((playerId: string) =>
   unstable_cache(() => computePlayerDetailData(playerId), [`player-detail-${playerId}`], {
-    revalidate: 86400,
+    revalidate: 43200,
     tags: ["form-analysis"],
   })(),
 );

@@ -122,6 +122,6 @@ async function fetchManagerInfoUncached(clubId: string): Promise<ManagerInfo | n
 
 export const getManagerInfo = (clubId: string) =>
   unstable_cache(() => fetchManagerInfoUncached(clubId), [`manager-${clubId}`], {
-    revalidate: 86400,
+    revalidate: 43200,
     tags: ["manager"],
   })();
