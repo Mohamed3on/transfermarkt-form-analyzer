@@ -110,9 +110,12 @@ async function fetchAllStats(playerIds: string[]): Promise<Cache> {
   let staleCache: Cache = {};
   try {
     const raw: Cache = JSON.parse(await readFile(CACHE_PATH, "utf-8"));
-    // Discard entries older than 24h and migrate legacy entries without timestamps
+    // Discard entries older than STALE_MAX_MS, and treat zero-stats+empty-league entries
+    // as corrupted (previous failure mode where a failed CEAPI silently cached zeros).
     for (const [id, entry] of Object.entries(raw)) {
-      if (entry.fetchedAt && now - entry.fetchedAt < STALE_MAX_MS) {
+      const s = entry.data;
+      const looksCorrupted = !s.league && !s.appearances && !s.minutes && !s.goals && !s.assists;
+      if (entry.fetchedAt && now - entry.fetchedAt < STALE_MAX_MS && !looksCorrupted) {
         staleCache[id] = entry;
       }
     }
@@ -410,10 +413,34 @@ async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<vo
         `Player count regressed: ${oldCount} → ${newCount} (${Math.round((newCount / oldCount) * 100)}%).`,
       );
     }
+    // Per-player regression: stats are cumulative within a season, so a player going
+    // from non-zero to zero means the scrape failed for them (not real-world regression).
+    const byId = new Map(existing.map((p) => [p.playerId, p]));
+    const regressed = players.filter((p) => {
+      const old = byId.get(p.playerId);
+      if (!old) return false;
+      return (
+        (old.goals > 0 || old.assists > 0 || old.minutes > 0) &&
+        p.goals === 0 &&
+        p.assists === 0 &&
+        p.minutes === 0
+      );
+    });
+    if (regressed.length > 0) {
+      const sample = regressed
+        .slice(0, 5)
+        .map((p) => p.name)
+        .join(", ");
+      throw new Error(
+        `${regressed.length} player(s) regressed to zero stats (e.g. ${sample}) — scrape failed silently.`,
+      );
+    }
   } catch (e) {
     if (
       e instanceof Error &&
-      (e.message.startsWith("Stats regressed") || e.message.startsWith("Player count"))
+      (e.message.startsWith("Stats regressed") ||
+        e.message.startsWith("Player count") ||
+        e.message.includes("regressed to zero stats"))
     )
       throw e;
   }

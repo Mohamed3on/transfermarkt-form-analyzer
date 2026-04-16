@@ -324,7 +324,7 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   };
 
   if (!ceapiRes.ok) {
-    return { ...ZERO_STATS, ...shared };
+    throw new Error(`ceapi ${ceapiRes.status} for ${playerId}`);
   }
   const ceapi = await ceapiRes.json();
   const games: CeapiGame[] = ceapi?.data?.performance ?? [];
