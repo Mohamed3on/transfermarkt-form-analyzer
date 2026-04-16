@@ -413,26 +413,24 @@ async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<vo
         `Player count regressed: ${oldCount} → ${newCount} (${Math.round((newCount / oldCount) * 100)}%).`,
       );
     }
-    // Per-player regression: stats are cumulative within a season, so a player going
-    // from non-zero to zero means the scrape failed for them (not real-world regression).
+    // Per-player regression: season stats are cumulative, so any decrease in goals,
+    // assists, or minutes indicates a silent scrape failure (e.g. truncated CEAPI).
     const byId = new Map(existing.map((p) => [p.playerId, p]));
     const regressed = players.filter((p) => {
       const old = byId.get(p.playerId);
       if (!old) return false;
-      return (
-        (old.goals > 0 || old.assists > 0 || old.minutes > 0) &&
-        p.goals === 0 &&
-        p.assists === 0 &&
-        p.minutes === 0
-      );
+      return p.goals < old.goals || p.assists < old.assists || p.minutes < old.minutes;
     });
     if (regressed.length > 0) {
       const sample = regressed
         .slice(0, 5)
-        .map((p) => p.name)
+        .map((p) => {
+          const old = byId.get(p.playerId)!;
+          return `${p.name} (${old.goals}G/${old.assists}A/${old.minutes}' → ${p.goals}G/${p.assists}A/${p.minutes}')`;
+        })
         .join(", ");
       throw new Error(
-        `${regressed.length} player(s) regressed to zero stats (e.g. ${sample}) — scrape failed silently.`,
+        `${regressed.length} player(s) have decreasing season stats (e.g. ${sample}) — scrape regressed silently.`,
       );
     }
   } catch (e) {
@@ -440,7 +438,7 @@ async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<vo
       e instanceof Error &&
       (e.message.startsWith("Stats regressed") ||
         e.message.startsWith("Player count") ||
-        e.message.includes("regressed to zero stats"))
+        e.message.includes("decreasing season stats"))
     )
       throw e;
   }

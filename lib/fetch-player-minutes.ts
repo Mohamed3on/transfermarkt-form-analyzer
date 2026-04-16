@@ -1,7 +1,7 @@
 import * as cheerio from "cheerio";
 import type { CeapiGame, PlayerStatsResult, RecentGameStats } from "@/app/types";
 import { BASE_URL } from "./constants";
-import { fetchPage } from "./fetch";
+import { fetchPage, withSlot } from "./fetch";
 import { parseMarketValue } from "./parse-market-value";
 
 const ZERO_STATS: PlayerStatsResult = {
@@ -249,13 +249,16 @@ export function derivePositionStats(
 export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerStatsResult> {
   if (!playerId) return ZERO_STATS;
 
-  // Fetch HTML (for club/ribbon) and ceapi (for stats) in parallel
+  // Fetch HTML (for club/ribbon) and ceapi (for stats) in parallel.
+  // Both go through the shared concurrency limiter so ceapi isn't hammered harder than HTML.
   const [htmlContent, ceapiRes] = await Promise.all([
     fetchPage(`${BASE_URL}/x/leistungsdaten/spieler/${playerId}`),
-    fetch(`${BASE_URL}/ceapi/performance-game/${playerId}`, {
-      headers: getCeapiHeaders(),
-      cache: "no-store",
-    }),
+    withSlot(() =>
+      fetch(`${BASE_URL}/ceapi/performance-game/${playerId}`, {
+        headers: getCeapiHeaders(),
+        cache: "no-store",
+      }),
+    ),
   ]);
 
   // Parse club/ribbon from HTML

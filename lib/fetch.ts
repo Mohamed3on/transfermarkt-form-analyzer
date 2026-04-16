@@ -45,6 +45,16 @@ export async function fetchPage(
   }
 }
 
+/** Run an async operation under the shared Transfermarkt concurrency limit. */
+export async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+  await acquireSlot();
+  try {
+    return await fn();
+  } finally {
+    releaseSlot();
+  }
+}
+
 async function fetchPageInner(
   url: string,
   revalidate?: number,
