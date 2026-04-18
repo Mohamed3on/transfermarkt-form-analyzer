@@ -330,7 +330,12 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
     throw new Error(`ceapi ${ceapiRes.status} for ${playerId}`);
   }
   const ceapi = await ceapiRes.json();
-  const games: CeapiGame[] = ceapi?.data?.performance ?? [];
+  const games: CeapiGame[] | undefined = ceapi?.data?.performance;
+  // TM occasionally returns 200 with a nullish `performance` under rate pressure.
+  // Treat that as a failure so the retry loop fires instead of silently caching zeros.
+  if (!Array.isArray(games)) {
+    throw new Error(`ceapi returned no performance array for ${playerId}`);
+  }
   const stats = aggregateSeasonStats(games);
 
   return { ...stats, ...shared, rawGames: games };
