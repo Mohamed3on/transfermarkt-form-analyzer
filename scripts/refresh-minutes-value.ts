@@ -25,11 +25,14 @@ const DATA_DIR = join(process.cwd(), "data");
 const OUT_PATH = join(DATA_DIR, "minutes-value.json");
 const CACHE_PATH = join(DATA_DIR, "player-cache.json");
 const CLUBS_PATH = join(DATA_DIR, "clubs.json");
-const POOL_PATH = join(DATA_DIR, "player-pool.json");
-const POOL_TS_PATH = join(DATA_DIR, "player-pool-updated-at.txt");
-// Regather the player ID pool once a day. The TM list pages (MV top, scorers)
-// are the WAF-prone calls; the pool itself barely changes hour-to-hour.
-const POOL_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+// MV-based lists (most valuable, O30, top forwards) only move on TM's value
+// update cycles — cache for a day. Scorer lists change after every match so we
+// always try to refresh them per run, with the cached version as fallback for
+// WAF blocks.
+const POOL_MV_PATH = join(DATA_DIR, "player-pool-mv.json");
+const POOL_MV_TS_PATH = join(DATA_DIR, "player-pool-mv-updated-at.txt");
+const POOL_MV_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const POOL_SCORERS_PATH = join(DATA_DIR, "player-pool-scorers.json");
 
 type CacheEntry = { data: PlayerStatsResult; fetchedAt: number };
 type Cache = Record<string, CacheEntry>;
@@ -59,37 +62,10 @@ async function fetchMVWithRetry(maxAttempts = 6): Promise<MinutesValuePlayer[]> 
   return [];
 }
 
-async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
-  console.log("[refresh] Fetching player lists...");
-
-  const [mvPlayers, o30Players, topForwards, seasonScorers, yearlyScorers] = await Promise.all([
-    fetchMVWithRetry(),
-    fetchO30MostValuableRaw().catch(() => [] as MinutesValuePlayer[]),
-    fetchTopForwardsRaw().catch(() => [] as MinutesValuePlayer[]),
-    fetchTopScorersRaw().catch(() => [] as MinutesValuePlayer[]),
-    fetchYearlyScorersRaw().catch(() => [] as MinutesValuePlayer[]),
-  ]);
-
-  if (mvPlayers.length === 0) {
-    throw new Error("0 players from MV pages after 6 attempts — rate-limited.");
-  }
-  if (o30Players.length === 0) console.warn("[refresh] O30 MV unavailable — continuing without");
-  if (topForwards.length === 0)
-    console.warn("[refresh] top forwards unavailable — continuing without");
-  if (seasonScorers.length === 0)
-    console.warn("[refresh] season scorers unavailable — continuing without");
-  if (yearlyScorers.length === 0)
-    console.warn("[refresh] yearly scorers unavailable — continuing without");
-
+function dedupeById(groups: { label: string; list: MinutesValuePlayer[] }[]): MinutesValuePlayer[] {
   const seen = new Set<string>();
   const players: MinutesValuePlayer[] = [];
-  for (const { label, list } of [
-    { label: "MV", list: mvPlayers },
-    { label: "O30 MV", list: o30Players },
-    { label: "top forwards", list: topForwards },
-    { label: "season scorers", list: seasonScorers },
-    { label: "yearly scorers", list: yearlyScorers },
-  ]) {
+  for (const { label, list } of groups) {
     let added = 0;
     for (const p of list) {
       if (!seen.has(p.playerId)) {
@@ -100,43 +76,108 @@ async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
     }
     console.log(`[refresh] ${label}: +${added} new (${list.length} total)`);
   }
+  return players;
+}
 
+async function gatherMvPool(): Promise<MinutesValuePlayer[]> {
+  console.log("[refresh] Fetching MV-based pool (most valuable, O30, top forwards)...");
+  const [mvPlayers, o30Players, topForwards] = await Promise.all([
+    fetchMVWithRetry(),
+    fetchO30MostValuableRaw().catch(() => [] as MinutesValuePlayer[]),
+    fetchTopForwardsRaw().catch(() => [] as MinutesValuePlayer[]),
+  ]);
+  if (mvPlayers.length === 0) {
+    throw new Error("0 players from MV pages after 6 attempts — rate-limited.");
+  }
+  if (o30Players.length === 0) console.warn("[refresh] O30 MV unavailable — continuing without");
+  if (topForwards.length === 0)
+    console.warn("[refresh] top forwards unavailable — continuing without");
+  return dedupeById([
+    { label: "MV", list: mvPlayers },
+    { label: "O30 MV", list: o30Players },
+    { label: "top forwards", list: topForwards },
+  ]);
+}
+
+async function gatherScorerPool(): Promise<MinutesValuePlayer[]> {
+  console.log("[refresh] Fetching scorer pool (season + yearly)...");
+  const [seasonScorers, yearlyScorers] = await Promise.all([
+    fetchTopScorersRaw().catch(() => [] as MinutesValuePlayer[]),
+    fetchYearlyScorersRaw().catch(() => [] as MinutesValuePlayer[]),
+  ]);
+  if (seasonScorers.length === 0)
+    console.warn("[refresh] season scorers unavailable — continuing without");
+  if (yearlyScorers.length === 0)
+    console.warn("[refresh] yearly scorers unavailable — continuing without");
+  if (seasonScorers.length === 0 && yearlyScorers.length === 0) {
+    throw new Error("both scorer lists unavailable");
+  }
+  return dedupeById([
+    { label: "season scorers", list: seasonScorers },
+    { label: "yearly scorers", list: yearlyScorers },
+  ]);
+}
+
+/** MV pool: reuse if < 24h old, otherwise regather. Fall back to cache on failure. */
+async function loadMvPool(): Promise<MinutesValuePlayer[]> {
+  let cached: MinutesValuePlayer[] | null = null;
+  let ageMs = Infinity;
+  try {
+    cached = JSON.parse(await readFile(POOL_MV_PATH, "utf-8"));
+    ageMs = Date.now() - new Date((await readFile(POOL_MV_TS_PATH, "utf-8")).trim()).getTime();
+  } catch {}
+  if (!FORCE_REFRESH && cached && ageMs < POOL_MV_MAX_AGE_MS) {
+    console.log(
+      `[refresh] Reusing MV pool: ${cached.length} players (${(ageMs / 3.6e6).toFixed(1)}h old)`,
+    );
+    return cached;
+  }
+  try {
+    const players = await gatherMvPool();
+    await writeFile(POOL_MV_PATH, JSON.stringify(players));
+    await writeFile(POOL_MV_TS_PATH, new Date().toISOString());
+    return players;
+  } catch (e) {
+    if (cached) {
+      console.warn(
+        `[refresh] MV gather failed, using ${(ageMs / 3.6e6).toFixed(1)}h-old cache: ${e}`,
+      );
+      return cached;
+    }
+    throw e;
+  }
+}
+
+/** Scorer pool: always attempt fetch (values change per match). Cache is fallback-only. */
+async function loadScorerPool(): Promise<MinutesValuePlayer[]> {
+  let cached: MinutesValuePlayer[] | null = null;
+  try {
+    cached = JSON.parse(await readFile(POOL_SCORERS_PATH, "utf-8"));
+  } catch {}
+  try {
+    const players = await gatherScorerPool();
+    await writeFile(POOL_SCORERS_PATH, JSON.stringify(players));
+    return players;
+  } catch (e) {
+    if (cached) {
+      console.warn(`[refresh] Scorer gather failed, using cached scorer pool: ${e}`);
+      return cached;
+    }
+    console.warn(`[refresh] Scorer gather failed and no cache available: ${e}`);
+    return [];
+  }
+}
+
+async function loadOrGatherPlayers(): Promise<MinutesValuePlayer[]> {
+  const [mvList, scorerList] = await Promise.all([loadMvPool(), loadScorerPool()]);
+  const players = dedupeById([
+    { label: "MV pool", list: mvList },
+    { label: "scorer pool", list: scorerList },
+  ]);
   if (players.length < 100) {
     throw new Error(`Only ${players.length} players — expected 100+.`);
   }
   return players;
-}
-
-async function loadOrGatherPlayers(): Promise<MinutesValuePlayer[]> {
-  let cachedPool: MinutesValuePlayer[] | null = null;
-  let cachedAgeMs = Infinity;
-  try {
-    cachedPool = JSON.parse(await readFile(POOL_PATH, "utf-8"));
-    const ts = (await readFile(POOL_TS_PATH, "utf-8")).trim();
-    cachedAgeMs = Date.now() - new Date(ts).getTime();
-  } catch {
-    // Missing or unreadable pool — fall through to gather.
-  }
-
-  if (!FORCE_REFRESH && cachedPool && cachedAgeMs < POOL_MAX_AGE_MS) {
-    const hours = (cachedAgeMs / 3.6e6).toFixed(1);
-    console.log(`[refresh] Reusing pool from disk: ${cachedPool.length} players (${hours}h old)`);
-    return cachedPool;
-  }
-
-  try {
-    const players = await gatherPlayers();
-    await writeFile(POOL_PATH, JSON.stringify(players));
-    await writeFile(POOL_TS_PATH, new Date().toISOString());
-    return players;
-  } catch (e) {
-    if (cachedPool) {
-      const hours = (cachedAgeMs / 3.6e6).toFixed(1);
-      console.warn(`[refresh] Gather failed, falling back to ${hours}h-old pool: ${e}`);
-      return cachedPool;
-    }
-    throw e;
-  }
 }
 
 // --- 2. Fetch per-player stats with adaptive concurrency ---
