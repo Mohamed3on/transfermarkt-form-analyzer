@@ -25,6 +25,11 @@ const DATA_DIR = join(process.cwd(), "data");
 const OUT_PATH = join(DATA_DIR, "minutes-value.json");
 const CACHE_PATH = join(DATA_DIR, "player-cache.json");
 const CLUBS_PATH = join(DATA_DIR, "clubs.json");
+const POOL_PATH = join(DATA_DIR, "player-pool.json");
+const POOL_TS_PATH = join(DATA_DIR, "player-pool-updated-at.txt");
+// Regather the player ID pool once a day. The TM list pages (MV top, scorers)
+// are the WAF-prone calls; the pool itself barely changes hour-to-hour.
+const POOL_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 type CacheEntry = { data: PlayerStatsResult; fetchedAt: number };
 type Cache = Record<string, CacheEntry>;
@@ -100,6 +105,38 @@ async function gatherPlayers(): Promise<MinutesValuePlayer[]> {
     throw new Error(`Only ${players.length} players — expected 100+.`);
   }
   return players;
+}
+
+async function loadOrGatherPlayers(): Promise<MinutesValuePlayer[]> {
+  let cachedPool: MinutesValuePlayer[] | null = null;
+  let cachedAgeMs = Infinity;
+  try {
+    cachedPool = JSON.parse(await readFile(POOL_PATH, "utf-8"));
+    const ts = (await readFile(POOL_TS_PATH, "utf-8")).trim();
+    cachedAgeMs = Date.now() - new Date(ts).getTime();
+  } catch {
+    // Missing or unreadable pool — fall through to gather.
+  }
+
+  if (!FORCE_REFRESH && cachedPool && cachedAgeMs < POOL_MAX_AGE_MS) {
+    const hours = (cachedAgeMs / 3.6e6).toFixed(1);
+    console.log(`[refresh] Reusing pool from disk: ${cachedPool.length} players (${hours}h old)`);
+    return cachedPool;
+  }
+
+  try {
+    const players = await gatherPlayers();
+    await writeFile(POOL_PATH, JSON.stringify(players));
+    await writeFile(POOL_TS_PATH, new Date().toISOString());
+    return players;
+  } catch (e) {
+    if (cachedPool) {
+      const hours = (cachedAgeMs / 3.6e6).toFixed(1);
+      console.warn(`[refresh] Gather failed, falling back to ${hours}h-old pool: ${e}`);
+      return cachedPool;
+    }
+    throw e;
+  }
 }
 
 // --- 2. Fetch per-player stats with adaptive concurrency ---
@@ -450,7 +487,7 @@ async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<vo
 // --- Main pipeline ---
 
 async function main() {
-  const players = await gatherPlayers();
+  const players = await loadOrGatherPlayers();
 
   console.log(`[refresh] Fetching stats for ${players.length} players...`);
   const cache = await fetchAllStats(players.map((p) => p.playerId));
