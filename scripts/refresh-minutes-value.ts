@@ -413,13 +413,22 @@ async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<vo
         `Player count regressed: ${oldCount} → ${newCount} (${Math.round((newCount / oldCount) * 100)}%).`,
       );
     }
-    // Per-player regression: season stats are cumulative, so any decrease in goals,
-    // assists, or minutes indicates a silent scrape failure (e.g. truncated CEAPI).
+    // Per-player regression: catch silent scrape failures (e.g. ceapi returning zeros or
+    // truncated data) without flagging TM's small retroactive stat corrections (±a few
+    // minutes from stoppage-time recalcs, etc.). Only fail on collapses to zero or on
+    // drops large enough that they can't be an edit.
     const byId = new Map(existing.map((p) => [p.playerId, p]));
+    const MIN_MINUTES_DROP = 60; // ~a full appearance; below this TM is just retro-adjusting
     const regressed = players.filter((p) => {
       const old = byId.get(p.playerId);
       if (!old) return false;
-      return p.goals < old.goals || p.assists < old.assists || p.minutes < old.minutes;
+      const minutesCollapsed = old.minutes > 0 && p.minutes === 0;
+      return (
+        p.goals < old.goals ||
+        p.assists < old.assists ||
+        minutesCollapsed ||
+        old.minutes - p.minutes >= MIN_MINUTES_DROP
+      );
     });
     if (regressed.length > 0) {
       const sample = regressed
