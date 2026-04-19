@@ -124,9 +124,12 @@ export interface PlayerDetailData {
   clubCount: number;
   form: PlayerFormSummary;
   signalSummary: PlayerSignalSummary;
+  signalSummarySameLeague: PlayerSignalSummary;
   trend: PlayerTrend | null;
   outperformers: PlayerStats[];
   underperformers: PlayerStats[];
+  outperformersSameLeague: PlayerStats[];
+  underperformersSameLeague: PlayerStats[];
   clubmates: MinutesValuePlayer[];
   topClubmatesByNpga: MinutesValuePlayer[];
   minutesBenchmark: MinutesBenchmark;
@@ -355,6 +358,28 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
         ? "overpriced"
         : null;
 
+  const sameLeague = <T extends { league: string }>(list: T[]) =>
+    list.filter((p) => p.league === comparisonTarget.league);
+  const sameLeaguePool = sameLeague(comparisonPlayers);
+  const cheaperSameLeague = countComparisons(comparisonTarget, sameLeaguePool, false);
+  const pricierSameLeague = countComparisons(comparisonTarget, sameLeaguePool, true);
+  const discoveryStatusSameLeague =
+    pricierSameLeague >= MIN_COMPARISON_COUNT
+      ? "bargain"
+      : cheaperSameLeague >= MIN_COMPARISON_COUNT
+        ? "overpriced"
+        : null;
+
+  const signalSummary: PlayerSignalSummary = {
+    availablePct: Math.max(0, 100 - Math.round(missedPct(player) * 100)),
+    gamesScheduled: gamesScheduled(player),
+    gamesMissed: player.gamesMissed ?? 0,
+    cheaperPlayersBeatingTarget,
+    pricierPlayersBeatenByTarget,
+    discoveryStatus,
+    discoveryThreshold: MIN_COMPARISON_COUNT,
+  };
+
   const topClubmatesByNpga = [...clubmates]
     .sort((left, right) => {
       const diff = seasonNpga(right) - seasonNpga(left);
@@ -405,18 +430,18 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
     leagueCount: leaguePlayers.length,
     clubCount: clubmates.length,
     form: buildFormSummary(player),
-    signalSummary: {
-      availablePct: Math.max(0, 100 - Math.round(missedPct(player) * 100)),
-      gamesScheduled: gamesScheduled(player),
-      gamesMissed: player.gamesMissed ?? 0,
-      cheaperPlayersBeatingTarget,
-      pricierPlayersBeatenByTarget,
-      discoveryStatus,
-      discoveryThreshold: MIN_COMPARISON_COUNT,
+    signalSummary,
+    signalSummarySameLeague: {
+      ...signalSummary,
+      cheaperPlayersBeatingTarget: cheaperSameLeague,
+      pricierPlayersBeatenByTarget: pricierSameLeague,
+      discoveryStatus: discoveryStatusSameLeague,
     },
     trend: buildTrend(player.playerId, winners, losers),
     outperformers: outperformers.slice(0, 6),
     underperformers: underperformers.slice(0, 6),
+    outperformersSameLeague: sameLeague(outperformers).slice(0, 6),
+    underperformersSameLeague: sameLeague(underperformers).slice(0, 6),
     clubmates: clubmates.map(stripRecentForm),
     topClubmatesByNpga: topClubmatesByNpga.map(stripRecentForm),
     minutesBenchmark: {
@@ -440,7 +465,7 @@ async function computePlayerDetailData(playerId: string): Promise<PlayerDetailDa
 }
 
 export const getPlayerDetailData = cache((playerId: string) =>
-  unstable_cache(() => computePlayerDetailData(playerId), [`player-detail-${playerId}`], {
+  unstable_cache(() => computePlayerDetailData(playerId), [`player-detail-v2-${playerId}`], {
     revalidate: 43200,
     tags: ["form-analysis"],
   })(),

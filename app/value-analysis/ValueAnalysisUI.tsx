@@ -519,20 +519,22 @@ function DiscoverySection({
     [candidates],
   );
 
-  const top5Players = useMemo(
-    () => (isTop5 ? allPlayers.filter((p) => TOP_5_LEAGUES.includes(p.league)) : []),
-    [allPlayers, isTop5],
-  );
+  const isSingleLeague = leagueFilter !== "all" && !isTop5;
+  const scopedPool = useMemo(() => {
+    if (isTop5) return allPlayers.filter((p) => TOP_5_LEAGUES.includes(p.league));
+    if (isSingleLeague) return allPlayers.filter((p) => p.league === leagueFilter);
+    return null;
+  }, [allPlayers, isTop5, isSingleLeague, leagueFilter]);
 
   const filteredCandidates = useMemo(() => {
     let filtered = filterPlayersByLeagueAndClub(candidates, leagueFilter, clubFilter);
     if (nationalityFilter !== "all")
       filtered = filtered.filter((p) => p.nationality === nationalityFilter);
-    if (isTop5) {
+    if (scopedPool) {
       filtered = filtered
         .map((player) => ({
           ...player,
-          comparisonCount: countComparisons(player, top5Players, !isOverpriced),
+          comparisonCount: countComparisons(player, scopedPool, !isOverpriced),
         }))
         .filter((p) => p.comparisonCount >= MIN_COMPARISON_COUNT);
     }
@@ -542,16 +544,7 @@ function DiscoverySection({
     if (sortBy === "ga-desc") return sorted.sort((a, b) => b.points - a.points);
     if (sortBy === "ga-asc") return sorted.sort((a, b) => a.points - b.points);
     return sorted.sort((a, b) => b.comparisonCount - a.comparisonCount);
-  }, [
-    candidates,
-    top5Players,
-    leagueFilter,
-    clubFilter,
-    nationalityFilter,
-    sortBy,
-    isTop5,
-    isOverpriced,
-  ]);
+  }, [candidates, scopedPool, leagueFilter, clubFilter, nationalityFilter, sortBy, isOverpriced]);
 
   const isValueActive = sortBy === "value-asc" || sortBy === "value-desc";
   const isGaActive = sortBy === "ga-asc" || sortBy === "ga-desc";
@@ -969,6 +962,7 @@ export function ValueAnalysisUI({
   const underNatFilter = params.get("uNat") || "all";
   const underSortBy = parseDiscoverySort(params.get("uSort"));
   const benchTop5Only = params.get("bTop5") === "1";
+  const benchSameLeagueOnly = params.get("bLeague") === "1";
 
   // ── Overperformer state ──
   const overLeagueFilter = params.get("oLeague") || "all";
@@ -996,18 +990,43 @@ export function ValueAnalysisUI({
   const gaHasResults = !!gaData?.targetPlayer;
   const targetMinutes = gaData?.targetPlayer?.minutes;
 
-  const filteredUnderperformers = useMemo(() => {
-    if (!gaData?.underperformers) return [];
-    if (benchTop5Only)
-      return gaData.underperformers.filter((p) => TOP_5_LEAGUES.includes(p.league));
-    return gaData.underperformers;
-  }, [gaData?.underperformers, benchTop5Only]);
+  const targetLeague = gaData?.targetPlayer?.league;
+  const benchScopePredicate = useMemo(() => {
+    if (benchSameLeagueOnly && targetLeague) return (p: PlayerStats) => p.league === targetLeague;
+    if (benchTop5Only) return (p: PlayerStats) => TOP_5_LEAGUES.includes(p.league);
+    return null;
+  }, [benchSameLeagueOnly, targetLeague, benchTop5Only]);
 
-  const filteredOutperformers = useMemo(() => {
-    if (!gaData?.outperformers) return [];
-    if (benchTop5Only) return gaData.outperformers.filter((p) => TOP_5_LEAGUES.includes(p.league));
-    return gaData.outperformers;
-  }, [gaData?.outperformers, benchTop5Only]);
+  const filteredUnderperformers = useMemo(
+    () =>
+      gaData?.underperformers
+        ? benchScopePredicate
+          ? gaData.underperformers.filter(benchScopePredicate)
+          : gaData.underperformers
+        : [],
+    [gaData?.underperformers, benchScopePredicate],
+  );
+  const filteredOutperformers = useMemo(
+    () =>
+      gaData?.outperformers
+        ? benchScopePredicate
+          ? gaData.outperformers.filter(benchScopePredicate)
+          : gaData.outperformers
+        : [],
+    [gaData?.outperformers, benchScopePredicate],
+  );
+
+  const benchPoolSummary = useMemo(() => {
+    if (benchSameLeagueOnly && targetLeague) {
+      const count = allPlayers.filter((p) => p.league === targetLeague).length;
+      return `Analyzed ${count.toLocaleString()} players in ${targetLeague}`;
+    }
+    if (benchTop5Only) {
+      const count = allPlayers.filter((p) => TOP_5_LEAGUES.includes(p.league)).length;
+      return `Analyzed ${count.toLocaleString()} players across the top 5 leagues`;
+    }
+    return `Analyzed ${gaData?.totalPlayers.toLocaleString()} players across top European leagues`;
+  }, [benchSameLeagueOnly, benchTop5Only, targetLeague, allPlayers, gaData?.totalPlayers]);
 
   // ── Discovery tab counts ──
   const underTabCount = rawUnderCandidates.length;
@@ -1069,7 +1088,7 @@ export function ValueAnalysisUI({
           value={mode}
           onValueChange={(v) => {
             if (!v) return;
-            push({ mode: v === "ga" ? null : v, tab: null, bTop5: null });
+            push({ mode: v === "ga" ? null : v, tab: null, bTop5: null, bLeague: null });
           }}
         >
           <ToggleGroupItem value="ga" className="px-4">
@@ -1160,20 +1179,36 @@ export function ValueAnalysisUI({
                 <TargetPlayerCard player={gaData!.targetPlayer} minutes={targetMinutes} />
               </section>
 
-              <FilterButton
-                active={benchTop5Only}
-                onClick={() => update({ bTop5: benchTop5Only ? null : "1" })}
-              >
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Top 5 leagues
-              </FilterButton>
+              <div className="flex flex-wrap items-center gap-2">
+                <FilterButton
+                  active={benchTop5Only}
+                  onClick={() => update({ bTop5: benchTop5Only ? null : "1", bLeague: null })}
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  Top 5 leagues
+                </FilterButton>
+                <FilterButton
+                  active={benchSameLeagueOnly}
+                  onClick={() => update({ bLeague: benchSameLeagueOnly ? null : "1", bTop5: null })}
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 8h14M5 12h14M5 16h14"
+                    />
+                  </svg>
+                  Same league only
+                </FilterButton>
+              </div>
 
               <p className="text-xs text-text-muted flex items-start gap-1.5">
                 <span>
@@ -1310,7 +1345,7 @@ export function ValueAnalysisUI({
               </Tabs>
 
               <div className="text-center py-6 text-xs animate-fade-in text-text-muted [animation-delay:0.3s]">
-                Analyzed {gaData!.totalPlayers.toLocaleString()} players across top European leagues
+                {benchPoolSummary}
               </div>
             </div>
           )}

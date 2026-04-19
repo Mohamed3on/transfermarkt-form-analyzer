@@ -28,11 +28,11 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { PlayerSubtitle } from "@/components/PlayerSubtitle";
 import { timeAgo } from "@/app/components/DataLastUpdated";
-import { ComparisonItem } from "@/components/ComparisonItem";
+import { ComparisonPanels } from "./ComparisonPanels";
 import { DetailDeck } from "@/components/DetailDeck";
 import { HeroMetric } from "@/components/HeroMetric";
 import { SectionPanel } from "@/components/SectionPanel";
-import type { MinutesValuePlayer, PlayerStats, RecentGameStats } from "@/app/types";
+import type { MinutesValuePlayer, RecentGameStats } from "@/app/types";
 import { POSITION_NAMES } from "@/lib/fetch-player-minutes";
 import { PlayerInjuryBadge } from "./PlayerInjuryBadge";
 import { effectivePosition, getBroadPositionFilter } from "@/lib/positions";
@@ -247,48 +247,6 @@ function MinutesBenchmarkPanel({
               </div>
             </Link>
           ))
-        )}
-      </div>
-    </SectionPanel>
-  );
-}
-
-function ComparisonCard({
-  title,
-  emptyLabel,
-  players,
-  positive,
-  benchmarkUrl,
-}: {
-  title: string;
-  emptyLabel: string;
-  players: PlayerStats[];
-  positive: boolean;
-  benchmarkUrl: string;
-}) {
-  return (
-    <SectionPanel
-      title={title}
-      aside={
-        <Link
-          href={benchmarkUrl}
-          className="text-xs text-text-secondary transition-colors hover:text-text-primary"
-        >
-          See full benchmark →
-        </Link>
-      }
-    >
-      <div className="space-y-3">
-        {players.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border-subtle bg-elevated px-4 py-6 text-sm text-text-secondary">
-            {emptyLabel}
-          </div>
-        ) : (
-          players
-            .slice(0, 6)
-            .map((player) => (
-              <ComparisonItem key={player.playerId} player={player} positive={positive} />
-            ))
         )}
       </div>
     </SectionPanel>
@@ -588,10 +546,14 @@ export async function generateMetadata({ params }: { params: Promise<{ playerId:
 
 export default async function PlayerDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ playerId: string }>;
+  searchParams: Promise<{ sameLeague?: string }>;
 }) {
   const { playerId } = await params;
+  const { sameLeague } = await searchParams;
+  const sameLeagueOnly = sameLeague === "1";
   const data = await getPlayerDetailData(playerId);
 
   if (!data) {
@@ -629,11 +591,12 @@ export default async function PlayerDetailPage({
   const {
     player,
     rankings,
-    signalSummary,
     trend,
     form,
     outperformers,
     underperformers,
+    outperformersSameLeague,
+    underperformersSameLeague,
     clubmates,
     topClubmatesByNpga,
     minutesBenchmark,
@@ -646,6 +609,9 @@ export default async function PlayerDetailPage({
     clubCount,
     penaltyRank,
   } = data;
+  const signalSummary = sameLeagueOnly ? data.signalSummarySameLeague : data.signalSummary;
+  const activeUnderperformers = sameLeagueOnly ? underperformersSameLeague : underperformers;
+  const activeOutperformers = sameLeagueOnly ? outperformersSameLeague : outperformers;
   const fallbackMatchCount = player.recentForm?.length ?? 0;
 
   return (
@@ -1087,22 +1053,14 @@ export default async function PlayerDetailPage({
             </SectionPanel>
           </div>
 
-          <section className="grid gap-4 lg:grid-cols-2">
-            <ComparisonCard
-              title="Pricier peers he's beating"
-              emptyLabel="No pricier comparable players are behind him on the current value model."
-              players={underperformers}
-              positive
-              benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=underdelivering`}
-            />
-            <ComparisonCard
-              title="Cheaper peers ahead of him"
-              emptyLabel="No cheaper comparable players are ahead of him on the current value model."
-              players={outperformers}
-              positive={false}
-              benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=better-value`}
-            />
-          </section>
+          <ComparisonPanels
+            underperformers={activeUnderperformers}
+            outperformers={activeOutperformers}
+            sameLeagueOnly={sameLeagueOnly}
+            leagueLabel={player.league}
+            underBenchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=underdelivering`}
+            overBenchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=better-value`}
+          />
 
           {/* Minutes tab */}
           <section className="grid gap-4 lg:grid-cols-2">
