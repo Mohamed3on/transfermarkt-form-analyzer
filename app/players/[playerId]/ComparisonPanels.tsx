@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { PlayerStats } from "@/app/types";
+import type { ComparisonScope } from "@/lib/player-detail";
 import { ComparisonItem } from "@/components/ComparisonItem";
 import { FilterButton } from "@/components/FilterButton";
 import { SectionPanel } from "@/components/SectionPanel";
@@ -47,14 +48,14 @@ function Card({ title, emptyLabel, players, positive, benchmarkUrl }: CardProps)
 export function ComparisonPanels({
   underperformers,
   outperformers,
-  sameLeagueOnly,
+  scope,
   leagueLabel,
   underBenchmarkUrl,
   overBenchmarkUrl,
 }: {
   underperformers: PlayerStats[];
   outperformers: PlayerStats[];
-  sameLeagueOnly: boolean;
+  scope: ComparisonScope;
   leagueLabel: string;
   underBenchmarkUrl: string;
   overBenchmarkUrl: string;
@@ -64,47 +65,48 @@ export function ComparisonPanels({
   const params = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  const toggle = () => {
-    const next = new URLSearchParams(params);
-    if (sameLeagueOnly) next.delete("sameLeague");
-    else next.set("sameLeague", "1");
-    const qs = next.toString();
+  const setScope = (next: ComparisonScope) => {
+    const qp = new URLSearchParams(params);
+    qp.delete("sameLeague");
+    qp.delete("top5");
+    if (next === "league") qp.set("sameLeague", "1");
+    else if (next === "top5") qp.set("top5", "1");
+    const qs = qp.toString();
     startTransition(() => {
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     });
   };
 
-  const withScope = (url: string) => (sameLeagueOnly ? `${url}&bLeague=1` : url);
+  const toggleScope = (target: Exclude<ComparisonScope, "all">) =>
+    setScope(scope === target ? "all" : target);
+
+  const benchmarkSuffix = { all: "", league: "&bLeague=1", top5: "&bTop5=1" }[scope];
+  const peerLabel = { all: "comparable", league: leagueLabel, top5: "top 5 league" }[scope];
 
   return (
     <div className={`space-y-4 ${isPending ? "opacity-70" : ""}`}>
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <FilterButton active={sameLeagueOnly} onClick={toggle}>
+        <FilterButton active={scope === "top5"} onClick={() => toggleScope("top5")}>
+          Top 5 leagues only
+        </FilterButton>
+        <FilterButton active={scope === "league"} onClick={() => toggleScope("league")}>
           {leagueLabel} only
         </FilterButton>
       </div>
       <section className="grid gap-4 lg:grid-cols-2">
         <Card
           title="Pricier peers he's beating"
-          emptyLabel={
-            sameLeagueOnly
-              ? `No pricier ${leagueLabel} peers are behind him on the current value model.`
-              : "No pricier comparable players are behind him on the current value model."
-          }
+          emptyLabel={`No pricier ${peerLabel} peers are behind him on the current value model.`}
           players={underperformers}
           positive
-          benchmarkUrl={withScope(underBenchmarkUrl)}
+          benchmarkUrl={`${underBenchmarkUrl}${benchmarkSuffix}`}
         />
         <Card
           title="Cheaper peers ahead of him"
-          emptyLabel={
-            sameLeagueOnly
-              ? `No cheaper ${leagueLabel} peers are ahead of him on the current value model.`
-              : "No cheaper comparable players are ahead of him on the current value model."
-          }
+          emptyLabel={`No cheaper ${peerLabel} peers are ahead of him on the current value model.`}
           players={outperformers}
           positive={false}
-          benchmarkUrl={withScope(overBenchmarkUrl)}
+          benchmarkUrl={`${overBenchmarkUrl}${benchmarkSuffix}`}
         />
       </section>
     </div>

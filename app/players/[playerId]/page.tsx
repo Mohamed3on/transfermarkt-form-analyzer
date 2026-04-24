@@ -12,7 +12,12 @@ import {
 } from "lucide-react";
 import { createPageMetadata } from "@/lib/metadata";
 import { getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
-import { getPlayerDetailData, seasonNpga, type PlayerRankings } from "@/lib/player-detail";
+import {
+  getPlayerDetailData,
+  seasonNpga,
+  type ComparisonScope,
+  type PlayerRankings,
+} from "@/lib/player-detail";
 import { getPlayerRecentMatches } from "@/lib/player-recent-matches";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -549,11 +554,11 @@ export default async function PlayerDetailPage({
   searchParams,
 }: {
   params: Promise<{ playerId: string }>;
-  searchParams: Promise<{ sameLeague?: string }>;
+  searchParams: Promise<{ sameLeague?: string; top5?: string }>;
 }) {
   const { playerId } = await params;
-  const { sameLeague } = await searchParams;
-  const sameLeagueOnly = sameLeague === "1";
+  const { sameLeague, top5 } = await searchParams;
+  const scope: ComparisonScope = sameLeague === "1" ? "league" : top5 === "1" ? "top5" : "all";
   const data = await getPlayerDetailData(playerId);
 
   if (!data) {
@@ -593,10 +598,7 @@ export default async function PlayerDetailPage({
     rankings,
     trend,
     form,
-    outperformers,
-    underperformers,
-    outperformersSameLeague,
-    underperformersSameLeague,
+    comparisons,
     clubmates,
     topClubmatesByNpga,
     minutesBenchmark,
@@ -609,9 +611,11 @@ export default async function PlayerDetailPage({
     clubCount,
     penaltyRank,
   } = data;
-  const signalSummary = sameLeagueOnly ? data.signalSummarySameLeague : data.signalSummary;
-  const activeUnderperformers = sameLeagueOnly ? underperformersSameLeague : underperformers;
-  const activeOutperformers = sameLeagueOnly ? outperformersSameLeague : outperformers;
+  const {
+    outperformers: activeOutperformers,
+    underperformers: activeUnderperformers,
+    signalSummary,
+  } = comparisons[scope];
   const fallbackMatchCount = player.recentForm?.length ?? 0;
 
   return (
@@ -1056,7 +1060,7 @@ export default async function PlayerDetailPage({
           <ComparisonPanels
             underperformers={activeUnderperformers}
             outperformers={activeOutperformers}
-            sameLeagueOnly={sameLeagueOnly}
+            scope={scope}
             leagueLabel={player.league}
             underBenchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=underdelivering`}
             overBenchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=better-value`}
