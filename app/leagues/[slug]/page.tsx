@@ -103,8 +103,10 @@ export default async function LeaguePage({ params }: { params: Promise<{ slug: s
   const leaguePlayers = allPlayers.filter((p) => inLeague(p.league));
   const leagueInjured = (injuredData.players ?? []).filter((p) => inLeague(p.league));
 
-  const aggregatedTop = leagueAnalysis.aggregatedTop.slice(0, 2);
-  const aggregatedBottom = leagueAnalysis.aggregatedBottom.slice(0, 2);
+  const topTier = (teams: typeof leagueAnalysis.aggregatedTop) =>
+    teams.length === 0 ? teams : teams.filter((t) => t.count === teams[0].count);
+  const aggregatedTop = topTier(leagueAnalysis.aggregatedTop);
+  const aggregatedBottom = topTier(leagueAnalysis.aggregatedBottom);
   const hasFormLeaders = aggregatedTop.length > 0 || aggregatedBottom.length > 0;
 
   const formLeaders: Record<string, FormLeader> = {};
@@ -239,6 +241,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ slug: s
             squad={slimForClient(leaguePlayers, { trimRecentForm: true })}
             defaultSort="ga"
             limit={10}
+            showClub
             emptyLabel={`No tracked players in ${league.name}.`}
           />
         </section>

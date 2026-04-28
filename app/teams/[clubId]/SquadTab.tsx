@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { NationalityFlag } from "@/components/NationalityFlag";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { getPlayerDetailHref } from "@/lib/format";
 import type { MinutesValuePlayer } from "@/app/types";
@@ -25,10 +26,12 @@ function SquadPlayerRow({
   player,
   rank,
   sortBy,
+  showClub,
 }: {
   player: MinutesValuePlayer;
   rank: number;
   sortBy: SortKey;
+  showClub: boolean;
 }) {
   const playerNpga = npga(player);
   const penGoals = player.penaltyGoals ?? 0;
@@ -51,8 +54,19 @@ function SquadPlayerRow({
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm text-text-primary">{player.name}</p>
-        <p className="mt-0.5 text-xs text-text-secondary">
-          {player.position} · {player.age}y · {player.marketValueDisplay}
+        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-text-secondary">
+          {showClub && player.clubLogoUrl && (
+            <img
+              src={player.clubLogoUrl}
+              alt={player.club}
+              title={player.club}
+              className="h-3.5 w-3.5 shrink-0 object-contain"
+            />
+          )}
+          <NationalityFlag url={player.nationalityFlagUrl} name={player.nationality} />
+          <span className="truncate">
+            {player.position} · {player.age}y · {player.marketValueDisplay}
+          </span>
         </p>
       </div>
       <div className="hidden shrink-0 items-center gap-4 text-right sm:flex">
@@ -99,11 +113,13 @@ export function SquadTab({
   defaultSort = "value",
   emptyLabel = "No tracked players found for this club.",
   limit,
+  showClub = false,
 }: {
   squad: MinutesValuePlayer[];
   defaultSort?: SortKey;
   emptyLabel?: string;
   limit?: number;
+  showClub?: boolean;
 }) {
   const [sortBy, setSortBy] = useState<SortKey>(defaultSort);
   const [sortAsc, setSortAsc] = useState(false);
@@ -172,7 +188,13 @@ export function SquadTab({
 
       <div className="space-y-3">
         {sorted.map((player, i) => (
-          <SquadPlayerRow key={player.playerId} player={player} rank={i + 1} sortBy={sortBy} />
+          <SquadPlayerRow
+            key={player.playerId}
+            player={player}
+            rank={i + 1}
+            sortBy={sortBy}
+            showClub={showClub}
+          />
         ))}
       </div>
     </div>
