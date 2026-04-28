@@ -1,6 +1,6 @@
 # SquadStat
 
-Football scouting dashboards built on Transfermarkt data.
+Football scouting tools built on Transfermarkt data.
 
 - Live app: https://squadstat.com
 - Public repo: https://github.com/Mohamed3on/squadstat
@@ -12,19 +12,19 @@ Football scouting dashboards built on Transfermarkt data.
 - Player explorer (market value, minutes, G+A, loans/new signings)
 - Value analysis (bargains vs underperforming value)
 - Injury impact by player, club, and injury type
-- Curated discovery boards at `/discover`
+- Curated discovery views at `/discover`
 
 ## Main Routes
 
 | Route                | Purpose                                        |
 | -------------------- | ---------------------------------------------- |
 | `/`                  | Home and navigation                            |
-| `/discover`          | Curated board links (shareable filtered views) |
+| `/discover`          | Curated quick-view links (shareable filters)   |
 | `/form`              | 5/10/15/20-match form analysis                 |
 | `/expected-position` | Squad value vs table over/underperformance     |
 | `/players`           | Player explorer with filters and sorting       |
 | `/value-analysis`    | Value efficiency, bargains, and minutes lens   |
-| `/injured`           | Injury impact dashboards                       |
+| `/injured`           | Injury impact by player, team, and injury type |
 
 ## API Routes
 

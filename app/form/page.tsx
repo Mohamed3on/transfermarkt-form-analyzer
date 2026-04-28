@@ -1,6 +1,6 @@
 import { getAnalysis } from "@/lib/form-analysis";
 import { getTeamFormData, splitPerformers } from "@/lib/team-form";
-import { AnalyzerUI } from "@/app/components/AnalyzerUI";
+import { FormAnalysisUI } from "@/app/components/FormAnalysisUI";
 import { createPageMetadata } from "@/lib/metadata";
 import { DiscoveryLinkGrid } from "@/app/components/DiscoveryLinkGrid";
 
@@ -31,9 +31,9 @@ export default async function FormPage() {
 
   return (
     <>
-      <AnalyzerUI initialData={data} deltaMap={deltaMap} />
+      <FormAnalysisUI initialData={data} deltaMap={deltaMap} />
       <DiscoveryLinkGrid
-        title="Explore Supporting Boards"
+        title="Quick views"
         description="Move from form signals into player value and injury diagnostics."
         maxItems={6}
         currentPath="/form"

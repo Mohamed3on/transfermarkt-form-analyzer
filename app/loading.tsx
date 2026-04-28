@@ -40,7 +40,7 @@ export default function Loading() {
         <StandoutsGridSkeleton />
       </section>
 
-      {/* Core Dashboards skeleton */}
+      {/* Explore skeleton */}
       <section className="pt-12 sm:pt-16">
         <div className="mb-6">
           <Skeleton className="h-3 w-14 mb-2" />

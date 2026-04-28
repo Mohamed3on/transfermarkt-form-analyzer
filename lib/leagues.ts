@@ -55,15 +55,41 @@ export function getLeagueLogoUrl(leagueName: string): string | undefined {
   return leagueLogoMap[leagueName] || leagueLogoMap[leagueName.toLowerCase().replace(/\s/g, "")];
 }
 
-const leagueUrlMap: Record<string, string> = {};
+const leagueSlugMap: Record<string, string> = {};
+const transfermarktLeagueUrlMap: Record<string, string> = {};
 for (const l of LEAGUES) {
-  const url = `https://www.transfermarkt.com/${l.slug}/startseite/wettbewerb/${l.code}`;
-  leagueUrlMap[l.name] = url;
-  leagueUrlMap[l.name.toLowerCase().replace(/\s/g, "")] = url;
+  const tmUrl = `https://www.transfermarkt.com/${l.slug}/startseite/wettbewerb/${l.code}`;
+  const normalizedKey = l.name.toLowerCase().replace(/\s/g, "");
+  leagueSlugMap[l.name] = l.slug;
+  leagueSlugMap[normalizedKey] = l.slug;
+  transfermarktLeagueUrlMap[l.name] = tmUrl;
+  transfermarktLeagueUrlMap[normalizedKey] = tmUrl;
+}
+
+export function getLeagueSlug(leagueName: string): string | undefined {
+  return leagueSlugMap[leagueName] || leagueSlugMap[leagueName.toLowerCase().replace(/\s/g, "")];
 }
 
 export function getLeagueUrl(leagueName: string): string | undefined {
-  return leagueUrlMap[leagueName] || leagueUrlMap[leagueName.toLowerCase().replace(/\s/g, "")];
+  const slug = getLeagueSlug(leagueName);
+  return slug ? `/leagues/${slug}` : undefined;
+}
+
+export function getTransfermarktLeagueUrl(leagueName: string): string | undefined {
+  return (
+    transfermarktLeagueUrlMap[leagueName] ||
+    transfermarktLeagueUrlMap[leagueName.toLowerCase().replace(/\s/g, "")]
+  );
+}
+
+export function getLeagueBySlug(slug: string): League | undefined {
+  return LEAGUES.find((l) => l.slug === slug);
+}
+
+/** True when two league names refer to the same league, despite scrape variants like "La Liga" vs "LaLiga". */
+export function isSameLeague(a: string, b: string): boolean {
+  const slugA = getLeagueSlug(a);
+  return slugA !== undefined && slugA === getLeagueSlug(b);
 }
 
 const leagueColorMap: Record<string, string> = {};

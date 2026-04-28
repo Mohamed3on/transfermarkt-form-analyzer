@@ -3,6 +3,7 @@ import * as cheerio from "cheerio";
 import type { TeamStats, PeriodAnalysis, AnalysisResult, AggregatedTeam } from "@/app/types";
 import { BASE_URL } from "@/lib/constants";
 import { fetchPage } from "@/lib/fetch";
+import { isSameLeague } from "@/lib/leagues";
 
 const PERIODS = [20, 15, 10, 5];
 
@@ -201,142 +202,153 @@ async function fetchAllPeriodsWithRetry(): Promise<TeamStats[][]> {
   return results as TeamStats[][];
 }
 
-export const getAnalysis = unstable_cache(
-  async (): Promise<AnalysisResult> => {
-    // Fetch all periods in parallel — all must succeed or we skip caching
-    const allTeamsPerPeriod = await fetchAllPeriodsWithRetry();
+function analyzeFormData(allTeamsPerPeriod: TeamStats[][]): AnalysisResult {
+  const analysis: PeriodAnalysis[] = [];
+  let matchedPeriod: number | null = null;
+  const leadersPerPeriod = allTeamsPerPeriod.map((teams) =>
+    teams.length > 0 ? getLeaders(teams) : null,
+  );
 
-    const analysis: PeriodAnalysis[] = [];
-    let matchedPeriod: number | null = null;
-    const leadersPerPeriod = allTeamsPerPeriod.map((teams) =>
-      teams.length > 0 ? getLeaders(teams) : null,
-    );
+  for (let i = 0; i < PERIODS.length; i++) {
+    const period = PERIODS[i];
+    const teams = allTeamsPerPeriod[i];
+    const leaders = leadersPerPeriod[i];
+    if (teams.length === 0 || !leaders) continue;
+
+    const topTeams = findQualifiedTeams(teams, "top", leaders);
+    const bottomTeams = findQualifiedTeams(teams, "bottom", leaders);
+
+    const periodData: PeriodAnalysis = {
+      period,
+      teamsAnalyzed: teams.length,
+      leaders,
+      topTeams: topTeams.map(({ team, criteria }) => ({
+        name: team.name,
+        league: team.league,
+        country: team.country,
+        leaguePosition: team.leaguePosition,
+        criteria,
+        stats: {
+          points: team.points,
+          goalDiff: team.goalDiff,
+          goalsScored: team.goalsScored,
+          goalsConceded: team.goalsConceded,
+        },
+        logoUrl: team.logoUrl,
+        clubUrl: team.clubUrl,
+        clubId: team.clubId,
+      })),
+      bottomTeams: bottomTeams.map(({ team, criteria }) => ({
+        name: team.name,
+        league: team.league,
+        country: team.country,
+        leaguePosition: team.leaguePosition,
+        criteria,
+        stats: {
+          points: team.points,
+          goalDiff: team.goalDiff,
+          goalsScored: team.goalsScored,
+          goalsConceded: team.goalsConceded,
+        },
+        logoUrl: team.logoUrl,
+        clubUrl: team.clubUrl,
+        clubId: team.clubId,
+      })),
+      hasMatch: topTeams.length > 0 && bottomTeams.length > 0,
+    };
+
+    analysis.push(periodData);
+
+    if (periodData.hasMatch && !matchedPeriod) {
+      matchedPeriod = period;
+    }
+  }
+
+  const aggregateEntries = (type: "top" | "bottom") => {
+    const teamMap = new Map<
+      string,
+      { team: TeamStats; entries: { category: string; period: number; value: number }[] }
+    >();
 
     for (let i = 0; i < PERIODS.length; i++) {
       const period = PERIODS[i];
       const teams = allTeamsPerPeriod[i];
       const leaders = leadersPerPeriod[i];
       if (teams.length === 0 || !leaders) continue;
+      const data = leaders[type];
 
-      const topTeams = findQualifiedTeams(teams, "top", leaders);
-      const bottomTeams = findQualifiedTeams(teams, "bottom", leaders);
+      const categories = type === "top" ? TOP_CATEGORIES : BOTTOM_CATEGORIES;
 
-      const periodData: PeriodAnalysis = {
-        period,
-        teamsAnalyzed: teams.length,
-        leaders,
-        topTeams: topTeams.map(({ team, criteria }) => ({
-          name: team.name,
-          league: team.league,
-          country: team.country,
-          leaguePosition: team.leaguePosition,
-          criteria,
-          stats: {
-            points: team.points,
-            goalDiff: team.goalDiff,
-            goalsScored: team.goalsScored,
-            goalsConceded: team.goalsConceded,
-          },
-          logoUrl: team.logoUrl,
-          clubUrl: team.clubUrl,
-          clubId: team.clubId,
-        })),
-        bottomTeams: bottomTeams.map(({ team, criteria }) => ({
-          name: team.name,
-          league: team.league,
-          country: team.country,
-          leaguePosition: team.leaguePosition,
-          criteria,
-          stats: {
-            points: team.points,
-            goalDiff: team.goalDiff,
-            goalsScored: team.goalsScored,
-            goalsConceded: team.goalsConceded,
-          },
-          logoUrl: team.logoUrl,
-          clubUrl: team.clubUrl,
-          clubId: team.clubId,
-        })),
-        hasMatch: topTeams.length > 0 && bottomTeams.length > 0,
-      };
-
-      analysis.push(periodData);
-
-      if (periodData.hasMatch && !matchedPeriod) {
-        matchedPeriod = period;
-      }
-    }
-
-    // Aggregate: tally how often each team leads any category across all windows
-    const aggregateEntries = (type: "top" | "bottom") => {
-      const teamMap = new Map<
-        string,
-        { team: TeamStats; entries: { category: string; period: number; value: number }[] }
-      >();
-
-      for (let i = 0; i < PERIODS.length; i++) {
-        const period = PERIODS[i];
-        const teams = allTeamsPerPeriod[i];
-        const leaders = leadersPerPeriod[i];
-        if (teams.length === 0 || !leaders) continue;
-        const data = leaders[type];
-
-        const categories = type === "top" ? TOP_CATEGORIES : BOTTOM_CATEGORIES;
-
-        for (const { key, label } of categories) {
-          const value = data[key].value;
-          for (const teamName of data[key].teams) {
-            const team = teams.find((t) => t.name === teamName);
-            if (!team) continue;
-            const existing = teamMap.get(team.clubId);
-            if (existing) {
-              existing.entries.push({ category: label, period, value });
-            } else {
-              teamMap.set(team.clubId, { team, entries: [{ category: label, period, value }] });
-            }
+      for (const { key, label } of categories) {
+        const value = data[key].value;
+        for (const teamName of data[key].teams) {
+          const team = teams.find((t) => t.name === teamName);
+          if (!team) continue;
+          const existing = teamMap.get(team.clubId);
+          if (existing) {
+            existing.entries.push({ category: label, period, value });
+          } else {
+            teamMap.set(team.clubId, { team, entries: [{ category: label, period, value }] });
           }
         }
       }
+    }
 
-      const result: AggregatedTeam[] = [];
-      for (const [, { team, entries }] of teamMap) {
-        if (entries.length < 2) continue;
-        // Use stats from the longest period available for this team
-        const longestPeriod = Math.max(...entries.map((e) => e.period));
-        const longestPeriodTeams = allTeamsPerPeriod[PERIODS.indexOf(longestPeriod)];
-        const statsTeam = longestPeriodTeams.find((t) => t.clubId === team.clubId) || team;
-        result.push({
-          name: team.name,
-          league: team.league,
-          leaguePosition: team.leaguePosition,
-          logoUrl: team.logoUrl,
-          clubUrl: team.clubUrl,
-          clubId: team.clubId,
-          count: entries.length,
-          entries,
-          stats: {
-            points: statsTeam.points,
-            goalDiff: statsTeam.goalDiff,
-            goalsScored: statsTeam.goalsScored,
-            goalsConceded: statsTeam.goalsConceded,
-          },
-        });
-      }
-      return result.sort((a, b) => b.count - a.count);
-    };
+    const result: AggregatedTeam[] = [];
+    for (const [, { team, entries }] of teamMap) {
+      if (entries.length < 2) continue;
+      const longestPeriod = Math.max(...entries.map((e) => e.period));
+      const longestPeriodTeams = allTeamsPerPeriod[PERIODS.indexOf(longestPeriod)];
+      const statsTeam = longestPeriodTeams.find((t) => t.clubId === team.clubId) || team;
+      result.push({
+        name: team.name,
+        league: team.league,
+        leaguePosition: team.leaguePosition,
+        logoUrl: team.logoUrl,
+        clubUrl: team.clubUrl,
+        clubId: team.clubId,
+        count: entries.length,
+        entries,
+        stats: {
+          points: statsTeam.points,
+          goalDiff: statsTeam.goalDiff,
+          goalsScored: statsTeam.goalsScored,
+          goalsConceded: statsTeam.goalsConceded,
+        },
+      });
+    }
+    return result.sort((a, b) => b.count - a.count);
+  };
 
-    const aggregatedTop = aggregateEntries("top");
-    const aggregatedBottom = aggregateEntries("bottom");
+  return {
+    success: matchedPeriod !== null,
+    matchedPeriod,
+    analysis,
+    aggregatedTop: aggregateEntries("top"),
+    aggregatedBottom: aggregateEntries("bottom"),
+    allTeamsPerPeriod: PERIODS.map((period, i) => ({ period, teams: allTeamsPerPeriod[i] })),
+  };
+}
 
-    return {
-      success: matchedPeriod !== null,
-      matchedPeriod,
-      analysis,
-      aggregatedTop,
-      aggregatedBottom,
-      allTeamsPerPeriod: PERIODS.map((period, i) => ({ period, teams: allTeamsPerPeriod[i] })),
-    };
+export const getAnalysis = unstable_cache(
+  async (): Promise<AnalysisResult> => {
+    const allTeamsPerPeriod = await fetchAllPeriodsWithRetry();
+    return analyzeFormData(allTeamsPerPeriod);
   },
   ["form-analysis"],
   { revalidate: 7200, tags: ["form-analysis"] },
 );
+
+/**
+ * Re-runs the form analysis scoped to a single league — leaders are computed
+ * within just the league's teams, not across all top-5 leagues. Compares via
+ * slug to handle scraped name variants like "La Liga" vs "LaLiga".
+ */
+export async function getLeagueAnalysis(leagueName: string): Promise<AnalysisResult> {
+  const full = await getAnalysis();
+  const periodTeams = (full.allTeamsPerPeriod ?? []).map((p) => p.teams);
+  const leagueOnly = periodTeams.map((teams) =>
+    teams.filter((t) => isSameLeague(t.league, leagueName)),
+  );
+  return analyzeFormData(leagueOnly);
+}

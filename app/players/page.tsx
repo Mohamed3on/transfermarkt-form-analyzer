@@ -44,8 +44,8 @@ export default async function PlayersPage() {
       </Suspense>
       <DiscoveryLinkGrid
         section="players"
-        title="Player Scouting Boards"
-        description="Use purpose-built boards for loans, new signings, and top-5 output leaders."
+        title="Player scouting views"
+        description="Use purpose-built filters for loans, new signings, and top-5 output leaders."
         currentPath="/players"
       />
       <DataLastUpdated />

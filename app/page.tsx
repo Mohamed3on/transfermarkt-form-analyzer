@@ -1140,7 +1140,7 @@ async function HeroCard({ dataPromise }: { dataPromise: Promise<HomeData> }) {
             ))
           ) : (
             <div className="rounded-lg border border-border-subtle bg-card px-3 py-2 text-sm text-text-muted">
-              Snapshot data is temporarily unavailable. Open a dashboard below for full tables.
+              Snapshot data is temporarily unavailable. Open a section below for full tables.
             </div>
           )}
         </div>
@@ -1256,7 +1256,7 @@ export default function Home() {
         <SectionHeading
           eyebrow="Live data"
           title="Latest Standouts"
-          description="The best and worst from each dashboard — open the full view for more."
+          description="The best and worst from each section — open the full view for more."
         />
 
         <Suspense fallback={<StandoutsGridSkeleton />}>
@@ -1267,8 +1267,8 @@ export default function Home() {
       <section className="pt-12 sm:pt-16">
         <SectionHeading
           eyebrow="Explore"
-          title="Core Dashboards"
-          description="Six dashboards covering form, squad value, player stats, injuries, and market trends."
+          title="Explore"
+          description="Six sections covering form, squad value, player stats, injuries, and market trends."
           action={{ href: "/value-analysis", label: "Open Over/Under" }}
         />
 
@@ -1281,7 +1281,7 @@ export default function Home() {
 
       <section className="pt-12 sm:pt-16">
         <div className="rounded-2xl border border-border-medium bg-card p-5 sm:p-6">
-          <h2 className="text-xl font-pixel text-text-primary sm:text-2xl">Open a dashboard</h2>
+          <h2 className="text-xl font-pixel text-text-primary sm:text-2xl">Open a section</h2>
           <p className="mt-1 text-sm text-text-muted">
             Start from the question you want to answer.{" "}
             <Link

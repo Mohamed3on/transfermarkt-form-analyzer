@@ -15,6 +15,7 @@ import { ExternalLink } from "lucide-react";
 import { InfoTip } from "@/app/components/InfoTip";
 import { PositionDisplay, POS_ABBREV } from "@/components/PositionDisplay";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
+import { getLeagueUrl } from "@/lib/leagues";
 import {
   filterPlayersByLeagueAndClub,
   getFormMinutes,
@@ -119,6 +120,51 @@ function AvatarBadge({
         {tooltip}
       </span>
     </div>
+  );
+}
+
+function LeagueChip({ league, logoUrl }: { league: string; logoUrl: string }) {
+  const href = getLeagueUrl(league);
+  const inner = (
+    <>
+      <img
+        src={logoUrl}
+        alt={league}
+        title={league}
+        className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px shrink-0"
+      />
+      <span className="hidden md:inline">{league}</span>
+    </>
+  );
+  return href ? (
+    <Link
+      href={href}
+      className="flex items-center gap-1.5 hover:underline hover:text-text-primary transition-colors"
+    >
+      {inner}
+    </Link>
+  ) : (
+    <span className="flex items-center gap-1.5">{inner}</span>
+  );
+}
+
+function ClubChip({ club, logoUrl }: { club: string; logoUrl?: string }) {
+  const clubId = extractClubIdFromLogoUrl(logoUrl);
+  const inner = (
+    <>
+      {logoUrl && <img src={logoUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}
+      {club}
+    </>
+  );
+  return clubId ? (
+    <Link
+      href={getTeamDetailHref(clubId)}
+      className="truncate inline-flex items-center gap-1 hover:underline"
+    >
+      {inner}
+    </Link>
+  ) : (
+    <span className="truncate inline-flex items-center gap-1">{inner}</span>
   );
 }
 
@@ -282,45 +328,11 @@ function PlayerCard({
           <div className="flex items-center gap-1.5 text-xs mt-0.5 overflow-hidden text-text-secondary">
             <PositionDisplay position={player.position} playedPosition={player.playedPosition} />
             <span className="opacity-40">·</span>
-            {(() => {
-              const cid = extractClubIdFromLogoUrl(player.clubLogoUrl);
-              return cid ? (
-                <Link
-                  href={getTeamDetailHref(cid)}
-                  className="truncate inline-flex items-center gap-1 hover:underline"
-                >
-                  {player.clubLogoUrl && (
-                    <img
-                      src={player.clubLogoUrl}
-                      alt=""
-                      className="w-3.5 h-3.5 object-contain shrink-0"
-                    />
-                  )}
-                  {player.club}
-                </Link>
-              ) : (
-                <span className="truncate inline-flex items-center gap-1">
-                  {player.clubLogoUrl && (
-                    <img
-                      src={player.clubLogoUrl}
-                      alt=""
-                      className="w-3.5 h-3.5 object-contain shrink-0"
-                    />
-                  )}
-                  {player.club}
-                </span>
-              );
-            })()}
+            <ClubChip club={player.club} logoUrl={player.clubLogoUrl} />
             {player.leagueLogoUrl && (
               <>
                 <span className="opacity-40">·</span>
-                <img
-                  src={player.leagueLogoUrl}
-                  alt={player.league}
-                  title={player.league}
-                  className="w-3.5 h-3.5 object-contain rounded-sm bg-white/90 p-px shrink-0"
-                />
-                <span className="hidden md:inline">{player.league}</span>
+                <LeagueChip league={player.league} logoUrl={player.leagueLogoUrl} />
               </>
             )}
             {nationalityDisplay}

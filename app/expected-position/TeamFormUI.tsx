@@ -9,6 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ManagerSection, ManagerSkeleton } from "@/app/components/ManagerPPGBadge";
 import { InfoTip } from "@/app/components/InfoTip";
 import { LEAGUES, getLeagueLogoUrl } from "@/lib/leagues";
+import { FormLeaderPill } from "@/components/FormLeaderPill";
 import { LeagueBadge } from "@/components/LeagueBadge";
 import { RankBadge } from "@/components/RankBadge";
 import { formatValueStr, getTeamDetailHref, ordinal } from "@/lib/format";
@@ -133,15 +134,7 @@ function TeamCard({
               </Link>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <LeagueBadge league={team.league} />
-                {formLeader && (
-                  <Link
-                    href="/form"
-                    className={`inline-flex items-center gap-0.5 text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-semibold transition-all duration-150 hover:scale-105 hover:brightness-125 ${formLeader.type === "top" ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}
-                  >
-                    {formLeader.type === "top" ? "↑ Best" : "↓ Worst"} form{" "}
-                    <span className="text-[8px] opacity-60">→</span>
-                  </Link>
-                )}
+                {formLeader && <FormLeaderPill type={formLeader.type} />}
               </div>
             </div>
           </div>
@@ -204,7 +197,7 @@ function TeamCard({
 }
 
 // Component that renders both lists with aligned card rows
-function TeamListsGrid({
+export function TeamListsGrid({
   overperformers,
   underperformers,
   formLeaders,

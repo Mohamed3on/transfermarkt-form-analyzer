@@ -39,7 +39,7 @@ function Section({
               href={href}
               className="text-sm text-accent-blue hover:text-text-primary transition-colors"
             >
-              Open dashboard
+              Open page
             </Link>
           </div>
         </div>
@@ -62,7 +62,7 @@ export default function HowItWorksPage() {
         <h1 className="text-3xl font-pixel text-text-primary sm:text-4xl">How It Works</h1>
         <p className="mt-3 max-w-3xl text-sm text-text-secondary sm:text-base">
           SquadStat pulls data from Transfermarkt and runs calculations to surface form trends,
-          value gaps, and injury cost. Here is how each dashboard works.
+          value gaps, and injury cost. Here is how each page works.
         </p>
       </div>
 

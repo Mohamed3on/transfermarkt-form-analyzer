@@ -1,15 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  Crown,
-  Medal,
-  Sparkles,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowUpRight, Crown, Medal, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import { DetailHero, DetailPageShell } from "@/components/DetailHero";
 import { createPageMetadata } from "@/lib/metadata";
 import { getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
 import {
@@ -619,527 +612,506 @@ export default async function PlayerDetailPage({
   const fallbackMatchCount = player.recentForm?.length ?? 0;
 
   return (
-    <div className="full-bleed pt-6 pb-12 sm:pt-8 sm:pb-16">
-      <div className="mx-auto max-w-screen-2xl px-3 sm:px-4">
-        <Link
-          href="/players"
-          className="mb-4 inline-flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to player explorer
-        </Link>
+    <DetailPageShell backHref="/players" backLabel="Back to player explorer">
+      <DetailHero>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          <PlayerAvatar
+            imageUrl={player.imageUrl}
+            name={player.name}
+            size="lg"
+            className="h-24 w-24 rounded-[1.5rem] border border-border-medium sm:h-28 sm:w-28"
+          />
 
-        <section className="relative overflow-hidden rounded-[1.75rem] border border-border-subtle bg-[radial-gradient(circle_at_top_left,rgba(88,166,255,0.16),transparent_38%),radial-gradient(circle_at_80%_12%,rgba(0,255,135,0.14),transparent_30%),linear-gradient(180deg,var(--bg-card),var(--bg-elevated))] p-5 animate-blur-in motion-reduce:animate-none sm:p-7 lg:p-8">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(88,166,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(88,166,255,0.05)_1px,transparent_1px)] bg-[size:64px_64px]" />
-
-          <div className="relative grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
-            <div>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <PlayerAvatar
-                  imageUrl={player.imageUrl}
-                  name={player.name}
-                  size="lg"
-                  className="h-24 w-24 rounded-[1.5rem] border border-border-medium sm:h-28 sm:w-28"
-                />
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <LeagueBadge league={player.league} />
-                    {player.isOnLoan && (
-                      <SignalBadge className="border-accent-gold/25 bg-accent-gold/10 text-accent-gold">
-                        On loan
-                      </SignalBadge>
-                    )}
-                    {!player.isOnLoan && player.isNewSigning && (
-                      <SignalBadge className="border-accent-blue/25 bg-accent-blue/10 text-accent-blue">
-                        New signing
-                      </SignalBadge>
-                    )}
-                    {player.isCurrentIntl && (
-                      <SignalBadge className="border-emerald-500/25 bg-emerald-500/10 text-emerald-400">
-                        Current international
-                      </SignalBadge>
-                    )}
-                    {trend && (
-                      <SignalBadge
-                        className={
-                          trend.type === "winner"
-                            ? "border-accent-hot-border bg-accent-hot-glow text-accent-hot"
-                            : "border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft"
-                        }
-                      >
-                        {trend.type === "winner" ? (
-                          <TrendingUp className="mr-1 h-3.5 w-3.5" />
-                        ) : (
-                          <TrendingDown className="mr-1 h-3.5 w-3.5" />
-                        )}
-                        {trend.type === "winner" ? "Repeat riser" : "Repeat faller"}
-                      </SignalBadge>
-                    )}
-                  </div>
-
-                  <h1 className="mt-4 text-3xl font-pixel leading-tight text-text-primary sm:text-4xl">
-                    {player.name}
-                  </h1>
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-text-secondary">
-                    <PlayerSubtitle
-                      position={player.position}
-                      playedPosition={player.playedPosition}
-                      club={player.club}
-                      clubLogoUrl={player.clubLogoUrl}
-                      clubId={data.clubId ?? undefined}
-                      age={player.age}
-                      nationalityFlagUrl={player.nationalityFlagUrl}
-                      nationality={player.nationality}
-                    />
-                  </div>
-
-                  <div className="mt-5 flex flex-wrap items-center gap-3">
-                    <Button asChild>
-                      <Link
-                        href={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}`}
-                      >
-                        Compare on value
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="border-border-medium bg-elevated text-text-primary hover:bg-card-hover"
-                    >
-                      <a
-                        href={getLeistungsdatenUrl(player.profileUrl)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Transfermarkt profile
-                        <ArrowUpRight className="ml-2 h-4 w-4" />
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-              <HeroMetric
-                label="Value"
-                value={player.marketValueDisplay}
-                subline={`#${rankings.marketValueOverall} overall · #${rankings.marketValuePosition} ${positionLabel.toLowerCase()}`}
-                accentClass="text-accent-gold"
-              />
-              <HeroMetric
-                label="npG+A"
-                value={String(form.seasonNpga)}
-                subline={`#${rankings.npgaOverall} overall · #${rankings.npgaPosition} ${positionLabel.toLowerCase()}`}
-                accentClass="text-accent-hot"
-              />
-              <HeroMetric
-                label="G+A"
-                value={String(form.seasonGa)}
-                subline={`${form.seasonGoals}G · ${form.seasonAssists}A`}
-                accentClass="text-emerald-400"
-              />
-              <HeroMetric
-                label="Minutes"
-                value={`${player.minutes.toLocaleString()}'`}
-                subline={`Played ${player.totalMatches} of ${signalSummary.gamesScheduled - signalSummary.gamesMissed}${signalSummary.availablePct < 100 ? ` · ${100 - signalSummary.availablePct}% missed` : ""}`}
-                accentClass="text-accent-blue"
-              />
-            </div>
-
-            <div className="col-span-full flex flex-wrap gap-2.5">
-              {signalSummary.discoveryStatus === "bargain" &&
-                signalSummary.cheaperPlayersBeatingTarget === 0 && (
-                  <SignalBadge className="border-accent-hot-border bg-accent-hot-glow text-accent-hot">
-                    <Sparkles className="mr-1 h-3.5 w-3.5" />
-                    Outperforming {signalSummary.pricierPlayersBeatenByTarget} pricier peers
-                  </SignalBadge>
-                )}
-              {signalSummary.discoveryStatus === "overpriced" &&
-                signalSummary.pricierPlayersBeatenByTarget === 0 && (
-                  <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
-                    {signalSummary.cheaperPlayersBeatingTarget} cheaper peers with more output
-                  </SignalBadge>
-                )}
-              {(minutesBenchmark.playingLessCount ?? minutesBenchmark.playingLess.length) === 0 &&
-                (minutesBenchmark.playingMoreCount ?? minutesBenchmark.playingMore.length) > 0 && (
-                  <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
-                    Fewest minutes among comparable peers
-                  </SignalBadge>
-                )}
-              <Suspense>
-                <PlayerInjuryBadge playerId={player.playerId} />
-              </Suspense>
-              {player.contractExpiry && (
-                <SignalBadge className="border-border-subtle bg-card-hover text-text-secondary">
-                  Contract until {player.contractExpiry}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <LeagueBadge league={player.league} />
+              {player.isOnLoan && (
+                <SignalBadge className="border-accent-gold/25 bg-accent-gold/10 text-accent-gold">
+                  On loan
+                </SignalBadge>
+              )}
+              {!player.isOnLoan && player.isNewSigning && (
+                <SignalBadge className="border-accent-blue/25 bg-accent-blue/10 text-accent-blue">
+                  New signing
+                </SignalBadge>
+              )}
+              {player.isCurrentIntl && (
+                <SignalBadge className="border-emerald-500/25 bg-emerald-500/10 text-emerald-400">
+                  Current international
                 </SignalBadge>
               )}
               {trend && (
-                <Link href="/biggest-movers">
-                  <SignalBadge className="border-border-subtle bg-card-hover text-text-secondary transition-colors hover:text-text-primary">
-                    {trend.appearances.length} repeat {trend.type === "winner" ? "rises" : "drops"}
-                  </SignalBadge>
-                </Link>
+                <SignalBadge
+                  className={
+                    trend.type === "winner"
+                      ? "border-accent-hot-border bg-accent-hot-glow text-accent-hot"
+                      : "border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft"
+                  }
+                >
+                  {trend.type === "winner" ? (
+                    <TrendingUp className="mr-1 h-3.5 w-3.5" />
+                  ) : (
+                    <TrendingDown className="mr-1 h-3.5 w-3.5" />
+                  )}
+                  {trend.type === "winner" ? "Repeat riser" : "Repeat faller"}
+                </SignalBadge>
               )}
             </div>
+
+            <h1 className="mt-4 text-3xl font-pixel leading-tight text-text-primary sm:text-4xl">
+              {player.name}
+            </h1>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-text-secondary">
+              <PlayerSubtitle
+                position={player.position}
+                playedPosition={player.playedPosition}
+                club={player.club}
+                clubLogoUrl={player.clubLogoUrl}
+                clubId={data.clubId ?? undefined}
+                age={player.age}
+                nationalityFlagUrl={player.nationalityFlagUrl}
+                nationality={player.nationality}
+              />
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Button asChild>
+                <Link
+                  href={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}`}
+                >
+                  Compare on value
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="border-border-medium bg-elevated text-text-primary hover:bg-card-hover"
+              >
+                <a
+                  href={getLeistungsdatenUrl(player.profileUrl)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Transfermarkt profile
+                  <ArrowUpRight className="ml-2 h-4 w-4" />
+                </a>
+              </Button>
+            </div>
           </div>
-        </section>
+        </div>
 
-        <DetailDeck
-          sections={[
-            { value: "snapshot", label: "Snapshot" },
-            { value: "comparisons", label: "Market comps" },
-            { value: "minutes", label: "Minutes" },
-          ]}
-        >
-          <div className="space-y-8">
-            <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[1.06fr_0.94fr]">
-              <SectionPanel title="Rankings">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-left">Metric</TableHead>
-                      <TableHead className="text-right">All</TableHead>
-                      <TableHead className="text-right">League</TableHead>
-                      <TableHead className="hidden sm:table-cell text-right">Club</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">
-                        {positionShortLabel || positionLabel}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {RANKING_METRICS.map((m) => {
-                      const base = `/players${m.sortKey ? `?sort=${m.sortKey}` : ""}`;
-                      const sep = m.sortKey ? "&" : "?";
-                      const posFilter = getBroadPositionFilter(effectivePosition(player));
-                      return (
-                        <TableRow key={m.label}>
-                          <TableCell className="whitespace-nowrap">
-                            <Link
-                              href={base}
-                              className="text-text-secondary transition-colors hover:text-text-primary hover:underline"
-                            >
-                              <span className="sm:hidden">{m.shortLabel}</span>
-                              <span className="hidden sm:inline">{m.label}</span>
-                            </Link>
-                          </TableCell>
-                          <RankCell
-                            rank={rankings[m.overallKey]}
-                            total={overallCount}
+        <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+          <HeroMetric
+            label="Value"
+            value={player.marketValueDisplay}
+            subline={`#${rankings.marketValueOverall} overall · #${rankings.marketValuePosition} ${positionLabel.toLowerCase()}`}
+            accentClass="text-accent-gold"
+          />
+          <HeroMetric
+            label="npG+A"
+            value={String(form.seasonNpga)}
+            subline={`#${rankings.npgaOverall} overall · #${rankings.npgaPosition} ${positionLabel.toLowerCase()}`}
+            accentClass="text-accent-hot"
+          />
+          <HeroMetric
+            label="G+A"
+            value={String(form.seasonGa)}
+            subline={`${form.seasonGoals}G · ${form.seasonAssists}A`}
+            accentClass="text-emerald-400"
+          />
+          <HeroMetric
+            label="Minutes"
+            value={`${player.minutes.toLocaleString()}'`}
+            subline={`Played ${player.totalMatches} of ${signalSummary.gamesScheduled - signalSummary.gamesMissed}${signalSummary.availablePct < 100 ? ` · ${100 - signalSummary.availablePct}% missed` : ""}`}
+            accentClass="text-accent-blue"
+          />
+        </div>
+
+        <div className="col-span-full flex flex-wrap gap-2.5">
+          {signalSummary.discoveryStatus === "bargain" &&
+            signalSummary.cheaperPlayersBeatingTarget === 0 && (
+              <SignalBadge className="border-accent-hot-border bg-accent-hot-glow text-accent-hot">
+                <Sparkles className="mr-1 h-3.5 w-3.5" />
+                Outperforming {signalSummary.pricierPlayersBeatenByTarget} pricier peers
+              </SignalBadge>
+            )}
+          {signalSummary.discoveryStatus === "overpriced" &&
+            signalSummary.pricierPlayersBeatenByTarget === 0 && (
+              <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
+                {signalSummary.cheaperPlayersBeatingTarget} cheaper peers with more output
+              </SignalBadge>
+            )}
+          {(minutesBenchmark.playingLessCount ?? minutesBenchmark.playingLess.length) === 0 &&
+            (minutesBenchmark.playingMoreCount ?? minutesBenchmark.playingMore.length) > 0 && (
+              <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
+                Fewest minutes among comparable peers
+              </SignalBadge>
+            )}
+          <Suspense>
+            <PlayerInjuryBadge playerId={player.playerId} />
+          </Suspense>
+          {player.contractExpiry && (
+            <SignalBadge className="border-border-subtle bg-card-hover text-text-secondary">
+              Contract until {player.contractExpiry}
+            </SignalBadge>
+          )}
+          {trend && (
+            <Link href="/biggest-movers">
+              <SignalBadge className="border-border-subtle bg-card-hover text-text-secondary transition-colors hover:text-text-primary">
+                {trend.appearances.length} repeat {trend.type === "winner" ? "rises" : "drops"}
+              </SignalBadge>
+            </Link>
+          )}
+        </div>
+      </DetailHero>
+
+      <DetailDeck
+        sections={[
+          { value: "snapshot", label: "Snapshot" },
+          { value: "comparisons", label: "Market comps" },
+          { value: "minutes", label: "Minutes" },
+        ]}
+      >
+        <div className="space-y-8">
+          <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[1.06fr_0.94fr]">
+            <SectionPanel title="Rankings">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-left">Metric</TableHead>
+                    <TableHead className="text-right">All</TableHead>
+                    <TableHead className="text-right">League</TableHead>
+                    <TableHead className="hidden sm:table-cell text-right">Club</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">
+                      {positionShortLabel || positionLabel}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {RANKING_METRICS.map((m) => {
+                    const base = `/players${m.sortKey ? `?sort=${m.sortKey}` : ""}`;
+                    const sep = m.sortKey ? "&" : "?";
+                    const posFilter = getBroadPositionFilter(effectivePosition(player));
+                    return (
+                      <TableRow key={m.label}>
+                        <TableCell className="whitespace-nowrap">
+                          <Link
                             href={base}
-                          />
-                          <RankCell
-                            rank={rankings[m.leagueKey]}
-                            total={leagueCount}
-                            href={`${base}${sep}league=${encodeURIComponent(player.league)}`}
-                          />
-                          <TableCell className="hidden sm:table-cell text-right whitespace-nowrap">
-                            <Link
-                              href={`${base}${sep}club=${encodeURIComponent(player.club)}`}
-                              className="transition-opacity hover:opacity-70"
-                            >
-                              <RankBadge rank={rankings[m.clubKey]} total={clubCount} />
-                            </Link>
-                          </TableCell>
-                          <RankCell
-                            rank={rankings[m.positionKey]}
-                            total={positionPeerCount}
-                            href={`${base}${sep}pos=${posFilter}`}
-                          />
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-                {subgroupRankings.length > 0 && (
-                  <div className="mt-4 space-y-3">
-                    {subgroupRankings.map((group) => (
-                      <Table key={group.label}>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-left">
-                              {group.label} ({group.total})
-                            </TableHead>
-                            <TableHead className="text-right">npG+A</TableHead>
-                            <TableHead className="text-right">Value</TableHead>
-                            <TableHead className="text-right">Minutes</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell className="text-text-secondary">Rank</TableCell>
-                            <TableCell className="text-right font-value text-accent-hot">
-                              #{group.npgaRank}
-                            </TableCell>
-                            <TableCell className="text-right font-value text-accent-gold">
-                              #{group.marketValueRank}
-                            </TableCell>
-                            <TableCell className="text-right font-value text-accent-blue">
-                              #{group.minutesRank}
-                            </TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    ))}
-                  </div>
-                )}
-              </SectionPanel>
-
-              <SectionPanel title="Season">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-left">Period</TableHead>
-                      <TableHead className="text-right">npG+A</TableHead>
-                      <TableHead className="text-right">G</TableHead>
-                      <TableHead className="text-right">A</TableHead>
-                      <TableHead className="text-right">Mins</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {[
-                      {
-                        label: "Season",
-                        npga: form.seasonNpga,
-                        goals: form.seasonGoals,
-                        pens: form.penaltyGoals,
-                        assists: form.seasonAssists,
-                        mins: form.seasonMinutes,
-                      },
-                      {
-                        label: "Last 5",
-                        npga: form.last5Npga,
-                        goals: form.last5Goals,
-                        pens: form.last5PenaltyGoals,
-                        assists: form.last5Assists,
-                        mins: form.last5Minutes,
-                      },
-                      {
-                        label: "Last 10",
-                        npga: form.last10Npga,
-                        goals: form.last10Goals,
-                        pens: form.last10PenaltyGoals,
-                        assists: form.last10Assists,
-                        mins: form.last10Minutes,
-                      },
-                    ].map((row) => (
-                      <TableRow key={row.label}>
-                        <TableCell className="text-text-secondary">{row.label}</TableCell>
-                        <TableCell className="text-right font-value text-accent-hot">
-                          {row.npga}
+                            className="text-text-secondary transition-colors hover:text-text-primary hover:underline"
+                          >
+                            <span className="sm:hidden">{m.shortLabel}</span>
+                            <span className="hidden sm:inline">{m.label}</span>
+                          </Link>
                         </TableCell>
-                        <TableCell className="text-right font-value">
-                          <GoalBreakdown goals={row.goals} penaltyGoals={row.pens} />
+                        <RankCell rank={rankings[m.overallKey]} total={overallCount} href={base} />
+                        <RankCell
+                          rank={rankings[m.leagueKey]}
+                          total={leagueCount}
+                          href={`${base}${sep}league=${encodeURIComponent(player.league)}`}
+                        />
+                        <TableCell className="hidden sm:table-cell text-right whitespace-nowrap">
+                          <Link
+                            href={`${base}${sep}club=${encodeURIComponent(player.club)}`}
+                            className="transition-opacity hover:opacity-70"
+                          >
+                            <RankBadge rank={rankings[m.clubKey]} total={clubCount} />
+                          </Link>
                         </TableCell>
-                        <TableCell className="text-right font-value text-text-primary">
-                          {row.assists}
-                        </TableCell>
-                        <TableCell className="text-right font-value text-text-primary">
-                          {row.mins.toLocaleString()}
-                        </TableCell>
+                        <RankCell
+                          rank={rankings[m.positionKey]}
+                          total={positionPeerCount}
+                          href={`${base}${sep}pos=${posFilter}`}
+                        />
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {form.penaltyAttempts > 0 && (
-                  <Link
-                    href="/players?sort=pen"
-                    className="mt-2.5 block text-sm text-text-secondary transition-colors hover:text-text-primary"
-                  >
-                    Penalties:{" "}
-                    <span className="font-value text-amber-400">
-                      {form.penaltyGoals}/{form.penaltyAttempts}
-                    </span>{" "}
-                    scored
-                    {form.penaltyConversion !== null && (
-                      <>
-                        {" "}
-                        (
-                        <span
-                          className={`font-value ${form.penaltyConversion >= 80 ? "text-emerald-400" : form.penaltyConversion >= 60 ? "text-amber-400" : "text-red-400"}`}
-                        >
-                          {form.penaltyConversion}%
-                        </span>
-                        )
-                      </>
-                    )}
-                    {penaltyRank && (
-                      <>
-                        {" "}
-                        · <RankBadge rank={penaltyRank.rank} total={penaltyRank.total} /> of{" "}
-                        {penaltyRank.total} takers
-                      </>
-                    )}
-                  </Link>
-                )}
-                {player.positionStats && player.positionStats.length > 1 && (
-                  <div className="mt-4">
-                    <Table>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {subgroupRankings.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {subgroupRankings.map((group) => (
+                    <Table key={group.label}>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-left">Position</TableHead>
-                          <TableHead className="text-right">Apps</TableHead>
-                          <TableHead className="text-right">G</TableHead>
-                          <TableHead className="text-right">A</TableHead>
+                          <TableHead className="text-left">
+                            {group.label} ({group.total})
+                          </TableHead>
                           <TableHead className="text-right">npG+A</TableHead>
-                          <TableHead className="text-right">Mins</TableHead>
+                          <TableHead className="text-right">Value</TableHead>
+                          <TableHead className="text-right">Minutes</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {player.positionStats.map((ps) => {
-                          const npga =
-                            ps.goals - /* no penalty split per position */ 0 + ps.assists;
-                          const bestNpga = Math.max(
-                            ...player.positionStats!.map((p) => p.goals + p.assists),
-                          );
-                          const isBest = npga === bestNpga && player.positionStats!.length > 1;
-                          return (
-                            <TableRow key={ps.positionId}>
-                              <TableCell className="text-text-secondary">{ps.position}</TableCell>
-                              <TableCell className="text-right font-value text-text-primary">
-                                {ps.appearances}
-                              </TableCell>
-                              <TableCell className="text-right font-value text-text-primary">
-                                {ps.goals}
-                              </TableCell>
-                              <TableCell className="text-right font-value text-text-primary">
-                                {ps.assists}
-                              </TableCell>
-                              <TableCell
-                                className={`text-right font-value ${isBest ? "text-accent-hot" : "text-text-primary"}`}
-                              >
-                                {npga}
-                              </TableCell>
-                              <TableCell className="text-right font-value text-text-primary">
-                                {ps.minutes.toLocaleString()}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
+                        <TableRow>
+                          <TableCell className="text-text-secondary">Rank</TableCell>
+                          <TableCell className="text-right font-value text-accent-hot">
+                            #{group.npgaRank}
+                          </TableCell>
+                          <TableCell className="text-right font-value text-accent-gold">
+                            #{group.marketValueRank}
+                          </TableCell>
+                          <TableCell className="text-right font-value text-accent-blue">
+                            #{group.minutesRank}
+                          </TableCell>
+                        </TableRow>
                       </TableBody>
                     </Table>
-                  </div>
-                )}
-              </SectionPanel>
-            </section>
-
-            <SectionPanel
-              title="Latest matches"
-              aside={
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 text-[11px] text-text-muted">
-                    <span className="flex items-center gap-1 whitespace-nowrap">
-                      <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-                      <span className="hidden sm:inline">Open play</span>
-                      <span className="sm:hidden">OP</span>
-                    </span>
-                    <span className="flex items-center gap-1 whitespace-nowrap">
-                      <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
-                      <span className="hidden sm:inline">Penalty</span>
-                      <span className="sm:hidden">Pen</span>
-                    </span>
-                  </div>
-                  <div className="rounded-full border border-border-subtle bg-black/20 px-3 py-1.5 text-xs text-text-secondary whitespace-nowrap">
-                    Last <span className="font-value text-text-primary">{fallbackMatchCount}</span>{" "}
-                    matches
-                  </div>
+                  ))}
                 </div>
-              }
-            >
-              <Suspense fallback={<RecentMatchesSkeleton />}>
-                <RecentMatchesAsync
-                  playerId={player.playerId}
-                  fallbackMatches={player.recentForm ?? []}
-                />
-              </Suspense>
+              )}
             </SectionPanel>
-          </div>
 
-          <ComparisonPanels
-            underperformers={activeUnderperformers}
-            outperformers={activeOutperformers}
-            scope={scope}
-            leagueLabel={player.league}
-            underBenchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=underdelivering`}
-            overBenchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=better-value`}
+            <SectionPanel title="Season">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-left">Period</TableHead>
+                    <TableHead className="text-right">npG+A</TableHead>
+                    <TableHead className="text-right">G</TableHead>
+                    <TableHead className="text-right">A</TableHead>
+                    <TableHead className="text-right">Mins</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[
+                    {
+                      label: "Season",
+                      npga: form.seasonNpga,
+                      goals: form.seasonGoals,
+                      pens: form.penaltyGoals,
+                      assists: form.seasonAssists,
+                      mins: form.seasonMinutes,
+                    },
+                    {
+                      label: "Last 5",
+                      npga: form.last5Npga,
+                      goals: form.last5Goals,
+                      pens: form.last5PenaltyGoals,
+                      assists: form.last5Assists,
+                      mins: form.last5Minutes,
+                    },
+                    {
+                      label: "Last 10",
+                      npga: form.last10Npga,
+                      goals: form.last10Goals,
+                      pens: form.last10PenaltyGoals,
+                      assists: form.last10Assists,
+                      mins: form.last10Minutes,
+                    },
+                  ].map((row) => (
+                    <TableRow key={row.label}>
+                      <TableCell className="text-text-secondary">{row.label}</TableCell>
+                      <TableCell className="text-right font-value text-accent-hot">
+                        {row.npga}
+                      </TableCell>
+                      <TableCell className="text-right font-value">
+                        <GoalBreakdown goals={row.goals} penaltyGoals={row.pens} />
+                      </TableCell>
+                      <TableCell className="text-right font-value text-text-primary">
+                        {row.assists}
+                      </TableCell>
+                      <TableCell className="text-right font-value text-text-primary">
+                        {row.mins.toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {form.penaltyAttempts > 0 && (
+                <Link
+                  href="/players?sort=pen"
+                  className="mt-2.5 block text-sm text-text-secondary transition-colors hover:text-text-primary"
+                >
+                  Penalties:{" "}
+                  <span className="font-value text-amber-400">
+                    {form.penaltyGoals}/{form.penaltyAttempts}
+                  </span>{" "}
+                  scored
+                  {form.penaltyConversion !== null && (
+                    <>
+                      {" "}
+                      (
+                      <span
+                        className={`font-value ${form.penaltyConversion >= 80 ? "text-emerald-400" : form.penaltyConversion >= 60 ? "text-amber-400" : "text-red-400"}`}
+                      >
+                        {form.penaltyConversion}%
+                      </span>
+                      )
+                    </>
+                  )}
+                  {penaltyRank && (
+                    <>
+                      {" "}
+                      · <RankBadge rank={penaltyRank.rank} total={penaltyRank.total} /> of{" "}
+                      {penaltyRank.total} takers
+                    </>
+                  )}
+                </Link>
+              )}
+              {player.positionStats && player.positionStats.length > 1 && (
+                <div className="mt-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-left">Position</TableHead>
+                        <TableHead className="text-right">Apps</TableHead>
+                        <TableHead className="text-right">G</TableHead>
+                        <TableHead className="text-right">A</TableHead>
+                        <TableHead className="text-right">npG+A</TableHead>
+                        <TableHead className="text-right">Mins</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {player.positionStats.map((ps) => {
+                        const npga = ps.goals - /* no penalty split per position */ 0 + ps.assists;
+                        const bestNpga = Math.max(
+                          ...player.positionStats!.map((p) => p.goals + p.assists),
+                        );
+                        const isBest = npga === bestNpga && player.positionStats!.length > 1;
+                        return (
+                          <TableRow key={ps.positionId}>
+                            <TableCell className="text-text-secondary">{ps.position}</TableCell>
+                            <TableCell className="text-right font-value text-text-primary">
+                              {ps.appearances}
+                            </TableCell>
+                            <TableCell className="text-right font-value text-text-primary">
+                              {ps.goals}
+                            </TableCell>
+                            <TableCell className="text-right font-value text-text-primary">
+                              {ps.assists}
+                            </TableCell>
+                            <TableCell
+                              className={`text-right font-value ${isBest ? "text-accent-hot" : "text-text-primary"}`}
+                            >
+                              {npga}
+                            </TableCell>
+                            <TableCell className="text-right font-value text-text-primary">
+                              {ps.minutes.toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </SectionPanel>
+          </section>
+
+          <SectionPanel
+            title="Latest matches"
+            aside={
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-[11px] text-text-muted">
+                  <span className="flex items-center gap-1 whitespace-nowrap">
+                    <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+                    <span className="hidden sm:inline">Open play</span>
+                    <span className="sm:hidden">OP</span>
+                  </span>
+                  <span className="flex items-center gap-1 whitespace-nowrap">
+                    <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+                    <span className="hidden sm:inline">Penalty</span>
+                    <span className="sm:hidden">Pen</span>
+                  </span>
+                </div>
+                <div className="rounded-full border border-border-subtle bg-black/20 px-3 py-1.5 text-xs text-text-secondary whitespace-nowrap">
+                  Last <span className="font-value text-text-primary">{fallbackMatchCount}</span>{" "}
+                  matches
+                </div>
+              </div>
+            }
+          >
+            <Suspense fallback={<RecentMatchesSkeleton />}>
+              <RecentMatchesAsync
+                playerId={player.playerId}
+                fallbackMatches={player.recentForm ?? []}
+              />
+            </Suspense>
+          </SectionPanel>
+        </div>
+
+        <ComparisonPanels
+          underperformers={activeUnderperformers}
+          outperformers={activeOutperformers}
+          scope={scope}
+          leagueLabel={player.league}
+          underBenchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=underdelivering`}
+          overBenchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=better-value`}
+        />
+
+        {/* Minutes tab */}
+        <section className="grid gap-4 lg:grid-cols-2">
+          <MinutesBenchmarkPanel
+            title="Playing less"
+            count={minutesBenchmark.playingLessCount}
+            players={minutesBenchmark.playingLess}
+            benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&mode=mins&tab=less`}
+            emptyLabel="No same-or-higher value players are playing fewer minutes."
+            accentClass="text-accent-cold-soft"
           />
+          <MinutesBenchmarkPanel
+            title="Playing more"
+            count={minutesBenchmark.playingMoreCount}
+            players={minutesBenchmark.playingMore}
+            benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&mode=mins&tab=more`}
+            emptyLabel="No same-or-lower value players are playing more minutes."
+            accentClass="text-accent-hot"
+          />
+        </section>
 
-          {/* Minutes tab */}
-          <section className="grid gap-4 lg:grid-cols-2">
-            <MinutesBenchmarkPanel
-              title="Playing less"
-              count={minutesBenchmark.playingLessCount}
-              players={minutesBenchmark.playingLess}
-              benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&mode=mins&tab=less`}
-              emptyLabel="No same-or-higher value players are playing fewer minutes."
-              accentClass="text-accent-cold-soft"
-            />
-            <MinutesBenchmarkPanel
-              title="Playing more"
-              count={minutesBenchmark.playingMoreCount}
-              players={minutesBenchmark.playingMore}
-              benchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&mode=mins&tab=more`}
-              emptyLabel="No same-or-lower value players are playing more minutes."
-              accentClass="text-accent-hot"
-            />
-          </section>
-
-          <section className="grid gap-4 lg:grid-cols-[0.34fr_0.66fr]">
-            <SectionPanel title="Standing within the club">
-              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                <div className="rounded-[1.35rem] border border-border-subtle bg-black/20 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                    Tracked clubmates
-                  </p>
-                  <p className="mt-2 text-2xl font-value text-text-primary">{clubmates.length}</p>
-                  <p className="mt-1 text-sm text-text-secondary">
-                    players currently in the stored club sample
-                  </p>
-                </div>
-                <div className="rounded-[1.35rem] border border-border-subtle bg-black/20 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                    Club npG+A rank
-                  </p>
-                  <p className="mt-2 text-2xl font-value text-accent-gold">#{rankings.npgaClub}</p>
-                  <p className="mt-1 text-sm text-text-secondary">
-                    inside {player.club}&apos;s tracked stack
-                  </p>
-                </div>
-                <div className="rounded-[1.35rem] border border-border-subtle bg-black/20 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
-                    Market value rank
-                  </p>
-                  <p className="mt-2 text-2xl font-value text-text-primary">
-                    #{rankings.marketValueClub}
-                  </p>
-                  <p className="mt-1 text-sm text-text-secondary">within the same club sample</p>
-                </div>
+        <section className="grid gap-4 lg:grid-cols-[0.34fr_0.66fr]">
+          <SectionPanel title="Standing within the club">
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <div className="rounded-[1.35rem] border border-border-subtle bg-black/20 p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
+                  Tracked clubmates
+                </p>
+                <p className="mt-2 text-2xl font-value text-text-primary">{clubmates.length}</p>
+                <p className="mt-1 text-sm text-text-secondary">
+                  players currently in the stored club sample
+                </p>
               </div>
-            </SectionPanel>
-
-            <SectionPanel title={`Top performers at ${player.club}`}>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {topClubmatesByNpga.map((clubmate, index) => (
-                  <ClubContextItem
-                    key={clubmate.playerId}
-                    player={clubmate}
-                    rank={index + 1}
-                    highlighted={clubmate.playerId === player.playerId}
-                  />
-                ))}
+              <div className="rounded-[1.35rem] border border-border-subtle bg-black/20 p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
+                  Club npG+A rank
+                </p>
+                <p className="mt-2 text-2xl font-value text-accent-gold">#{rankings.npgaClub}</p>
+                <p className="mt-1 text-sm text-text-secondary">
+                  inside {player.club}&apos;s tracked stack
+                </p>
               </div>
-            </SectionPanel>
-          </section>
-        </DetailDeck>
+              <div className="rounded-[1.35rem] border border-border-subtle bg-black/20 p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted">
+                  Market value rank
+                </p>
+                <p className="mt-2 text-2xl font-value text-text-primary">
+                  #{rankings.marketValueClub}
+                </p>
+                <p className="mt-1 text-sm text-text-secondary">within the same club sample</p>
+              </div>
+            </div>
+          </SectionPanel>
 
-        {player.fetchedAt && (
-          <p className="mt-6 text-center text-xs text-text-muted">
-            Stats updated {timeAgo(new Date(player.fetchedAt))}
-          </p>
-        )}
-      </div>
-    </div>
+          <SectionPanel title={`Top performers at ${player.club}`}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {topClubmatesByNpga.map((clubmate, index) => (
+                <ClubContextItem
+                  key={clubmate.playerId}
+                  player={clubmate}
+                  rank={index + 1}
+                  highlighted={clubmate.playerId === player.playerId}
+                />
+              ))}
+            </div>
+          </SectionPanel>
+        </section>
+      </DetailDeck>
+
+      {player.fetchedAt && (
+        <p className="mt-6 text-center text-xs text-text-muted">
+          Stats updated {timeAgo(new Date(player.fetchedAt))}
+        </p>
+      )}
+    </DetailPageShell>
   );
 }

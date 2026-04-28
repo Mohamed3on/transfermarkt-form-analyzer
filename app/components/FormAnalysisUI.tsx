@@ -105,10 +105,8 @@ function AggregatedTeamCard({
           </div>
           <div className="flex items-center flex-wrap gap-1.5 text-xs sm:text-sm text-text-secondary">
             {getLeagueUrl(team.league) ? (
-              <a
-                href={getLeagueUrl(team.league)}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={getLeagueUrl(team.league)!}
                 className="flex items-center gap-1.5 hover:underline shrink-0"
               >
                 {getLeagueLogoUrl(team.league) && (
@@ -121,14 +119,14 @@ function AggregatedTeamCard({
                   />
                 )}
                 {team.league}
-              </a>
+              </Link>
             ) : (
               team.league
             )}
             {team.leaguePosition > 0 && (
               <span className="font-value text-text-muted">· {ordinal(team.leaguePosition)}</span>
             )}
-            {deltaPts != null && (
+            {deltaPts != null && deltaPts !== 0 && (
               <Link
                 href="/expected-position"
                 className={`inline-flex items-center gap-0.5 font-value text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full transition-all duration-150 hover:scale-105 hover:brightness-125 ${deltaPts > 0 ? "bg-[var(--accent-hot-glow)] text-[var(--accent-hot)]" : "bg-[var(--accent-cold-glow)] text-[var(--accent-cold)]"}`}
@@ -185,7 +183,37 @@ function AggregatedTeamCard({
   );
 }
 
-function AggregatedSection({
+export function AggregatedFormCard({
+  top,
+  bottom,
+  deltaMap,
+  children,
+}: {
+  top: AggregatedTeam[];
+  bottom: AggregatedTeam[];
+  deltaMap?: Record<string, number>;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl p-4 sm:p-6 animate-scale-in relative overflow-hidden border border-accent-hot bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] shadow-[var(--shadow-glow-hot)]">
+      <div
+        className="absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl opacity-20 bg-accent-hot"
+        aria-hidden="true"
+      />
+      <div className="relative">
+        {children}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+          {top.length > 0 && <AggregatedSection teams={top} type="top" deltaMap={deltaMap} />}
+          {bottom.length > 0 && (
+            <AggregatedSection teams={bottom} type="bottom" deltaMap={deltaMap} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AggregatedSection({
   teams,
   type,
   deltaMap,
@@ -422,7 +450,7 @@ function LeaderCard({
   );
 }
 
-export function AnalyzerUI({
+export function FormAnalysisUI({
   initialData,
   deltaMap,
 }: {
@@ -435,59 +463,41 @@ export function AnalyzerUI({
 
   return (
     <div className="space-y-8">
-      {/* Hero Section — Aggregated View */}
       {hasAggregated ? (
-        <div className="rounded-2xl p-4 sm:p-6 animate-scale-in relative overflow-hidden border border-accent-hot bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] shadow-[var(--shadow-glow-hot)]">
-          <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl opacity-20 bg-accent-hot" />
-
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4 sm:mb-6">
-              <span className="text-2xl sm:text-3xl font-pixel text-accent-hot" aria-hidden="true">
-                ✓
-              </span>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-pixel text-text-primary text-balance flex items-center gap-2">
-                  Aggregated Form Leaders
-                  <InfoTip>
-                    <p>
-                      We track 4 categories —{" "}
-                      <strong>points, goal difference, goals scored, and goals conceded</strong> —
-                      across 4 time windows (last 5, 10, 15, and 20 matches).
-                    </p>
-                    <p className="mt-1.5">
-                      Teams that lead or trail <strong>2 or more categories</strong> across any
-                      window appear here, ranked by total categories led.
-                    </p>
-                    <p className="mt-1.5 text-text-muted">
-                      Data covers all competitions, not just the league.
-                    </p>
-                  </InfoTip>
-                </h2>
-                <p className="text-sm sm:text-base text-text-secondary">
-                  Teams leading or trailing the most categories across their last 5, 10, 15, and 20
-                  matches.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-              {initialData.aggregatedTop.length > 0 && (
-                <AggregatedSection
-                  teams={initialData.aggregatedTop}
-                  type="top"
-                  deltaMap={deltaMap}
-                />
-              )}
-              {initialData.aggregatedBottom.length > 0 && (
-                <AggregatedSection
-                  teams={initialData.aggregatedBottom}
-                  type="bottom"
-                  deltaMap={deltaMap}
-                />
-              )}
+        <AggregatedFormCard
+          top={initialData.aggregatedTop}
+          bottom={initialData.aggregatedBottom}
+          deltaMap={deltaMap}
+        >
+          <div className="flex items-center gap-3 mb-4 sm:mb-6">
+            <span className="text-2xl sm:text-3xl font-pixel text-accent-hot" aria-hidden="true">
+              ✓
+            </span>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-pixel text-text-primary text-balance flex items-center gap-2">
+                Aggregated Form Leaders
+                <InfoTip>
+                  <p>
+                    We track 4 categories —{" "}
+                    <strong>points, goal difference, goals scored, and goals conceded</strong> —
+                    across 4 time windows (last 5, 10, 15, and 20 matches).
+                  </p>
+                  <p className="mt-1.5">
+                    Teams that lead or trail <strong>2 or more categories</strong> across any window
+                    appear here, ranked by total categories led.
+                  </p>
+                  <p className="mt-1.5 text-text-muted">
+                    Data covers all competitions, not just the league.
+                  </p>
+                </InfoTip>
+              </h2>
+              <p className="text-sm sm:text-base text-text-secondary">
+                Teams leading or trailing the most categories across their last 5, 10, 15, and 20
+                matches.
+              </p>
             </div>
           </div>
-        </div>
+        </AggregatedFormCard>
       ) : (
         <Card className="rounded-2xl p-4 sm:p-6 text-center animate-scale-in border-accent-cold">
           <h2 className="text-lg sm:text-xl font-pixel mb-2 text-accent-cold">

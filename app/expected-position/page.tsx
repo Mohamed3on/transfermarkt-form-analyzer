@@ -37,8 +37,8 @@ export default async function ExpectedPositionPage() {
       </Suspense>
       <DiscoveryLinkGrid
         section="expected-position"
-        title="Team Performance Boards"
-        description="League-level and global boards for overperformers and underperformers."
+        title="Team performance views"
+        description="League-level and cross-league views for overperformers and underperformers."
         currentPath="/expected-position"
       />
     </>

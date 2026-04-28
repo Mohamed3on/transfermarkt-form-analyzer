@@ -94,8 +94,18 @@ function SquadPlayerRow({
   );
 }
 
-export function SquadTab({ squad }: { squad: MinutesValuePlayer[] }) {
-  const [sortBy, setSortBy] = useState<SortKey>("value");
+export function SquadTab({
+  squad,
+  defaultSort = "value",
+  emptyLabel = "No tracked players found for this club.",
+  limit,
+}: {
+  squad: MinutesValuePlayer[];
+  defaultSort?: SortKey;
+  emptyLabel?: string;
+  limit?: number;
+}) {
+  const [sortBy, setSortBy] = useState<SortKey>(defaultSort);
   const [sortAsc, setSortAsc] = useState(false);
 
   const sorted = useMemo(() => {
@@ -120,13 +130,13 @@ export function SquadTab({ squad }: { squad: MinutesValuePlayer[] }) {
       }
       return sortAsc ? -diff : diff;
     });
-    return list;
-  }, [squad, sortBy, sortAsc]);
+    return limit ? list.slice(0, limit) : list;
+  }, [squad, sortBy, sortAsc, limit]);
 
   if (squad.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border-subtle bg-elevated px-4 py-6 text-sm text-text-secondary">
-        No tracked players found for this club.
+        {emptyLabel}
       </div>
     );
   }

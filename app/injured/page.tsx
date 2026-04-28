@@ -29,8 +29,8 @@ export default async function InjuredPage() {
       </Suspense>
       <DiscoveryLinkGrid
         section="injured"
-        title="Injury Tracking Boards"
-        description="Track injury cost by player, team, and injury type from dedicated board pages."
+        title="More on injuries"
+        description="Track injury cost by player, team, and injury type from dedicated pages."
         currentPath="/injured"
         currentAliases={["/injured?tab=players"]}
       />

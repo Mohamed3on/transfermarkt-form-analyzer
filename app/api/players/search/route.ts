@@ -2,6 +2,7 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 import { NextResponse } from "next/server";
 import { getMinutesValueData } from "@/lib/fetch-minutes-value";
+import { LEAGUES, getLeagueLogoUrl } from "@/lib/leagues";
 
 export async function GET() {
   try {
@@ -25,8 +26,13 @@ export async function GET() {
       name: c.name,
       logoUrl: c.logoUrl,
     }));
+    const leagueIndex = LEAGUES.map((l) => ({
+      slug: l.slug,
+      name: l.name,
+      logoUrl: getLeagueLogoUrl(l.name) ?? "",
+    }));
     return NextResponse.json(
-      { players: playerIndex, teams: teamIndex },
+      { players: playerIndex, teams: teamIndex, leagues: leagueIndex },
       {
         headers: { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" },
       },

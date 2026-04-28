@@ -70,7 +70,7 @@ export default async function ValueAnalysisPage() {
       </Suspense>
       <DiscoveryLinkGrid
         section="value-analysis"
-        title="Over/Under Boards"
+        title="Over/Under views"
         description="Jump straight into overpriced, bargain, and low-minutes views."
         currentPath="/value-analysis"
         currentAliases={["/value-analysis?mode=ga"]}

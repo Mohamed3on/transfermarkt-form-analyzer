@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getLeagueLogoUrl, getLeagueUrl, getLeagueStyle } from "@/lib/leagues";
@@ -22,14 +23,12 @@ export function LeagueBadge({ league, variant = "badge" }: LeagueBadgeProps) {
       </>
     );
     return url ? (
-      <a
+      <Link
         href={url}
-        target="_blank"
-        rel="noopener noreferrer"
         className="hidden sm:flex items-center gap-1 ml-auto text-xs uppercase tracking-wide text-text-secondary hover:underline"
       >
         {content}
-      </a>
+      </Link>
     ) : (
       <span className="hidden sm:flex items-center gap-1 ml-auto text-xs uppercase tracking-wide text-text-secondary">
         {content}
@@ -39,18 +38,17 @@ export function LeagueBadge({ league, variant = "badge" }: LeagueBadgeProps) {
 
   // badge variant
   const style = getLeagueStyle(league);
-  return (
-    <a href={url} target="_blank" rel="noopener noreferrer">
-      <Badge
-        className={cn(
-          "text-[10px] sm:text-xs inline-flex items-center gap-1 hover:opacity-80 transition-opacity",
-          style.bg,
-          style.text,
-        )}
-      >
-        {logo}
-        {league}
-      </Badge>
-    </a>
+  const badge = (
+    <Badge
+      className={cn(
+        "text-[10px] sm:text-xs inline-flex items-center gap-1 hover:opacity-80 transition-opacity",
+        style.bg,
+        style.text,
+      )}
+    >
+      {logo}
+      {league}
+    </Badge>
   );
+  return url ? <Link href={url}>{badge}</Link> : badge;
 }

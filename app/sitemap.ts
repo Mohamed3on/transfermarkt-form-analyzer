@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { DISCOVERY_PRESETS, getPresetTargetHref } from "@/lib/discovery-presets";
+import { LEAGUES } from "@/lib/leagues";
 import { absoluteUrl } from "@/lib/site-config";
 
 const CORE_ROUTES = [
@@ -26,6 +27,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: "daily",
     priority: path === "/" ? 1 : path === "/discover" ? 0.9 : 0.8,
   }));
+  const leagueEntries: MetadataRoute.Sitemap = LEAGUES.map((l) => ({
+    url: absoluteUrl(`/leagues/${l.slug}`),
+    lastModified: now,
+    changeFrequency: "daily",
+    priority: 0.85,
+  }));
   const curatedEntries: MetadataRoute.Sitemap = curatedHrefs
     .filter((href) => !coreHrefSet.has(href as (typeof CORE_ROUTES)[number]))
     .map((href) => ({
@@ -35,5 +42,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     }));
 
-  return [...coreEntries, ...curatedEntries];
+  return [...coreEntries, ...leagueEntries, ...curatedEntries];
 }

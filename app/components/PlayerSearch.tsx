@@ -34,14 +34,29 @@ interface SearchTeam {
   logoUrl: string;
 }
 
+interface SearchLeague {
+  slug: string;
+  name: string;
+  logoUrl: string;
+}
+
 interface SearchIndex {
   players: SearchPlayer[];
   teams: SearchTeam[];
+  leagues: SearchLeague[];
 }
 
 type ScoredResult =
   | { type: "player"; data: SearchPlayer; score: number }
-  | { type: "team"; data: SearchTeam; score: number };
+  | { type: "team"; data: SearchTeam; score: number }
+  | { type: "league"; data: SearchLeague; score: number };
+
+const ROUTE_PREFIX = { player: "/players", team: "/teams", league: "/leagues" } as const;
+const KEY_PREFIX = { player: "p", team: "t", league: "l" } as const;
+
+function scoreName(normalized: string, q: string): number {
+  return normalized.startsWith(q) ? 0 : normalized.includes(q) ? 1 : -1;
+}
 
 export function PlayerSearch() {
   const router = useRouter();
@@ -58,11 +73,17 @@ export function PlayerSearch() {
         if (!r.ok) throw new Error(`Search index returned ${r.status}`);
         return r.json();
       })
-      .then((data) => setIndex(Array.isArray(data) ? { players: data, teams: [] } : data))
+      .then((data) =>
+        setIndex(
+          Array.isArray(data)
+            ? { players: data, teams: [], leagues: [] }
+            : { leagues: [], ...data },
+        ),
+      )
       .catch((err) => {
         console.error("[PlayerSearch] Failed to load search index:", err);
         fetchedRef.current = false;
-        setIndex({ players: [], teams: [] });
+        setIndex({ players: [], teams: [], leagues: [] });
       });
   }, []);
 
@@ -106,6 +127,7 @@ export function PlayerSearch() {
         position: normalizeForSearch(p.position),
       })),
       teams: index.teams.map((t) => normalizeForSearch(t.name)),
+      leagues: index.leagues.map((l) => normalizeForSearch(l.name)),
     };
   }, [index]);
 
@@ -117,27 +139,32 @@ export function PlayerSearch() {
     // Score: lower = better. name startsWith (0) > name contains (1) > secondary field (2)
     for (let i = 0; i < index.players.length; i++) {
       const n = normalizedIndex.players[i];
-      const score = n.name.startsWith(q)
-        ? 0
-        : n.name.includes(q)
-          ? 1
-          : n.club.includes(q) ||
-              n.league.includes(q) ||
-              n.nationality.includes(q) ||
-              n.position.includes(q)
-            ? 2
-            : -1;
+      let score = scoreName(n.name, q);
+      if (
+        score < 0 &&
+        (n.club.includes(q) ||
+          n.league.includes(q) ||
+          n.nationality.includes(q) ||
+          n.position.includes(q))
+      ) {
+        score = 2;
+      }
       if (score >= 0) scored.push({ type: "player", data: index.players[i], score });
     }
     for (let i = 0; i < index.teams.length; i++) {
-      const name = normalizedIndex.teams[i];
-      const score = name.startsWith(q) ? 0 : name.includes(q) ? 1 : -1;
+      const score = scoreName(normalizedIndex.teams[i], q);
       if (score >= 0) scored.push({ type: "team", data: index.teams[i], score });
+    }
+    for (let i = 0; i < index.leagues.length; i++) {
+      const score = scoreName(normalizedIndex.leagues[i], q);
+      if (score >= 0) scored.push({ type: "league", data: index.leagues[i], score });
     }
 
     scored.sort((a, b) => {
       if (a.score !== b.score) return a.score - b.score;
-      // Within same score tier: players with higher market value first, teams after players
+      // Within same score tier: leagues first, then players by market value, then teams
+      if (a.type === "league" && b.type !== "league") return -1;
+      if (b.type === "league" && a.type !== "league") return 1;
       const aVal = a.type === "player" ? a.data.marketValue : 0;
       const bVal = b.type === "player" ? b.data.marketValue : 0;
       return bVal - aVal;
@@ -168,10 +195,12 @@ export function PlayerSearch() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="top-[30%] translate-y-0 gap-0 overflow-hidden rounded-2xl border-border-subtle/60 bg-[var(--bg-card)] p-0 shadow-2xl shadow-black/40 sm:max-w-xl [&>button]:hidden">
           <DialogTitle className="sr-only">Search</DialogTitle>
-          <DialogDescription className="sr-only">Search for players or teams</DialogDescription>
+          <DialogDescription className="sr-only">
+            Search for players, teams, or leagues
+          </DialogDescription>
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder="Search players or teams..."
+              placeholder="Search players, teams, or leagues..."
               value={query}
               onValueChange={setQuery}
               wrapperClassName="border-border-subtle/40 px-4"
@@ -182,7 +211,7 @@ export function PlayerSearch() {
                 <div className="flex flex-col items-center gap-2 py-12 text-text-muted">
                   <Search className="h-5 w-5 opacity-30" />
                   <p className="text-sm">
-                    {index ? "Search 700+ players and 400+ teams" : "Loading\u2026"}
+                    {index ? "Search players, teams, and leagues" : "Loading\u2026"}
                   </p>
                   <p className="text-xs opacity-50">Try a name, club, league, or nationality</p>
                 </div>
@@ -191,13 +220,13 @@ export function PlayerSearch() {
               ) : (
                 <CommandGroup>
                   {results.map((r) => {
-                    const prefix = r.type === "player" ? "p" : "t";
-                    const href =
-                      r.type === "player" ? `/players/${r.data.id}` : `/teams/${r.data.id}`;
+                    const id = r.type === "league" ? r.data.slug : r.data.id;
+                    const href = `${ROUTE_PREFIX[r.type]}/${id}`;
+                    const prefix = KEY_PREFIX[r.type];
                     return (
                       <CommandItem
-                        key={`${prefix}-${r.data.id}`}
-                        value={`${prefix}-${r.data.id}`}
+                        key={`${prefix}-${id}`}
+                        value={`${prefix}-${id}`}
                         onSelect={() => handleSelect(href)}
                         className="gap-3 rounded-xl px-3 py-2.5 data-[selected=true]:bg-white/5"
                       >
@@ -223,7 +252,11 @@ export function PlayerSearch() {
                           )}
                         </div>
                         <span className="font-value text-xs text-text-muted">
-                          {r.type === "player" ? formatMarketValue(r.data.marketValue) : "Team"}
+                          {r.type === "player"
+                            ? formatMarketValue(r.data.marketValue)
+                            : r.type === "team"
+                              ? "Team"
+                              : "League"}
                         </span>
                       </CommandItem>
                     );

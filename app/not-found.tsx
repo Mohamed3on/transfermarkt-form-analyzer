@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const DASHBOARDS = [
+const PAGES = [
   { title: "Recent Form", href: "/form" },
   { title: "Value vs Table", href: "/expected-position" },
   { title: "Player Explorer", href: "/players" },
@@ -17,11 +17,11 @@ export default function NotFound() {
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-text-muted">404</p>
       <h1 className="mt-3 text-3xl font-pixel text-text-primary sm:text-4xl">Page not found</h1>
       <p className="mt-3 max-w-md text-sm text-text-secondary">
-        The page you&apos;re looking for doesn&apos;t exist. Try one of the dashboards below.
+        The page you&apos;re looking for doesn&apos;t exist. Try one of the pages below.
       </p>
 
       <div className="mt-8 grid w-full max-w-md grid-cols-1 gap-2 sm:grid-cols-2">
-        {DASHBOARDS.map((d) => (
+        {PAGES.map((d) => (
           <Link
             key={d.href}
             href={d.href}
