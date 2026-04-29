@@ -1,3 +1,6 @@
+import type { ComboboxGroup } from "@/components/Combobox";
+import { effectivePosition, getPositionClassRank } from "@/lib/positions";
+
 export const TOP_5_LEAGUES = ["Premier League", "LaLiga", "Bundesliga", "Serie A", "Ligue 1"];
 
 /** Build sorted Combobox options from a list of items, with an "All ..." default. */
@@ -13,8 +16,6 @@ export function uniqueFilterOptions<T>(
       .map((v) => ({ value: v!, label: v! })),
   ];
 }
-
-import type { ComboboxGroup } from "@/components/Combobox";
 
 /** Build grouped league options (Top 5 + Other, sorted by player count) for Combobox. */
 export function buildLeagueGroups(players: { league: string }[]): ComboboxGroup[] {
@@ -128,7 +129,8 @@ export function gamesAvailable(p: {
 
 /** Split players into those playing less and more minutes than the target, sorted for display.
  *  "Playing less" = same-or-higher value, available for same-or-more games yet fewer minutes (had opportunity but didn't play).
- *  "Playing more" = same-or-lower value, available for same-or-fewer games yet more minutes (played more despite less opportunity/value). */
+ *  "Playing more" = same-or-lower value, available for same-or-fewer games yet more minutes (played more despite less opportunity/value).
+ *  Position rank is also enforced so e.g. CBs (who naturally play more) aren't compared against CFs. */
 export function filterMinutesBenchmark<
   T extends {
     playerId: string;
@@ -137,18 +139,30 @@ export function filterMinutesBenchmark<
     totalMatches: number;
     gamesMissed?: number;
     totalGames?: number;
+    position: string;
+    playedPosition?: string;
   },
 >(players: T[], target: T): { playingLess: T[]; playingMore: T[] } {
   const benchAvail = gamesAvailable(target);
+  const targetRank = getPositionClassRank(effectivePosition(target));
   const playingLess: T[] = [];
   const playingMore: T[] = [];
   for (const p of players) {
     if (p.playerId === target.playerId) continue;
     const pAvail = gamesAvailable(p);
+    const pPos = effectivePosition(p);
+    const pRank = getPositionClassRank(pPos);
     if (p.minutes <= target.minutes) {
-      if (p.marketValue >= target.marketValue && pAvail >= benchAvail) playingLess.push(p);
+      if (p.marketValue >= target.marketValue && pAvail >= benchAvail && pRank <= targetRank)
+        playingLess.push(p);
     } else {
-      if (p.marketValue <= target.marketValue && pAvail <= benchAvail) playingMore.push(p);
+      if (
+        p.marketValue <= target.marketValue &&
+        pAvail <= benchAvail &&
+        pRank >= targetRank &&
+        pPos !== "Goalkeeper"
+      )
+        playingMore.push(p);
     }
   }
   playingLess.sort((a, b) => a.minutes - b.minutes || b.marketValue - a.marketValue);
