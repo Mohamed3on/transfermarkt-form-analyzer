@@ -1,10 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { PlayerStats } from "@/app/types";
-import type { ComparisonScope } from "@/lib/player-detail";
+import type { ComparisonScope, ScopedComparison } from "@/lib/player-detail";
+import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { ComparisonItem } from "@/components/ComparisonItem";
 import { FilterButton } from "@/components/FilterButton";
 import { SectionPanel } from "@/components/SectionPanel";
@@ -46,45 +47,37 @@ function Card({ title, emptyLabel, players, positive, benchmarkUrl }: CardProps)
 }
 
 export function ComparisonPanels({
-  underperformers,
-  outperformers,
-  scope,
+  comparisons,
+  initialScope,
   leagueLabel,
   underBenchmarkUrl,
   overBenchmarkUrl,
 }: {
-  underperformers: PlayerStats[];
-  outperformers: PlayerStats[];
-  scope: ComparisonScope;
+  comparisons: Record<ComparisonScope, ScopedComparison>;
+  initialScope: ComparisonScope;
   leagueLabel: string;
   underBenchmarkUrl: string;
   overBenchmarkUrl: string;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
-  const params = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const { replace } = useQueryParams(pathname);
+  const [scope, setScope] = useState<ComparisonScope>(initialScope);
 
-  const setScope = (next: ComparisonScope) => {
-    const qp = new URLSearchParams(params);
-    qp.delete("sameLeague");
-    qp.delete("top5");
-    if (next === "league") qp.set("sameLeague", "1");
-    else if (next === "top5") qp.set("top5", "1");
-    const qs = qp.toString();
-    startTransition(() => {
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  const toggleScope = (target: Exclude<ComparisonScope, "all">) => {
+    const next = scope === target ? "all" : target;
+    setScope(next);
+    replace({
+      sameLeague: next === "league" ? "1" : null,
+      top5: next === "top5" ? "1" : null,
     });
   };
 
-  const toggleScope = (target: Exclude<ComparisonScope, "all">) =>
-    setScope(scope === target ? "all" : target);
-
+  const { underperformers, outperformers } = comparisons[scope];
   const benchmarkSuffix = { all: "", league: "&bLeague=1", top5: "&bTop5=1" }[scope];
   const peerLabel = { all: "comparable", league: leagueLabel, top5: "top 5 league" }[scope];
 
   return (
-    <div className={`space-y-4 ${isPending ? "opacity-70" : ""}`}>
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <FilterButton active={scope === "top5"} onClick={() => toggleScope("top5")}>
           Top 5 leagues only

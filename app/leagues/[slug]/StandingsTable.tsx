@@ -78,7 +78,7 @@ export function StandingsTable({
             active={sort.key === "position"}
             dir={sort.dir}
             onClick={() => toggle("position")}
-            className="w-12"
+            className="w-8"
           />
           <TableHead className="text-left">Team</TableHead>
           <TableHead className="text-right">Pts</TableHead>
@@ -95,7 +95,7 @@ export function StandingsTable({
             dir={sort.dir}
             onClick={() => toggle("delta")}
             align="right"
-            className="w-16"
+            className="w-10 sm:w-16"
           />
         </TableRow>
       </TableHeader>
@@ -178,7 +178,9 @@ function StandingsRow({ team, formLeader }: { team: TeamFormEntry; formLeader?: 
         <span className="font-value text-text-primary">
           {formatMarketValue(team.marketValueNum)}
         </span>
-        <span className="ml-1.5 text-xs text-text-muted">{ordinal(team.marketValueRank)}</span>
+        <span className="ml-1.5 hidden text-xs text-text-muted sm:inline">
+          {ordinal(team.marketValueRank)}
+        </span>
       </TableCell>
       <TableCell className={cn("text-right font-value whitespace-nowrap", deltaColor)}>
         {team.deltaPts > 0 ? "+" : ""}

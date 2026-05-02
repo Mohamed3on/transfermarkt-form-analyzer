@@ -216,7 +216,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ slug: s
       </DetailHero>
 
       <div className="mt-14 grid gap-12 sm:mt-16 xl:grid-cols-[1.15fr_1fr] xl:gap-10">
-        <section>
+        <section className="min-w-0">
           <SectionHeader
             title="Standings"
             subtitle={`${league.name} table — sort by position, market value, or points gap vs squad-value expectation.`}
@@ -230,7 +230,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ slug: s
           )}
         </section>
 
-        <section>
+        <section className="min-w-0">
           <SectionHeader
             title="Top players"
             subtitle="Top 10 by npG+A — toggle to sort by value, mins, games, or pens."

@@ -113,6 +113,12 @@ export interface SubgroupRanking {
 
 export type ComparisonScope = "all" | "league" | "top5";
 
+export function paramsToScope(params: { sameLeague?: string; top5?: string }): ComparisonScope {
+  if (params.sameLeague === "1") return "league";
+  if (params.top5 === "1") return "top5";
+  return "all";
+}
+
 export interface ScopedComparison {
   outperformers: PlayerStats[];
   underperformers: PlayerStats[];

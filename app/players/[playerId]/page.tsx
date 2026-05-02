@@ -7,8 +7,8 @@ import { createPageMetadata } from "@/lib/metadata";
 import { getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
 import {
   getPlayerDetailData,
+  paramsToScope,
   seasonNpga,
-  type ComparisonScope,
   type PlayerRankings,
 } from "@/lib/player-detail";
 import { getPlayerRecentMatches } from "@/lib/player-recent-matches";
@@ -550,8 +550,7 @@ export default async function PlayerDetailPage({
   searchParams: Promise<{ sameLeague?: string; top5?: string }>;
 }) {
   const { playerId } = await params;
-  const { sameLeague, top5 } = await searchParams;
-  const scope: ComparisonScope = sameLeague === "1" ? "league" : top5 === "1" ? "top5" : "all";
+  const scope = paramsToScope(await searchParams);
   const data = await getPlayerDetailData(playerId);
 
   if (!data) {
@@ -604,11 +603,7 @@ export default async function PlayerDetailPage({
     clubCount,
     penaltyRank,
   } = data;
-  const {
-    outperformers: activeOutperformers,
-    underperformers: activeUnderperformers,
-    signalSummary,
-  } = comparisons[scope];
+  const { signalSummary } = comparisons.all;
   const fallbackMatchCount = player.recentForm?.length ?? 0;
 
   return (
@@ -1031,9 +1026,8 @@ export default async function PlayerDetailPage({
         </div>
 
         <ComparisonPanels
-          underperformers={activeUnderperformers}
-          outperformers={activeOutperformers}
-          scope={scope}
+          comparisons={comparisons}
+          initialScope={scope}
           leagueLabel={player.league}
           underBenchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=underdelivering`}
           overBenchmarkUrl={`/value-analysis?id=${player.playerId}&name=${encodeURIComponent(player.name)}&tab=better-value`}

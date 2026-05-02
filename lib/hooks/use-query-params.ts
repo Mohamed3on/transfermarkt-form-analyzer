@@ -28,6 +28,14 @@ export function useQueryParams(basePath: string) {
     [buildUrl],
   );
 
+  // Shallow URL replace — no server re-render, no history entry
+  const replace = useCallback(
+    (updates: Record<string, string | null>) => {
+      window.history.replaceState(null, "", buildUrl(updates));
+    },
+    [buildUrl],
+  );
+
   // Full navigation — triggers server re-render
   const push = useCallback(
     (updates: Record<string, string | null>) => {
@@ -36,5 +44,5 @@ export function useQueryParams(basePath: string) {
     [router, buildUrl],
   );
 
-  return { params, update, push };
+  return { params, update, replace, push };
 }
