@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { PlayerStats } from "@/app/types";
-import type { ComparisonScope, ScopedComparison } from "@/lib/player-detail";
+import type { ScopedComparison } from "@/lib/player-detail";
+import { type ComparisonScope, scopeToParams } from "@/lib/comparison-scope";
 import { useQueryParams } from "@/lib/hooks/use-query-params";
 import { ComparisonItem } from "@/components/ComparisonItem";
 import { FilterButton } from "@/components/FilterButton";
@@ -66,10 +67,7 @@ export function ComparisonPanels({
   const toggleScope = (target: Exclude<ComparisonScope, "all">) => {
     const next = scope === target ? "all" : target;
     setScope(next);
-    replace({
-      sameLeague: next === "league" ? "1" : null,
-      top5: next === "top5" ? "1" : null,
-    });
+    replace(scopeToParams(next));
   };
 
   const { underperformers, outperformers } = comparisons[scope];

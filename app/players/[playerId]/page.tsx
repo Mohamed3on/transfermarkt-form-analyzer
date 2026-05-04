@@ -1,18 +1,13 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, Crown, Medal, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowUpRight, Crown, Medal, TrendingDown, TrendingUp } from "lucide-react";
 import { DetailHero, DetailPageShell } from "@/components/DetailHero";
 import { createPageMetadata } from "@/lib/metadata";
 import { getLeistungsdatenUrl, getPlayerDetailHref } from "@/lib/format";
-import {
-  getPlayerDetailData,
-  paramsToScope,
-  seasonNpga,
-  type PlayerRankings,
-} from "@/lib/player-detail";
+import { getPlayerDetailData, seasonNpga, type PlayerRankings } from "@/lib/player-detail";
+import { paramsToScope } from "@/lib/comparison-scope";
 import { getPlayerRecentMatches } from "@/lib/player-recent-matches";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -27,9 +22,11 @@ import { LeagueBadge } from "@/components/LeagueBadge";
 import { PlayerSubtitle } from "@/components/PlayerSubtitle";
 import { timeAgo } from "@/app/components/DataLastUpdated";
 import { ComparisonPanels } from "./ComparisonPanels";
+import { HeroSignalBadges } from "./HeroSignalBadges";
 import { DetailDeck } from "@/components/DetailDeck";
 import { HeroMetric } from "@/components/HeroMetric";
 import { SectionPanel } from "@/components/SectionPanel";
+import { SignalBadge } from "@/components/SignalBadge";
 import type { MinutesValuePlayer, RecentGameStats } from "@/app/types";
 import { POSITION_NAMES } from "@/lib/fetch-player-minutes";
 import { PlayerInjuryBadge } from "./PlayerInjuryBadge";
@@ -181,10 +178,6 @@ function formatShortDate(value: string): string {
     month: "short",
     day: "numeric",
   }).format(date);
-}
-
-function SignalBadge({ children, className }: { children: React.ReactNode; className: string }) {
-  return <Badge className={`rounded-full border px-3 py-1 text-xs ${className}`}>{children}</Badge>;
 }
 
 function MinutesBenchmarkPanel({
@@ -723,19 +716,14 @@ export default async function PlayerDetailPage({
         </div>
 
         <div className="col-span-full flex flex-wrap gap-2.5">
-          {signalSummary.discoveryStatus === "bargain" &&
-            signalSummary.cheaperPlayersBeatingTarget === 0 && (
-              <SignalBadge className="border-accent-hot-border bg-accent-hot-glow text-accent-hot">
-                <Sparkles className="mr-1 h-3.5 w-3.5" />
-                Outperforming {signalSummary.pricierPlayersBeatenByTarget} pricier peers
-              </SignalBadge>
-            )}
-          {signalSummary.discoveryStatus === "overpriced" &&
-            signalSummary.pricierPlayersBeatenByTarget === 0 && (
-              <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
-                {signalSummary.cheaperPlayersBeatingTarget} cheaper peers with more output
-              </SignalBadge>
-            )}
+          <HeroSignalBadges
+            signalSummaries={{
+              all: comparisons.all.signalSummary,
+              league: comparisons.league.signalSummary,
+              top5: comparisons.top5.signalSummary,
+            }}
+            leagueLabel={player.league}
+          />
           {(minutesBenchmark.playingLessCount ?? minutesBenchmark.playingLess.length) === 0 &&
             (minutesBenchmark.playingMoreCount ?? minutesBenchmark.playingMore.length) > 0 && (
               <SignalBadge className="border-accent-cold-border bg-accent-cold-glow text-accent-cold-soft">
