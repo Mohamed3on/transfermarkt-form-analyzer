@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/com
 import { cn } from "@/lib/utils";
 import { Menu, HelpCircle } from "lucide-react";
 import { PlayerSearch } from "./PlayerSearch";
+import { LEAGUES, getLeagueLogoUrl } from "@/lib/leagues";
 
 const PAGE_CACHE_MAP: Record<string, { tags?: string[]; workflow?: boolean }> = {
   "/form": { tags: ["form-analysis"] },
@@ -94,6 +95,105 @@ const navItems = [
   { href: "/biggest-movers", label: "Biggest Movers" },
 ] as const;
 
+const LEAGUE_NAV = LEAGUES.map((l) => ({
+  slug: l.slug,
+  name: l.name,
+  href: `/leagues/${l.slug}`,
+  logoUrl: getLeagueLogoUrl(l.name),
+}));
+
+type LeagueNavItem = (typeof LEAGUE_NAV)[number];
+
+function MainNavLink({
+  href,
+  label,
+  variant,
+  isActive,
+  className,
+  ...rest
+}: {
+  href: string;
+  label: string;
+  variant: "desktop" | "mobile";
+  isActive: boolean;
+} & Omit<ComponentProps<typeof Link>, "href">) {
+  if (variant === "desktop") {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        asChild
+        className={cn(
+          "h-auto px-3 py-1.5 text-sm",
+          isActive && "bg-elevated text-text-primary",
+          className,
+        )}
+      >
+        <Link {...rest} href={href} aria-current={isActive ? "page" : undefined}>
+          {label}
+        </Link>
+      </Button>
+    );
+  }
+  return (
+    <Link
+      {...rest}
+      href={href}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "rounded-md px-3 py-2.5 text-base font-medium transition-colors",
+        isActive
+          ? "bg-elevated text-accent-hot"
+          : "text-text-secondary hover:bg-elevated hover:text-text-primary",
+        className,
+      )}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function LeagueNavLink({
+  league,
+  variant,
+  isActive,
+  className,
+  ...rest
+}: {
+  league: LeagueNavItem;
+  variant: "sheet" | "strip";
+  isActive: boolean;
+} & Omit<ComponentProps<typeof Link>, "href">) {
+  const isSheet = variant === "sheet";
+  return (
+    <Link
+      {...rest}
+      href={league.href}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "items-center rounded-md font-medium transition-colors",
+        isSheet ? "flex gap-2 px-3 py-2 text-sm" : "inline-flex shrink-0 gap-1.5 px-2 py-1 text-xs",
+        isActive
+          ? "bg-elevated text-text-primary"
+          : "text-text-secondary hover:bg-elevated hover:text-text-primary",
+        className,
+      )}
+    >
+      {league.logoUrl && (
+        <img
+          src={league.logoUrl}
+          alt=""
+          className={cn(
+            "rounded-sm bg-white/90 object-contain p-px",
+            isSheet ? "h-5 w-5" : "h-4 w-4",
+          )}
+        />
+      )}
+      <span>{league.name}</span>
+    </Link>
+  );
+}
+
 export function Header() {
   const queryClient = useQueryClient();
   const pathname = usePathname();
@@ -136,32 +236,15 @@ export function Header() {
         <nav className="hidden items-center gap-1 xl:flex">
           {navItems
             .filter((i) => !("desktopHidden" in i && i.desktopHidden))
-            .map(({ href, label }) => {
-              const isActive =
-                pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
-              return isActive ? (
-                <Button
-                  key={href}
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto cursor-default px-3 py-1.5 text-sm bg-elevated text-text-primary"
-                  disabled
-                  aria-current="page"
-                >
-                  {label}
-                </Button>
-              ) : (
-                <Button
-                  key={href}
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="h-auto px-3 py-1.5 text-sm"
-                >
-                  <Link href={href}>{label}</Link>
-                </Button>
-              );
-            })}
+            .map(({ href, label }) => (
+              <MainNavLink
+                key={href}
+                href={href}
+                label={label}
+                variant="desktop"
+                isActive={pathname === href}
+              />
+            ))}
         </nav>
 
         {/* Right side */}
@@ -214,35 +297,40 @@ export function Header() {
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <nav className="mt-8 flex flex-col gap-1">
                 {[...navItems, { href: "/how-it-works", label: "How It Works" } as const].map(
-                  ({ href, label }) => {
-                    const isActive =
-                      pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
-                    return isActive ? (
-                      <span
-                        key={href}
-                        aria-current="page"
-                        className="rounded-md bg-elevated px-3 py-2.5 text-base font-medium text-accent-hot"
-                      >
-                        {label}
-                      </span>
-                    ) : (
-                      <SheetClose key={href} asChild>
-                        <Link
-                          href={href}
-                          className={cn(
-                            "rounded-md px-3 py-2.5 text-base font-medium transition-colors",
-                            "text-text-secondary hover:bg-elevated hover:text-text-primary",
-                          )}
-                        >
-                          {label}
-                        </Link>
-                      </SheetClose>
-                    );
-                  },
+                  ({ href, label }) => (
+                    <SheetClose key={href} asChild>
+                      <MainNavLink
+                        href={href}
+                        label={label}
+                        variant="mobile"
+                        isActive={pathname === href}
+                      />
+                    </SheetClose>
+                  ),
                 )}
               </nav>
+              <div className="mt-6 border-t border-border-subtle pt-5">
+                <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">
+                  Leagues
+                </p>
+                <div className="mt-2 flex flex-col gap-1">
+                  {LEAGUE_NAV.map((l) => (
+                    <SheetClose key={l.slug} asChild>
+                      <LeagueNavLink league={l} variant="sheet" isActive={pathname === l.href} />
+                    </SheetClose>
+                  ))}
+                </div>
+              </div>
             </SheetContent>
           </Sheet>
+        </div>
+      </div>
+
+      <div className="hidden border-t border-border-subtle xl:block">
+        <div className="page-container flex items-center gap-1 overflow-x-auto py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {LEAGUE_NAV.map((l) => (
+            <LeagueNavLink key={l.slug} league={l} variant="strip" isActive={pathname === l.href} />
+          ))}
         </div>
       </div>
     </header>
