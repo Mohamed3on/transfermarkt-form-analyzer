@@ -44,28 +44,6 @@ async function fetchSeniorCareer(
   }
 }
 
-/** Fallback when the career-history API is unreachable: walk ceapi games and
- *  count senior caps via the static NT-type map. ceapi returns games
- *  newest-first, so the first senior NT clubId we hit resolves dual-nationals
- *  (e.g. switched from Spain to Morocco) to their current team. */
-function deriveSeniorCapsFromGames(games: CeapiGame[]): number {
-  let seniorClubId: string | undefined;
-  let caps = 0;
-  for (const g of games) {
-    if (!g.gameInformation.isNationalGame) continue;
-    const cid = g.clubsInformation?.club?.clubId;
-    if (!cid) continue;
-    if (!seniorClubId) {
-      if (!isSeniorNationalTeam(cid)) continue;
-      seniorClubId = cid;
-    } else if (cid !== seniorClubId) {
-      continue;
-    }
-    if ((g.statistics.playingTimeStatistics?.playedMinutes ?? 0) > 0) caps++;
-  }
-  return caps;
-}
-
 const ZERO_STATS: PlayerStatsResult = {
   minutes: 0,
   appearances: 0,
@@ -349,9 +327,9 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
     (leagueLinkImg.attr("src") || "").replace(/\/(verytiny|tiny)\//, "/header/") || "";
 
   // Parse senior international caps from profile header (Caps/Goals: N).
-  // The header only shows the player's *current* national team — for players in a youth
-  // squad (e.g. Portugal U21), it omits any senior caps. The senior fallback below patches
-  // those cases using ceapi's per-game data.
+  // The header only shows the player's *current* national team, so it
+  // under-reports for youth-squad players. Treated here as a fallback for when
+  // the alpha API is unreachable; the API result takes precedence below.
   const capsLi = $("li:contains('Caps/Goals')").first();
   const capsUl = capsLi.closest("ul");
   const natTeamName = capsUl.find("a[href*='/startseite/verein/']").first().attr("title") || "";
@@ -387,14 +365,10 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   }
   const stats = aggregateSeasonStats(games);
 
-  // The alpha API is the canonical source for both the senior cap count and
-  // whether the player is in the current squad (the same data drives TM's
-  // green/yellow shirt-number badge). Fall back to header for caps when the
-  // header is senior, or to ceapi-derived caps when it's a youth squad. The
-  // "currently in senior squad" signal can only come from the API — if it's
-  // unreachable we leave it at the header's value rather than guess.
-  const intlCareerCaps =
-    seniorCareer?.caps ?? (headerIsSenior ? headerCaps : deriveSeniorCapsFromGames(games));
+  // The alpha API is the canonical source for senior caps + whether the
+  // player is in the current squad (the same data powers TM's green/yellow
+  // shirt-number badge). Header values are kept as a fallback for API outages.
+  const intlCareerCaps = seniorCareer?.caps ?? headerCaps;
   const isCurrentIntl = seniorCareer?.isCurrent ?? headerCurrentIntl;
 
   const shared = {
