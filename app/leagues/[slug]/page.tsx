@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
-import type { InjuredPlayer } from "@/app/types";
+import type { AnalysisResult, InjuredPlayer } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { DetailHero, DetailPageShell } from "@/components/DetailHero";
 import { HeroMetric } from "@/components/HeroMetric";
@@ -91,9 +91,20 @@ export default async function LeaguePage({ params }: { params: Promise<{ slug: s
   const league = getLeagueBySlug(slug);
   if (!league) notFound();
 
+  // Form analysis can fail when Transfermarkt's WAF blocks all 4 form-window
+  // fetches (most often during a cold prerender). Render the page without the
+  // form section rather than failing the whole build — the cache layer will
+  // recover the next time a fetch succeeds.
+  const emptyAnalysis: AnalysisResult = {
+    success: false,
+    matchedPeriod: null,
+    analysis: [],
+    aggregatedTop: [],
+    aggregatedBottom: [],
+  };
   const [teamFormData, leagueAnalysis, allPlayers, injuredData] = await Promise.all([
     getTeamFormData(),
-    getLeagueAnalysis(league.name),
+    getLeagueAnalysis(league.name).catch(() => emptyAnalysis),
     getMinutesValueData(),
     getInjuredPlayers().catch(() => ({ players: [] as InjuredPlayer[] })),
   ]);
