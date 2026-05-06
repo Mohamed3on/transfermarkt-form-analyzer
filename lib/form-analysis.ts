@@ -171,9 +171,15 @@ function findQualifiedTeams(
 
 async function fetchAllPeriodsWithRetry(): Promise<TeamStats[][]> {
   const settled = await Promise.allSettled(PERIODS.map(fetchAllTeams));
-  const results = settled.map((r) =>
-    r.status === "fulfilled" && r.value.length > 0 ? r.value : null,
-  );
+  const results = settled.map((r, i) => {
+    if (r.status === "fulfilled" && r.value.length > 0) return r.value;
+    if (r.status === "rejected") {
+      console.error(`[form] Period ${PERIODS[i]} rejected:`, r.reason);
+    } else {
+      console.warn(`[form] Period ${PERIODS[i]} returned empty rows`);
+    }
+    return null;
+  });
 
   // Retry failed periods once, sequentially to avoid overwhelming rate limiter
   const failedIndices = results.flatMap((r, i) => (r === null ? [i] : []));

@@ -1,0 +1,31 @@
+"use client";
+
+import { RefreshCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export default function FormError({
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-text-muted">
+        Form data unavailable
+      </p>
+      <h1 className="mt-3 text-3xl font-pixel text-text-primary sm:text-4xl">
+        Couldn&apos;t load the form table
+      </h1>
+      <p className="mt-3 max-w-md text-sm text-text-secondary">
+        Transfermarkt didn&apos;t return all four windows this time. This usually clears up in a
+        minute — try again.
+      </p>
+
+      <Button onClick={reset} className="mt-8">
+        <RefreshCcw className="h-4 w-4" />
+        Try again
+      </Button>
+    </div>
+  );
+}
