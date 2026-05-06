@@ -217,10 +217,12 @@ export interface CeapiGame {
     competitionTypeId: number;
     competitionId: string;
     gameDay?: number;
+    isNationalGame?: boolean;
     date?: { dateTimeUTC?: string };
   };
   clubsInformation?: {
     club?: {
+      clubId?: string;
       venue?: "home" | "away";
       goalsTotal?: number | null;
       opponentGoalsTotal?: number | null;

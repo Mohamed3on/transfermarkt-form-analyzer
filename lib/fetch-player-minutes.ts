@@ -3,6 +3,34 @@ import type { CeapiGame, PlayerStatsResult, RecentGameStats } from "@/app/types"
 import { BASE_URL } from "./constants";
 import { fetchPage, withSlot } from "./fetch";
 import { parseMarketValue } from "./parse-market-value";
+import nationalTeamTypes from "@/data/national-teams.json";
+
+const NATIONAL_TEAM_TYPES = nationalTeamTypes as Record<string, number>;
+const SENIOR_NT_TYPE_ID = 1;
+const CURRENT_INTL_WINDOW_MS = 18 * 30 * 24 * 60 * 60 * 1000;
+
+function isSeniorNationalTeam(clubId: string | undefined): boolean {
+  return !!clubId && NATIONAL_TEAM_TYPES[clubId] === SENIOR_NT_TYPE_ID;
+}
+
+function deriveSeniorIntlFromGames(
+  games: CeapiGame[],
+): { caps: number; isCurrent: boolean } | null {
+  const ntGames = games.filter((g) => g.gameInformation.isNationalGame);
+  const seniorGame = ntGames.find((g) => isSeniorNationalTeam(g.clubsInformation?.club?.clubId));
+  const seniorClubId = seniorGame?.clubsInformation?.club?.clubId;
+  if (!seniorClubId) return null;
+  const seniorGames = ntGames.filter((g) => g.clubsInformation?.club?.clubId === seniorClubId);
+  const caps = seniorGames.filter(
+    (g) => (g.statistics.playingTimeStatistics?.playedMinutes ?? 0) > 0,
+  ).length;
+  const cutoff = Date.now() - CURRENT_INTL_WINDOW_MS;
+  const isCurrent = seniorGames.some((g) => {
+    const dt = g.gameInformation.date?.dateTimeUTC;
+    return !!dt && new Date(dt).getTime() > cutoff;
+  });
+  return { caps, isCurrent };
+}
 
 const ZERO_STATS: PlayerStatsResult = {
   minutes: 0,
@@ -283,16 +311,17 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const leagueLogoUrl =
     (leagueLinkImg.attr("src") || "").replace(/\/(verytiny|tiny)\//, "/header/") || "";
 
-  // Parse senior international caps from profile header (Caps/Goals: N)
-  // The team label varies: "Current international", "Former International", "National player"
-  // Find the <ul> containing Caps/Goals, then check the team name in the sibling <li>
+  // Parse senior international caps from profile header (Caps/Goals: N).
+  // The header only shows the player's *current* national team — for players in a youth
+  // squad (e.g. Portugal U21), it omits any senior caps. The senior fallback below patches
+  // those cases using ceapi's per-game data.
   const capsLi = $("li:contains('Caps/Goals')").first();
   const capsUl = capsLi.closest("ul");
   const natTeamName = capsUl.find("a[href*='/startseite/verein/']").first().attr("title") || "";
-  const isSeniorTeam = !!natTeamName && !/U\d/i.test(natTeamName);
-  const intlCareerCaps = isSeniorTeam ? parseInt(capsLi.find("a").first().text().trim()) || 0 : 0;
+  const headerIsSenior = !!natTeamName && !/U\d/i.test(natTeamName);
+  const headerCaps = headerIsSenior ? parseInt(capsLi.find("a").first().text().trim()) || 0 : 0;
   const ntLabel = capsUl.find(".data-header__label").first().text().trim().toLowerCase();
-  const isCurrentIntl = isSeniorTeam && ntLabel.includes("current international");
+  const headerCurrentIntl = headerIsSenior && ntLabel.includes("current international");
 
   // Parse contract expiry from club info header
   const contractLabel = clubInfo.find(".data-header__label:contains('Contract expires:')");
@@ -309,7 +338,24 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   const ageMatch = birthText.match(/\((\d+)\)/);
   const age = ageMatch ? parseInt(ageMatch[1]) : 0;
 
-  // Parse stats + league from ceapi
+  if (!ceapiRes.ok) {
+    throw new Error(`ceapi ${ceapiRes.status} for ${playerId}`);
+  }
+  const ceapi = await ceapiRes.json();
+  const games: CeapiGame[] | undefined = ceapi?.data?.performance;
+  // TM occasionally returns 200 with a nullish `performance` under rate pressure.
+  // Treat that as a failure so the retry loop fires instead of silently caching zeros.
+  if (!Array.isArray(games)) {
+    throw new Error(`ceapi returned no performance array for ${playerId}`);
+  }
+  const stats = aggregateSeasonStats(games);
+
+  // When the header points at a youth squad, the senior cap count is missing.
+  // Recover it from ceapi via the static national-team-type map.
+  const seniorFromGames = headerIsSenior ? null : deriveSeniorIntlFromGames(games);
+  const intlCareerCaps = seniorFromGames?.caps ?? headerCaps;
+  const isCurrentIntl = seniorFromGames ? seniorFromGames.isCurrent : headerCurrentIntl;
+
   const shared = {
     club,
     clubLogoUrl,
@@ -325,18 +371,6 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
     marketValueDisplay,
     age,
   };
-
-  if (!ceapiRes.ok) {
-    throw new Error(`ceapi ${ceapiRes.status} for ${playerId}`);
-  }
-  const ceapi = await ceapiRes.json();
-  const games: CeapiGame[] | undefined = ceapi?.data?.performance;
-  // TM occasionally returns 200 with a nullish `performance` under rate pressure.
-  // Treat that as a failure so the retry loop fires instead of silently caching zeros.
-  if (!Array.isArray(games)) {
-    throw new Error(`ceapi returned no performance array for ${playerId}`);
-  }
-  const stats = aggregateSeasonStats(games);
 
   return { ...stats, ...shared, rawGames: games };
 }
