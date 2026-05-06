@@ -491,27 +491,22 @@ async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<vo
         `Player count regressed: ${oldCount} → ${newCount} (${Math.round((newCount / oldCount) * 100)}%).`,
       );
     }
-    // Per-player regression: catch silent scrape failures (ceapi zero-outs, truncated
-    // data) without flagging TM's retroactive minute recalcs. Partial truncation drops
-    // goals/assists too, so those are the real signal. Pure minutes-only drops are TM's
-    // own corrections and are expected.
+    // Per-player regression: minutes only. TM frequently re-categorizes goals
+    // and assists post-match (a tap-in re-credited from striker to assister,
+    // an OG flipped, etc.), so per-player G/A drops are normal. Minutes are
+    // monotonic over a season — a decrease is a scrape regression.
     const byId = new Map(existing.map((p) => [p.playerId, p]));
     const regressed = players.filter((p) => {
       const old = byId.get(p.playerId);
-      if (!old) return false;
-      const minutesCollapsed = old.minutes > 0 && p.minutes === 0;
-      return p.goals < old.goals || p.assists < old.assists || minutesCollapsed;
+      return !!old && p.minutes < old.minutes;
     });
     if (regressed.length > 0) {
       const sample = regressed
         .slice(0, 5)
-        .map((p) => {
-          const old = byId.get(p.playerId)!;
-          return `${p.name} (${old.goals}G/${old.assists}A/${old.minutes}' → ${p.goals}G/${p.assists}A/${p.minutes}')`;
-        })
+        .map((p) => `${p.name} (${byId.get(p.playerId)!.minutes}' → ${p.minutes}')`)
         .join(", ");
       throw new Error(
-        `${regressed.length} player(s) have decreasing season stats (e.g. ${sample}) — scrape regressed silently.`,
+        `${regressed.length} player(s) have decreasing minutes (e.g. ${sample}) — scrape regressed silently.`,
       );
     }
   } catch (e) {
@@ -519,7 +514,7 @@ async function validate(players: MinutesValuePlayer[], cache: Cache): Promise<vo
       e instanceof Error &&
       (e.message.startsWith("Stats regressed") ||
         e.message.startsWith("Player count") ||
-        e.message.includes("decreasing season stats"))
+        e.message.includes("decreasing minutes"))
     )
       throw e;
   }
