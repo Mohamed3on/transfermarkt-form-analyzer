@@ -7,29 +7,63 @@ import nationalTeamTypes from "@/data/national-teams.json";
 
 const NATIONAL_TEAM_TYPES = nationalTeamTypes as Record<string, number>;
 const SENIOR_NT_TYPE_ID = 1;
-const CURRENT_INTL_WINDOW_MS = 18 * 30 * 24 * 60 * 60 * 1000;
+const TM_API_BASE = "https://tmapi-alpha.transfermarkt.technology";
 
 function isSeniorNationalTeam(clubId: string | undefined): boolean {
   return !!clubId && NATIONAL_TEAM_TYPES[clubId] === SENIOR_NT_TYPE_ID;
 }
 
-function deriveSeniorIntlFromGames(
-  games: CeapiGame[],
-): { caps: number; isCurrent: boolean } | null {
-  const ntGames = games.filter((g) => g.gameInformation.isNationalGame);
-  const seniorGame = ntGames.find((g) => isSeniorNationalTeam(g.clubsInformation?.club?.clubId));
-  const seniorClubId = seniorGame?.clubsInformation?.club?.clubId;
-  if (!seniorClubId) return null;
-  const seniorGames = ntGames.filter((g) => g.clubsInformation?.club?.clubId === seniorClubId);
-  const caps = seniorGames.filter(
-    (g) => (g.statistics.playingTimeStatistics?.playedMinutes ?? 0) > 0,
-  ).length;
-  const cutoff = Date.now() - CURRENT_INTL_WINDOW_MS;
-  const isCurrent = seniorGames.some((g) => {
-    const dt = g.gameInformation.date?.dateTimeUTC;
-    return !!dt && new Date(dt).getTime() > cutoff;
-  });
-  return { caps, isCurrent };
+interface NationalCareerEntry {
+  clubId: string;
+  gamesPlayed: number;
+  careerState: string;
+}
+
+/**
+ * Fetches the canonical senior NT line from the same API that powers
+ * Transfermarkt's player widget. Returns null on any network/parse error so
+ * callers can fall back to header / ceapi-derived values.
+ */
+async function fetchSeniorCareer(
+  playerId: string,
+): Promise<{ caps: number; isCurrent: boolean } | null> {
+  try {
+    const r = await fetch(`${TM_API_BASE}/player/${playerId}/national-career-history`, {
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" },
+    });
+    if (!r.ok) return null;
+    const j = (await r.json()) as { data?: { history?: NationalCareerEntry[] } };
+    const senior = j?.data?.history?.find((h) => isSeniorNationalTeam(h.clubId));
+    if (!senior) return null;
+    return {
+      caps: senior.gamesPlayed ?? 0,
+      isCurrent: senior.careerState === "CURRENT_NATIONAL_PLAYER",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Fallback when the career-history API is unreachable: walk ceapi games and
+ *  count senior caps via the static NT-type map. ceapi returns games
+ *  newest-first, so the first senior NT clubId we hit resolves dual-nationals
+ *  (e.g. switched from Spain to Morocco) to their current team. */
+function deriveSeniorCapsFromGames(games: CeapiGame[]): number {
+  let seniorClubId: string | undefined;
+  let caps = 0;
+  for (const g of games) {
+    if (!g.gameInformation.isNationalGame) continue;
+    const cid = g.clubsInformation?.club?.clubId;
+    if (!cid) continue;
+    if (!seniorClubId) {
+      if (!isSeniorNationalTeam(cid)) continue;
+      seniorClubId = cid;
+    } else if (cid !== seniorClubId) {
+      continue;
+    }
+    if ((g.statistics.playingTimeStatistics?.playedMinutes ?? 0) > 0) caps++;
+  }
+  return caps;
 }
 
 const ZERO_STATS: PlayerStatsResult = {
@@ -277,9 +311,11 @@ export function derivePositionStats(
 export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerStatsResult> {
   if (!playerId) return ZERO_STATS;
 
-  // Fetch HTML (for club/ribbon) and ceapi (for stats) in parallel.
-  // Both go through the shared concurrency limiter so ceapi isn't hammered harder than HTML.
-  const [htmlContent, ceapiRes] = await Promise.all([
+  // Fetch HTML (club/ribbon), ceapi (per-game stats), and the alpha-API senior
+  // NT row in parallel. HTML + ceapi go through the shared TM concurrency
+  // limiter; the alpha API runs on a different host and small payload, so we
+  // don't slot it.
+  const [htmlContent, ceapiRes, seniorCareer] = await Promise.all([
     fetchPage(`${BASE_URL}/x/leistungsdaten/spieler/${playerId}`),
     withSlot(() =>
       fetch(`${BASE_URL}/ceapi/performance-game/${playerId}`, {
@@ -287,6 +323,7 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
         cache: "no-store",
       }),
     ),
+    fetchSeniorCareer(playerId),
   ]);
 
   // Parse club/ribbon from HTML
@@ -350,11 +387,15 @@ export async function fetchPlayerMinutesRaw(playerId: string): Promise<PlayerSta
   }
   const stats = aggregateSeasonStats(games);
 
-  // When the header points at a youth squad, the senior cap count is missing.
-  // Recover it from ceapi via the static national-team-type map.
-  const seniorFromGames = headerIsSenior ? null : deriveSeniorIntlFromGames(games);
-  const intlCareerCaps = seniorFromGames?.caps ?? headerCaps;
-  const isCurrentIntl = seniorFromGames ? seniorFromGames.isCurrent : headerCurrentIntl;
+  // The alpha API is the canonical source for both the senior cap count and
+  // whether the player is in the current squad (the same data drives TM's
+  // green/yellow shirt-number badge). Fall back to header for caps when the
+  // header is senior, or to ceapi-derived caps when it's a youth squad. The
+  // "currently in senior squad" signal can only come from the API — if it's
+  // unreachable we leave it at the header's value rather than guess.
+  const intlCareerCaps =
+    seniorCareer?.caps ?? (headerIsSenior ? headerCaps : deriveSeniorCapsFromGames(games));
+  const isCurrentIntl = seniorCareer?.isCurrent ?? headerCurrentIntl;
 
   const shared = {
     club,
